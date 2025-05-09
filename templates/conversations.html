@@ -1,0 +1,504 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="fs-4 mb-2">Gesprekken</h2>
+                    <p class="text-muted mb-0">Bekijk, hervat of verwijder je eerdere gesprekken met Claude</p>
+                </div>
+                <div>
+                    <button id="new-conversation-btn" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i> Nieuw Gesprek
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Conversations List -->
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0 fs-6">Gesprekken</h5>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <ul id="conversations-list" class="list-group list-group-flush">
+                        <li class="list-group-item text-center text-muted py-3">
+                            <i class="fas fa-spinner fa-spin me-2"></i> Gesprekken laden...
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conversation Details -->
+        <div class="col-md-8">
+            <div id="conversation-detail" class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 id="conversation-title" class="card-title mb-0 fs-6">Selecteer een gesprek</h5>
+                    <div id="conversation-actions" class="btn-group" style="display: none;">
+                        <button id="rename-conversation-btn" class="btn btn-sm btn-outline-secondary">
+                            <i class="fas fa-edit me-1"></i> Hernoemen
+                        </button>
+                        <button id="delete-conversation-btn" class="btn btn-sm btn-outline-danger">
+                            <i class="fas fa-trash me-1"></i> Verwijderen
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="conversation-messages" class="conversation-messages">
+                        <p class="text-center text-muted py-5">Selecteer een gesprek om de inhoud te bekijken.</p>
+                    </div>
+                </div>
+                <div id="resume-conversation-footer" class="card-footer" style="display: none;">
+                    <div class="d-grid">
+                        <button id="resume-conversation-btn" class="btn btn-primary">
+                            <i class="fas fa-reply me-1"></i> Gesprek hervatten
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rename Conversation Modal -->
+<div class="modal fade" id="rename-modal" tabindex="-1" aria-labelledby="renameModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fs-6" id="renameModalLabel">Gesprek hernoemen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Sluiten"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="conversation-title-input" class="form-label">Titel</label>
+                    <input type="text" class="form-control" id="conversation-title-input">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuleren</button>
+                <button type="button" class="btn btn-primary" id="save-title-btn">Opslaan</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="delete-modal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fs-6" id="deleteModalLabel">Gesprek verwijderen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Sluiten"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">Weet je zeker dat je dit gesprek wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuleren</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete-btn">Verwijderen</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentConversationId = null;
+
+// Load conversations on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadConversations();
+    setupEventListeners();
+});
+
+function setupEventListeners() {
+    // New conversation button
+    document.getElementById('new-conversation-btn').addEventListener('click', function() {
+        window.location.href = '/dashboard';
+    });
+    
+    // Rename conversation
+    document.getElementById('rename-conversation-btn').addEventListener('click', function() {
+        const title = document.getElementById('conversation-title').textContent;
+        document.getElementById('conversation-title-input').value = title;
+        const modal = new bootstrap.Modal(document.getElementById('rename-modal'));
+        modal.show();
+    });
+    
+    // Save new title
+    document.getElementById('save-title-btn').addEventListener('click', function() {
+        const newTitle = document.getElementById('conversation-title-input').value;
+        renameConversation(currentConversationId, newTitle);
+        bootstrap.Modal.getInstance(document.getElementById('rename-modal')).hide();
+    });
+    
+    // Delete conversation
+    document.getElementById('delete-conversation-btn').addEventListener('click', function() {
+        const modal = new bootstrap.Modal(document.getElementById('delete-modal'));
+        modal.show();
+    });
+    
+    // Confirm delete
+    document.getElementById('confirm-delete-btn').addEventListener('click', function() {
+        deleteConversation(currentConversationId);
+        bootstrap.Modal.getInstance(document.getElementById('delete-modal')).hide();
+    });
+    
+    // Resume conversation
+    document.getElementById('resume-conversation-btn').addEventListener('click', function() {
+        window.location.href = `/dashboard?conversation_id=${currentConversationId}`;
+    });
+}
+
+function loadConversations() {
+    fetch('/api/conversations')
+        .then(response => response.json())
+        .then(data => {
+            const conversationsList = document.getElementById('conversations-list');
+            conversationsList.innerHTML = '';
+            
+            if (data.success && data.conversations && data.conversations.length > 0) {
+                data.conversations.forEach(conversation => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center border-0 border-bottom py-2';
+                    listItem.setAttribute('data-id', conversation.id);
+                    
+                    const titleContainer = document.createElement('div');
+                    titleContainer.className = 'd-flex flex-column';
+                    
+                    const titleSpan = document.createElement('span');
+                    titleSpan.className = 'conversation-title fw-medium';
+                    titleSpan.textContent = conversation.title;
+                    
+                    const dateSpan = document.createElement('small');
+                    dateSpan.className = 'text-muted';
+                    
+                    // Format date if available
+                    if (conversation.created_at) {
+                        const messageDate = new Date(conversation.created_at);
+                        const formattedDate = messageDate.toLocaleDateString('nl-NL', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric'
+                        });
+                        dateSpan.textContent = formattedDate;
+                    }
+                    
+                    titleContainer.appendChild(titleSpan);
+                    titleContainer.appendChild(dateSpan);
+                    
+                    const badgeSpan = document.createElement('span');
+                    badgeSpan.className = 'badge rounded-pill';
+                    badgeSpan.style.backgroundColor = '#0969da';
+                    badgeSpan.textContent = conversation.message_count;
+                    
+                    listItem.appendChild(titleContainer);
+                    listItem.appendChild(badgeSpan);
+                    
+                    listItem.addEventListener('click', function() {
+                        loadConversationDetail(conversation.id);
+                    });
+                    
+                    conversationsList.appendChild(listItem);
+                });
+            } else {
+                const listItem = document.createElement('li');
+                listItem.className = 'list-group-item text-center py-3';
+                listItem.innerHTML = '<i class="fas fa-comment-slash me-2"></i> Geen gesprekken gevonden.';
+                conversationsList.appendChild(listItem);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading conversations:', error);
+            document.getElementById('conversations-list').innerHTML = `
+                <li class="list-group-item text-center text-danger py-3">
+                    <i class="fas fa-exclamation-circle me-2"></i> Fout bij het laden van gesprekken.
+                </li>
+            `;
+        });
+}
+
+function loadConversationDetail(conversationId) {
+    currentConversationId = conversationId;
+    
+    // Highlight selected conversation
+    document.querySelectorAll('#conversations-list .list-group-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    document.querySelector(`#conversations-list .list-group-item[data-id="${conversationId}"]`)?.classList.add('active');
+    
+    // Show loading indicator
+    document.getElementById('conversation-messages').innerHTML = `
+        <p class="text-center text-muted py-5">
+            <i class="fas fa-spinner fa-spin me-2"></i> Gesprek laden...
+        </p>
+    `;
+    
+    // Show action buttons
+    document.getElementById('conversation-actions').style.display = 'block';
+    document.getElementById('resume-conversation-footer').style.display = 'block';
+    
+    fetch(`/api/conversations/${conversationId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.data) {
+                const { conversation, messages } = data.data;
+                
+                // Update title
+                document.getElementById('conversation-title').textContent = conversation.title;
+                
+                // Display messages
+                const messagesContainer = document.getElementById('conversation-messages');
+                messagesContainer.innerHTML = '';
+                
+                if (messages.length === 0) {
+                    messagesContainer.innerHTML = '<p class="text-center text-muted py-5">Dit gesprek bevat nog geen berichten.</p>';
+                    return;
+                }
+                
+                messages.forEach(message => {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = `message ${message.role}`;
+                    
+                    const iconSpan = document.createElement('div');
+                    iconSpan.className = 'message-icon';
+                    
+                    if (message.role === 'user') {
+                        iconSpan.innerHTML = '<i class="fas fa-user me-1"></i> Jij';
+                    } else {
+                        iconSpan.innerHTML = '<i class="fas fa-robot me-1"></i> Claude';
+                    }
+                    
+                    const contentDiv = document.createElement('div');
+                    contentDiv.className = 'message-content';
+                    contentDiv.textContent = message.content;
+                    
+                    const metaDiv = document.createElement('div');
+                    metaDiv.className = 'message-meta';
+                    
+                    // Format date
+                    const messageDate = new Date(message.created_at);
+                    const formattedDate = messageDate.toLocaleString('nl-NL', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+                    
+                    metaDiv.textContent = formattedDate;
+                    
+                    messageDiv.appendChild(iconSpan);
+                    messageDiv.appendChild(contentDiv);
+                    messageDiv.appendChild(metaDiv);
+                    messagesContainer.appendChild(messageDiv);
+                });
+            } else {
+                document.getElementById('conversation-messages').innerHTML = `
+                    <p class="text-center text-danger py-5">
+                        <i class="fas fa-exclamation-circle me-2"></i> ${data.error || 'Fout bij het laden van het gesprek.'}
+                    </p>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading conversation:', error);
+            document.getElementById('conversation-messages').innerHTML = `
+                <p class="text-center text-danger py-5">
+                    <i class="fas fa-exclamation-circle me-2"></i> Fout bij het laden van het gesprek.
+                </p>
+            `;
+        });
+}
+
+function renameConversation(conversationId, newTitle) {
+    fetch(`/api/conversations/${conversationId}`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            title: newTitle
+        })
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update title in UI
+                document.getElementById('conversation-title').textContent = newTitle;
+                
+                // Update conversation list
+                const listItem = document.querySelector(`#conversations-list .list-group-item[data-id="${conversationId}"]`);
+                if (listItem) {
+                    listItem.querySelector('.conversation-title').textContent = newTitle;
+                }
+                
+                // Show success message
+                showAlert('success', 'Gesprekstitel succesvol bijgewerkt.');
+            } else {
+                showAlert('danger', data.error || 'Fout bij het hernoemen van het gesprek.');
+            }
+        })
+        .catch(error => {
+            console.error('Error renaming conversation:', error);
+            showAlert('danger', 'Fout bij het hernoemen van het gesprek.');
+        });
+}
+
+function deleteConversation(conversationId) {
+    fetch(`/api/conversations/${conversationId}`, {
+        method: 'DELETE'
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove conversation from list
+                const listItem = document.querySelector(`#conversations-list .list-group-item[data-id="${conversationId}"]`);
+                if (listItem) {
+                    listItem.remove();
+                }
+                
+                // Reset conversation detail
+                currentConversationId = null;
+                document.getElementById('conversation-title').textContent = 'Selecteer een gesprek';
+                document.getElementById('conversation-messages').innerHTML = '<p class="text-center text-muted py-5">Selecteer een gesprek om de inhoud te bekijken.</p>';
+                document.getElementById('conversation-actions').style.display = 'none';
+                document.getElementById('resume-conversation-footer').style.display = 'none';
+                
+                // Show success message
+                showAlert('success', 'Gesprek succesvol verwijderd.');
+                
+                // Check if no conversations left
+                if (document.querySelectorAll('#conversations-list .list-group-item').length === 0) {
+                    document.getElementById('conversations-list').innerHTML = '<li class="list-group-item text-center py-3"><i class="fas fa-comment-slash me-2"></i> Geen gesprekken gevonden.</li>';
+                }
+            } else {
+                showAlert('danger', data.error || 'Fout bij het verwijderen van het gesprek.');
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting conversation:', error);
+            showAlert('danger', 'Fout bij het verwijderen van het gesprek.');
+        });
+}
+
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.setAttribute('role', 'alert');
+    
+    const icon = type === 'success' ? 'check-circle' : 'exclamation-circle';
+    
+    alertDiv.innerHTML = `
+        <i class="fas fa-${icon} me-2"></i> ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Sluiten"></button>
+    `;
+    
+    // Insert at the top of the container
+    const container = document.querySelector('.container');
+    container.insertBefore(alertDiv, container.firstChild);
+    
+    // Auto-dismiss after 5 seconds
+    setTimeout(() => {
+        alertDiv.classList.remove('show');
+        setTimeout(() => alertDiv.remove(), 150);
+    }, 5000);
+}
+</script>
+{% endblock %}
+
+{% block styles %}
+<style>
+/* GitHub-style conversation list */
+.list-group-item {
+    border-left: 0;
+    border-right: 0;
+    padding: 10px 16px;
+}
+
+.list-group-item.active {
+    background-color: #f6f8fa;
+    color: #24292f;
+    border-color: var(--border-color);
+}
+
+[data-theme="dark"] .list-group-item.active {
+    background-color: #161b22;
+    color: #c9d1d9;
+    border-color: var(--border-color);
+}
+
+.list-group-item:first-child {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+.list-group-item:hover {
+    background-color: #f6f8fa;
+}
+
+[data-theme="dark"] .list-group-item:hover {
+    background-color: #161b22;
+}
+
+.conversation-messages {
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.message {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+}
+
+.message-icon {
+    background-color: var(--secondary-bg);
+    border-bottom: 1px solid var(--border-color);
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--muted-text);
+    font-weight: 500;
+}
+
+.message-content {
+    padding: 10px 16px;
+    white-space: pre-wrap;
+}
+
+.message-meta {
+    font-size: 0.75rem;
+    color: var(--muted-text);
+    text-align: right;
+    padding: 4px 8px;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--secondary-bg);
+}
+
+/* GitHub-style modal */
+.modal-content {
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-footer {
+    border-top: 1px solid var(--border-color);
+}
+</style>
+{% endblock %}

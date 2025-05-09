@@ -1,0 +1,37 @@
+Stappenplan voor het ontwikkelen van de repository: 
+1. Als het bestand project_info.txt bestaat in de verder te ontwikkelen repository, kun je deze inlezen en hiervandaan verder gaan naar stap 3.
+2. Als dat bestand nog niet bestaat moet het aangemaakt worden. In een project-info branch. Het bestand moet gevuld worden met de volgende informatie op basis van het bestand start.txt in de repo:
+A. Projectoverzicht: Korte beschrijving van het project en zijn doel
+B. Architectuur: Overzicht van de modulestructuur
+C. Per module:
+o   Status van de module
+o   Bestandsnaam 
+o   Pad naar bestand / folderstructuur
+o   Functionaliteit
+o   Afhankelijkheid van andere modules 
+3. Als het bestand project_stappen.txt bestaat, kan deze worden ingelezen en hiervandaan verder naar stap 5.
+4. Als het bestand nog niet bestaat, kan het gevuld worden met informatie zoals hieronder beschreven bij project_stappen.txt bestand in een project_info branch. Deze stappen moeten een logische samenhang hebben om te komen tot de modules die genoemd staat in project_info.txt. 
+Volgende stappen: Korte beschrijving van de volgende ontwikkelstappen, maak een onderscheid tussen nice to haves en must haves. 
+Nice to haves hoeven in eerste instantie niet opgepakt te worden, tenzij hier expliciet om wordt gevraagd.
+Deze ontwikkelstap omschrijft minstens welk bestand aangemaakt/gewijzigd moet worden en wat er uitgevoerd moet worden.
+Maak als stap 2 en 4 zijn uitgevoerd een pull request aan voor deze branch naar de main branch en wacht op goedkeuring.
+5. Check of er een openstaand issue is in de repository. Als er een openstaand issue is, werk deze dan uit volgens stap 7, ga anders door naar stap 6. Als er meerdere openstaande issues zijn, geef dan voorrang aan bugs.
+6. Maak een github issue aan op basis van het eerstvolgende nog verder uit te werken stap in project_stappen. Het issue zelf moet aan de volgende eisen voldoen:
+6A. Titel: Duidelijke omschrijving van de te implementeren functionaliteit
+6B. Beschrijving:
+o	Gedetailleerde uitleg van wat geïmplementeerd moet worden
+o	Welke modules aangepast of gecreëerd moeten worden
+o	Welke functies toegevoegd of aangepast moeten worden
+o	Welke tests geschreven moeten worden
+o	Acceptatiecriteria
+o	Als een code script tussen de 200 en 250 regels lijkt te krijgen, probeer het dan verder op te splitsen in losse modules.
+o	Naam van de branch die gebruikt moet worden om dit issue te ontwikkelen
+6C. Labels: Toevoegen van labels "must-have", "nice-to-have" "bug"
+7. Voor het oplossen van een issue, volg de volgende stappen:
+7A. Als de branch met de naam die in de beschrijving staat nog niet gemaakt is, maak deze branch dan aan en haal de actuele code van main branche naar deze branch. Als deze branch al wel bestaat, check dan welke stappen van het issue al zijn uitgevoerd, en ga verder bij wat nog resteert.
+7B. Voeg wijzigingen toe en commit met een duidelijke commit message.
+7C. Push de wijzigingen naar je branch op GitHub 
+7D. Update het bestand project_info, voeg info toe over gewijzigde functionaliteit of nieuw toegevoegde bestanden.
+7E. Update het bestand project_stappen, maak duidelijk welke stap nu is afgerond.
+7F. Maak een pull request - Voeg een duidelijke beschrijving toe.
+7G. Sluit het issue en wacht op goedkeuring van de PR.

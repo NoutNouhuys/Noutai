@@ -1,0 +1,52 @@
+# crowding-api - Start.txt
+
+## Projectdoel
+Het hoofddoel van dit project is
+
+## Functionele Features
+### Must-haves:
+1. Structuur & Modulariteit
+-
+
+2. Logging & Error handling
+-
+
+3. Robuustheid
+-
+
+4. Performance en Efficiëntie
+-
+
+5. Data Science kwaliteit
+-
+
+6. Output/Reporting
+- 
+
+### Nice-to-haves:
+- 
+
+## Technische Specificaties
+- Programmeertaal: Python 3.11 of 3.12
+- Frameworks: 
+- Database: 
+- Frontend: 
+- Package dependency management:
+- Een entry point toevoegen aan pyproject.toml waarin het main script kan worden gerund, genaamd main bv (maar als je betere ideeën voor een naam hebt mag dat ook)
+- Nice to have: 
+
+## Infrastructuur
+- Containerisatie: 
+- CI/CD: 
+- Hosting: 
+
+## Performance Eisen
+- 
+## Security Vereisten
+- 
+
+## Integraties
+- 
+
+## UI/UX Richtlijnen
+- 

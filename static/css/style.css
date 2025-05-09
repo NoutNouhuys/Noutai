@@ -1,0 +1,867 @@
+/* Variables for theme colors - GitHub style */
+:root {
+    /* Light mode (default) - GitHub Light */
+    --background-color: #ffffff;
+    --foreground-color: #24292f;
+    --navbar-bg: #24292f;
+    --navbar-text: #ffffff;
+    --card-bg: #ffffff;
+    --card-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    --border-color: #d0d7de;
+    --input-bg: #f6f8fa;
+    --input-border: #d0d7de;
+    --footer-bg: #f6f8fa;
+    --footer-text: #57606a;
+    --message-user-bg: #f6f8fa;
+    --message-user-color: #24292f;
+    --message-system-bg: #ffffff;
+    --message-system-color: #24292f;
+    --message-error-bg: #ffebe9;
+    --message-error-color: #cf222e;
+    --code-bg: #f6f8fa;
+    --code-border: #d0d7de;
+    --code-tag-bg: #d0d7de;
+    --code-tag-color: #57606a;
+    --loading-dots-color: #57606a;
+    --chat-messages-bg: #ffffff;
+    --primary-button-bg: #2da44e; /* GitHub green */
+    --primary-button-hover: #2c974b;
+    --secondary-bg: #f6f8fa;
+    --muted-text: #57606a;
+    --card-header-bg: #f6f8fa;
+    --card-header-color: #24292f;
+    /* GitHub specific */
+    --gh-header-border: #d0d7de;
+    --gh-btn-border: #d0d7de;
+    --gh-btn-hover-bg: #f3f4f6;
+    --gh-counter-bg: #f3f4f6;
+}
+
+/* Dark mode colors - GitHub Dark */
+[data-theme="dark"] {
+    --background-color: #0d1117;
+    --foreground-color: #c9d1d9;
+    --navbar-bg: #161b22;
+    --navbar-text: #f0f6fc;
+    --card-bg: #161b22;
+    --card-shadow: 0 1px 3px rgba(0,0,0,0.4);
+    --border-color: #30363d;
+    --input-bg: #0d1117;
+    --input-border: #30363d;
+    --footer-bg: #161b22;
+    --footer-text: #8b949e;
+    --message-user-bg: #0d1117;
+    --message-user-color: #c9d1d9;
+    --message-system-bg: #161b22;
+    --message-system-color: #c9d1d9;
+    --message-error-bg: #5a1d1d;
+    --message-error-color: #ff7b72;
+    --code-bg: #0d1117;
+    --code-border: #30363d;
+    --code-tag-bg: #30363d;
+    --code-tag-color: #8b949e;
+    --loading-dots-color: #8b949e;
+    --chat-messages-bg: #0d1117;
+    --primary-button-bg: #238636; /* GitHub green in dark */
+    --primary-button-hover: #2ea043;
+    --secondary-bg: #0d1117;
+    --muted-text: #8b949e;
+    --card-header-bg: #161b22;
+    --card-header-color: #c9d1d9;
+    /* GitHub specific */
+    --gh-header-border: #30363d;
+    --gh-btn-border: #30363d;
+    --gh-btn-hover-bg: #30363d;
+    --gh-counter-bg: #30363d;
+}
+
+/* Theme transition */
+* {
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Base styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+    color: var(--foreground-color);
+    background-color: var(--background-color);
+}
+
+.container {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+/* Header - GitHub style */
+header {
+    background-color: var(--navbar-bg);
+    color: var(--navbar-text);
+    padding: 16px 0;
+    border-bottom: 1px solid var(--gh-header-border);
+}
+
+header h1 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    display: inline-block;
+    margin-right: 16px;
+}
+
+header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Theme Toggle Switch - GitHub style */
+.theme-switch-wrapper {
+    display: flex;
+    align-items: center;
+    margin-right: 15px;
+}
+
+.theme-switch {
+    display: inline-block;
+    height: 20px;
+    position: relative;
+    width: 40px;
+}
+
+.theme-switch input {
+    display: none;
+}
+
+.slider {
+    background-color: #484f58;
+    bottom: 0;
+    cursor: pointer;
+    left: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    transition: .4s;
+    border-radius: 34px;
+}
+
+.slider:before {
+    background-color: white;
+    bottom: 2px;
+    content: "";
+    height: 16px;
+    left: 2px;
+    position: absolute;
+    transition: .4s;
+    width: 16px;
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: #0969da;
+}
+
+input:checked + .slider:before {
+    transform: translateX(20px);
+}
+
+.theme-icon {
+    margin-left: 10px;
+    font-size: 14px;
+}
+
+/* User info - GitHub style */
+.user-info {
+    display: flex;
+    align-items: center;
+}
+
+.profile-pic {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.btn-logout {
+    margin-left: 12px;
+    background-color: transparent;
+    border: 1px solid var(--gh-btn-border);
+    color: var(--navbar-text);
+    padding: 3px 12px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.btn-logout:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Main content */
+main {
+    padding: 24px 0;
+}
+
+.welcome, .auth-container {
+    background-color: var(--card-bg);
+    border-radius: 6px;
+    box-shadow: var(--card-shadow);
+    padding: 24px;
+    text-align: center;
+    margin-bottom: 24px;
+    border: 1px solid var(--border-color);
+}
+
+.welcome h2, .auth-container h2 {
+    margin-bottom: 16px;
+    color: var(--foreground-color);
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.welcome p, .auth-container p {
+    margin-bottom: 20px;
+    color: var(--foreground-color);
+}
+
+/* Authentication specific */
+.auth-card {
+    max-width: 450px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.auth-info {
+    margin-top: 16px;
+    font-size: 0.875rem;
+    color: var(--muted-text);
+}
+
+/* Flash messages */
+.messages {
+    margin-bottom: 16px;
+}
+
+.message {
+    padding: 8px 16px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.message.error {
+    background-color: var(--message-error-bg);
+    color: var(--message-error-color);
+    border: 1px solid rgba(207, 34, 46, 0.3);
+}
+
+.message.success {
+    background-color: #dafbe1;
+    color: #116329;
+    border: 1px solid rgba(17, 99, 41, 0.3);
+}
+
+.message.info {
+    background-color: #ddf4ff;
+    color: #0969da;
+    border: 1px solid rgba(9, 105, 218, 0.3);
+}
+
+/* Chat interface - GitHub style */
+.chat-container {
+    background-color: var(--card-bg);
+    border-radius: 6px;
+    box-shadow: var(--card-shadow);
+    padding: 24px;
+    margin-bottom: 24px;
+    border: 1px solid var(--border-color);
+}
+
+.model-selector {
+    margin: 16px 0;
+    display: flex;
+    align-items: center;
+}
+
+.model-selector label {
+    margin-right: 8px;
+    font-weight: 500;
+    color: var(--foreground-color);
+}
+
+.model-selector select {
+    padding: 5px 12px;
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    background-color: var(--input-bg);
+    color: var(--foreground-color);
+    min-width: 250px;
+    font-size: 14px;
+}
+
+.chat-interface {
+    margin-top: 16px;
+}
+
+.chat-messages {
+    height: 400px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 12px;
+    background-color: var(--chat-messages-bg);
+}
+
+.chat-input {
+    display: flex;
+}
+
+.chat-input textarea {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+    background-color: var(--input-bg);
+    color: var(--foreground-color);
+    font-size: 14px;
+}
+
+/* GitHub-style buttons */
+.btn-primary {
+    background-color: var(--primary-button-bg) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(31, 35, 40, 0.15) !important;
+    border-radius: 6px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    padding: 5px 16px !important;
+    transition: background-color 0.2s !important;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-button-hover) !important;
+}
+
+.btn-outline-primary {
+    color: var(--foreground-color) !important;
+    background-color: var(--secondary-bg) !important;
+    border: 1px solid var(--gh-btn-border) !important;
+    border-radius: 6px !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    padding: 5px 16px !important;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--gh-btn-hover-bg) !important;
+}
+
+.btn-outline-secondary {
+    color: var(--foreground-color) !important;
+    background-color: var(--secondary-bg) !important;
+    border: 1px solid var(--gh-btn-border) !important;
+    border-radius: 6px !important;
+    font-size: 14px !important;
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--gh-btn-hover-bg) !important;
+}
+
+.btn-outline-danger {
+    color: var(--message-error-color) !important;
+    background-color: var(--secondary-bg) !important;
+    border: 1px solid var(--gh-btn-border) !important;
+    border-radius: 6px !important;
+    font-size: 14px !important;
+}
+
+.btn-outline-danger:hover {
+    background-color: var(--gh-btn-hover-bg) !important;
+}
+
+/* Chat messages - GitHub style */
+.message.user-message,
+.message.system-message,
+.message.error-message,
+.message.user,
+.message.assistant,
+.message.error {
+    margin-bottom: 12px;
+    border-radius: 6px;
+    padding: 0;
+    max-width: 85%;
+    animation: fadeIn 0.2s;
+    text-align: left;
+    border: 1px solid var(--border-color);
+}
+
+.message.user,
+.message.user-message {
+    background-color: var(--message-user-bg);
+    margin-left: auto;
+}
+
+.message.assistant,
+.message.system-message {
+    background-color: var(--message-system-bg);
+    margin-right: auto;
+}
+
+.message.error,
+.message.error-message {
+    background-color: var(--message-error-bg);
+    border-left: 4px solid var(--message-error-color);
+    margin-right: auto;
+}
+
+.message .message-content {
+    padding: 8px 12px;
+    overflow-wrap: break-word;
+}
+
+.message.user .message-content,
+.message.user-message .message-content {
+    color: var(--message-user-color);
+}
+
+.message.assistant .message-content,
+.message.system-message .message-content {
+    color: var(--message-system-color);
+}
+
+.message.error .message-content,
+.message.error-message .message-content {
+    color: var(--message-error-color);
+}
+
+.message-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--secondary-bg);
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 6px 6px 0 0;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--muted-text);
+    text-align: left;
+    width: 100%;
+}
+
+.message-icon i {
+    margin-right: 8px;
+}
+
+/* Code formatting - GitHub style */
+.message-content pre {
+    background-color: var(--code-bg);
+    border-radius: 6px;
+    padding: 16px;
+    overflow-x: auto;
+    margin: 12px 0;
+    border: 1px solid var(--code-border);
+    font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+}
+
+.message-content code {
+    font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+    font-size: 85%;
+    padding: 0.2em 0.4em;
+    border-radius: 6px;
+    background-color: var(--code-bg);
+    color: var(--foreground-color);
+}
+
+.message-content pre code {
+    padding: 0;
+    background-color: transparent;
+    border: none;
+    font-size: 85%;
+    line-height: 1.45;
+    display: block;
+}
+
+/* Enhance syntax highlighting - GitHub style */
+.message-content pre {
+    position: relative;
+}
+
+.message-content pre::before {
+    content: attr(data-language);
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 2px 8px;
+    font-size: 0.7em;
+    background-color: var(--code-tag-bg);
+    color: var(--code-tag-color);
+    border-radius: 0 6px 0 6px;
+    text-transform: uppercase;
+}
+
+/* Code block language indicators */
+.message-content pre.language-python::before {
+    content: "Python";
+}
+
+.message-content pre.language-javascript::before {
+    content: "JavaScript";
+}
+
+.message-content pre.language-js::before {
+    content: "JavaScript";
+}
+
+.message-content pre.language-html::before {
+    content: "HTML";
+}
+
+.message-content pre.language-css::before {
+    content: "CSS";
+}
+
+.message-content pre.language-sql::before {
+    content: "SQL";
+}
+
+.message-content pre.language-java::before {
+    content: "Java";
+}
+
+.message-content pre.language-bash::before {
+    content: "Bash";
+}
+
+.message-content pre.language-shell::before {
+    content: "Shell";
+}
+
+.message-content pre.language-plaintext::before {
+    content: "Text";
+}
+
+/* Loading indicator - GitHub style */
+.typing-indicator {
+    display: inline-flex;
+    align-items: center;
+}
+
+.typing-indicator span {
+    height: 6px;
+    width: 6px;
+    background-color: var(--loading-dots-color);
+    border-radius: 50%;
+    display: inline-block;
+    margin: 0 2px;
+    animation: bounce 1.5s infinite ease-in-out;
+}
+
+.typing-indicator span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes bounce {
+    0%, 60%, 100% {
+        transform: translateY(0);
+    }
+    30% {
+        transform: translateY(-4px);
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Buttons - GitHub style */
+.btn-login {
+    display: inline-flex;
+    align-items: center;
+    background-color: var(--primary-button-bg);
+    color: #ffffff;
+    padding: 5px 16px;
+    border: 1px solid rgba(31, 35, 40, 0.15);
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.btn-login:hover {
+    background-color: var(--primary-button-hover);
+}
+
+.google-logo {
+    margin-right: 8px;
+    width: 16px;
+    height: 16px;
+}
+
+/* Footer - GitHub style */
+footer {
+    background-color: var(--footer-bg);
+    color: var(--footer-text);
+    padding: 16px 0;
+    text-align: center;
+    font-size: 0.875rem;
+    border-top: 1px solid var(--border-color);
+}
+
+/* GitHub-style cards */
+.card {
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: var(--card-bg);
+}
+
+.card-header {
+    background-color: var(--card-header-bg);
+    border-bottom: 1px solid var(--border-color);
+    padding: 12px 16px;
+    font-weight: 500;
+}
+
+.card-body {
+    padding: 16px;
+}
+
+/* GitHub-style form controls */
+.form-control {
+    padding: 5px 12px;
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    color: var(--foreground-color);
+    font-size: 14px;
+}
+
+.form-select {
+    padding: 5px 12px;
+    background-color: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: 6px;
+    color: var(--foreground-color);
+    font-size: 14px;
+}
+
+.form-text {
+    font-size: 12px;
+    color: var(--muted-text);
+}
+
+/* GitHub-style navbar */
+.navbar {
+    padding: 0;
+}
+
+.navbar-dark {
+    background-color: var(--navbar-bg);
+}
+
+.navbar-brand {
+    font-weight: 600;
+    font-size: 16px;
+    padding: 8px 0;
+}
+
+.nav-link {
+    color: var(--navbar-text) !important;
+    font-size: 14px;
+    padding: 8px 16px !important;
+}
+
+.navbar-toggler {
+    border: none;
+    padding: 4px 8px;
+}
+
+.navbar-nav {
+    align-items: center;
+}
+
+/* Control panel - GitHub style */
+.control-panel {
+    background-color: var(--card-bg);
+    padding: 16px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+}
+
+.window-layout-controls {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 12px;
+}
+
+.window-layout-controls span {
+    margin-right: 8px;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+/* Chat away toggle - GitHub style */
+#chat-away-container {
+    margin-left: 8px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background-color: var(--secondary-bg);
+    border: 1px solid var(--border-color);
+}
+
+.form-check-input:checked {
+    background-color: var(--primary-button-bg);
+    border-color: var(--primary-button-bg);
+}
+
+/* Chat windows container - GitHub style */
+.chat-windows-container {
+    display: grid;
+    gap: 16px;
+    width: 100%;
+    height: calc(100vh - 250px);
+    min-height: 500px;
+}
+
+.chat-windows-container.layout-single {
+    grid-template-columns: 1fr;
+}
+
+.chat-windows-container.layout-horizontal {
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+}
+
+.chat-windows-container.layout-grid {
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    grid-template-rows: repeat(auto-fit, minmax(400px, 1fr));
+}
+
+.chat-window {
+    height: 100%;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+    border-radius: 6px;
+}
+
+.chat-window.active {
+    border-color: var(--primary-button-bg);
+}
+
+/* Overrides for Bootstrap components in dark mode */
+[data-theme="dark"] .bg-primary {
+    background-color: var(--navbar-bg) !important;
+}
+
+[data-theme="dark"] .bg-light {
+    background-color: var(--footer-bg) !important;
+}
+
+/* Fix positioning for messages in chat */
+.message {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 12px;
+    border-radius: 6px;
+}
+
+/* GitHub style syntax highlighting in dark mode */
+[data-theme="dark"] .token.comment,
+[data-theme="dark"] .token.prolog,
+[data-theme="dark"] .token.doctype,
+[data-theme="dark"] .token.cdata {
+    color: #8b949e;
+}
+
+[data-theme="dark"] .token.punctuation {
+    color: #c9d1d9;
+}
+
+[data-theme="dark"] .token.property,
+[data-theme="dark"] .token.tag,
+[data-theme="dark"] .token.boolean,
+[data-theme="dark"] .token.number,
+[data-theme="dark"] .token.constant,
+[data-theme="dark"] .token.symbol,
+[data-theme="dark"] .token.deleted {
+    color: #ff7b72;
+}
+
+[data-theme="dark"] .token.selector,
+[data-theme="dark"] .token.attr-name,
+[data-theme="dark"] .token.string,
+[data-theme="dark"] .token.char,
+[data-theme="dark"] .token.builtin,
+[data-theme="dark"] .token.inserted {
+    color: #7ee787;
+}
+
+[data-theme="dark"] .token.operator,
+[data-theme="dark"] .token.entity,
+[data-theme="dark"] .token.url,
+[data-theme="dark"] .language-css .token.string,
+[data-theme="dark"] .style .token.string {
+    color: #79c0ff;
+}
+
+[data-theme="dark"] .token.atrule,
+[data-theme="dark"] .token.attr-value,
+[data-theme="dark"] .token.keyword {
+    color: #ff7b72;
+}
+
+[data-theme="dark"] .token.function,
+[data-theme="dark"] .token.class-name {
+    color: #d2a8ff;
+}
+
+[data-theme="dark"] .token.regex,
+[data-theme="dark"] .token.important,
+[data-theme="dark"] .token.variable {
+    color: #ffa657;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .chat-windows-container {
+        height: auto;
+        grid-template-columns: 1fr !important;
+    }
+    
+    .chat-window {
+        margin-bottom: 16px;
+        height: 500px;
+    }
+    
+    .control-panel .row > div {
+        margin-bottom: 8px;
+        text-align: center;
+    }
+    
+    .window-layout-controls {
+        margin-top: 8px;
+        margin-left: 0;
+    }
+}

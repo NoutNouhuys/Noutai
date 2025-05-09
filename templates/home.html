@@ -1,0 +1,904 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    {% if current_user.is_authenticated %}
+    <section class="chat-container">
+        <div class="row mb-3">
+            <div class="col">
+                <h2 class="fs-4 mb-2">Welkom, {{ current_user.name }}!</h2>
+                <p class="text-muted mb-0">Stel je vraag aan Claude hieronder:</p>
+            </div>
+            <div class="col-md-3 text-md-end">
+                <div class="d-grid d-md-block">
+                    <a href="/conversations" class="btn btn-outline-primary">
+                        <i class="far fa-comment-dots me-1"></i> Gespreksgeschiedenis
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="control-panel mb-3">
+            <div class="row">
+                <div class="col-md-6">
+                    <button id="add-window-btn" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Nieuw venster toevoegen
+                    </button>
+                    <button id="remove-window-btn" class="btn btn-outline-danger ms-2" disabled>
+                        <i class="fas fa-minus"></i> Venster verwijderen
+                    </button>
+                    <button id="continue-in-new-window-btn" class="btn btn-outline-primary ms-2">
+                        <i class="fas fa-arrow-right"></i> Ga verder in een nieuw venster
+                    </button>
+                    <div id="chat-away-container" class="d-none d-inline-block ms-2">
+                        <div class="form-check form-switch d-inline-block">
+                            <input class="form-check-input" type="checkbox" id="chat-away-toggle">
+                            <label class="form-check-label" for="chat-away-toggle">Chat away</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="window-layout-controls d-inline-block">
+                        <span>Layout: </span>
+                        <div class="btn-group" role="group">
+                            <button id="layout-single" class="btn btn-outline-secondary active" title="Eén venster">
+                                <i class="fas fa-square"></i>
+                            </button>
+                            <button id="layout-horizontal" class="btn btn-outline-secondary" title="Horizontaal gesplitst">
+                                <i class="fas fa-columns"></i>
+                            </button>
+                            <button id="layout-grid" class="btn btn-outline-secondary" title="Grid layout">
+                                <i class="fas fa-th-large"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="mcp-status-bar" class="alert alert-info d-none">
+            <strong>Actieve MCP-servers:</strong> <span id="mcp-servers-list">Geen</span>
+        </div>
+
+        <div id="chat-windows-container" class="chat-windows-container layout-single">
+            <div class="chat-window active" data-window-id="window-1">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <label for="model-select-window-1" class="form-label mb-0">Model:</label>
+                            <select id="model-select-window-1" class="model-select form-select form-select-sm d-inline-block" style="width: auto;">
+                                <option value="claude-3-haiku-20240307">Claude 3 Haiku - Snel model</option>
+                                <option value="claude-3-sonnet-20240229">Claude 3 Sonnet - Gebalanceerd model</option>
+                                <option value="claude-3-opus-20240229">Claude 3 Opus - Geavanceerd model</option>
+                                <option value="claude-3-7-sonnet-20250219">Claude 3.7 Sonnet</option>
+                            </select>
+                        </div>
+                        <div>
+                            <button class="new-chat-btn btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-plus"></i> Nieuw gesprek
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        <div class="chat-messages flex-grow-1" id="chat-messages-window-1">
+                            <!-- Chat messages will be added here dynamically -->
+                        </div>
+                        <div class="chat-input mt-3">
+                            <div class="input-group">
+                                <textarea class="prompt-input form-control" placeholder="Stel je vraag aan Claude..." rows="3"></textarea>
+                                <button class="send-prompt btn btn-primary">
+                                    <i class="fas fa-paper-plane"></i> Versturen
+                                </button>
+                            </div>
+                            <div class="form-text text-end conversation-status">Nieuw gesprek</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    {% else %}
+    <section class="welcome text-center py-5">
+        <h2 class="mb-3">Welkom bij de Lynxx Anthropic Console</h2>
+        <p class="lead mb-4">Een custom interface voor Lynxx medewerkers om met Claude te communiceren.</p>
+        <p class="mb-4">Log in met je Lynxx Google account om te beginnen.</p>
+        <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">
+            <i class="fab fa-google me-2"></i> Log in met Google
+        </a>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Global state for all windows
+const chatWindows = new Map();
+
+// Chat away state
+let chatAwayActive = false;
+let chatAwayInProgress = false;
+let lastConversationId = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize the first window
+    const firstWindow = document.querySelector('.chat-window');
+    if (firstWindow) {
+        initializeChatWindow(firstWindow);
+    }
+    
+    // Setup control panel buttons
+    setupControlPanel();
+    
+    // Check URL parameters to load conversations
+    checkUrlParams();
+
+    // Voeg event listener toe voor de nieuwe knop
+    const continueInNewWindowBtn = document.getElementById('continue-in-new-window-btn');
+    continueInNewWindowBtn.addEventListener('click', function() {
+        // Haal het laatste bericht van Claude op
+        fetchLastAssistantMessage()
+            .then(lastMessage => {
+                // Open een nieuw venster met het laatste bericht
+                addChatWindow(lastMessage);
+
+                // Sluit het actieve venster
+                removeActiveWindow();
+            })
+            .catch(() => {
+                // Als er geen bericht is, open een nieuw venster zonder prompt
+                addChatWindow('');
+                removeActiveWindow();
+            });
+    });
+});
+
+function fetchLastAssistantMessage() {
+    return new Promise((resolve, reject) => {
+        const lastConversationId = getLastConversationId();
+
+        if (!lastConversationId) {
+            reject("No conversation ID provided.");
+            return;
+        }
+
+        fetch(`/api/conversations/${lastConversationId}/last_message`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                console.log('Parsing JSON response');
+                return response.json();
+            })
+            .then(data => {
+                if (data.success && data.last_message) {
+                    resolve(data.last_message);
+                } else {
+                    reject("No assistant response found.");
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching last message:', error);
+                reject(error);
+            });
+    });
+}
+
+
+// Function to update MCP server status in the UI
+function updateMcpStatus(activeServers) {
+    let statusBar = document.getElementById("mcp-status-bar");
+    let mcpList = document.getElementById("mcp-servers-list");
+
+    if (activeServers && activeServers.length > 0) {
+        mcpList.textContent = activeServers.join(", ");
+        statusBar.classList.remove("d-none");
+    } else {
+        mcpList.textContent = "Geen";
+        statusBar.classList.add("d-none");
+    }
+}
+
+function setupControlPanel() {
+    // Add window button
+    const addWindowBtn = document.getElementById('add-window-btn');
+    addWindowBtn.removeEventListener('click', addChatWindow); // Ensures it's not duplicated
+    addWindowBtn.addEventListener('click', function() {
+        const conversationId = getLastConversationId(); // Get the current conversation ID
+        if (conversationId) {
+            fetchLastAssistantMessage(conversationId)
+                .then(lastMessage => {
+                    addChatWindow(lastMessage);
+                })
+                .catch(() => {
+                    addChatWindow('');
+                });
+        } else {
+            addChatWindow('');
+        }
+    });
+    
+    // Remove window button
+    document.getElementById('remove-window-btn').addEventListener('click', removeActiveWindow);
+    
+    // Layout buttons
+    document.getElementById('layout-single').addEventListener('click', () => changeLayout('single'));
+    document.getElementById('layout-horizontal').addEventListener('click', () => changeLayout('horizontal'));
+    document.getElementById('layout-grid').addEventListener('click', () => changeLayout('grid'));
+    
+    // Chat away toggle
+    document.getElementById('chat-away-toggle').addEventListener('change', function(e) {
+        chatAwayActive = e.target.checked;
+        if (chatAwayActive) {
+            // Start the chat away process when activated
+            startChatAway();
+        } else {
+            // Stop the chat away process when deactivated
+            stopChatAway();
+        }
+    });
+}
+
+function setLastConversationId(conversationId) {
+    if (conversationId) {
+        lastConversationId= conversationId;
+    }
+}
+
+function getLastConversationId() {
+    return lastConversationId;
+}
+
+function checkUrlParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const conversationId = urlParams.get('conversation_id');
+    
+    if (conversationId) {
+        const firstWindow = document.querySelector('.chat-window');
+        if (firstWindow) {
+            const windowId = firstWindow.getAttribute('data-window-id');
+            const windowData = chatWindows.get(windowId);
+            if (windowData) {
+                loadConversation(windowId, conversationId);
+            }
+        }
+    }
+}
+
+function initializeChatWindow(windowElement) {
+    const windowId = windowElement.getAttribute('data-window-id');
+    
+    // Store window data in the global state
+    chatWindows.set(windowId, {
+        conversationId: null,
+        isWaitingForResponse: false
+    });
+    
+    // Add click event to make this window active
+    windowElement.addEventListener('click', function(event) {
+        // Don't make window active if clicking on a control element
+        if (!event.target.closest('button, select, textarea')) {
+            setActiveWindow(windowId);
+        }
+    });
+    
+    // Set up event listeners for this window
+    const sendPromptBtn = windowElement.querySelector('.send-prompt');
+    const promptInput = windowElement.querySelector('.prompt-input');
+    const newChatBtn = windowElement.querySelector('.new-chat-btn');
+    
+    sendPromptBtn.addEventListener('click', function() {
+        sendPrompt(windowId);
+    });
+    
+    promptInput.addEventListener('keydown', function(event) {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            sendPrompt(windowId);
+        }
+    });
+    
+    newChatBtn.addEventListener('click', function() {
+        resetConversation(windowId);
+    });
+    
+    // Make this window active
+    setActiveWindow(windowId);
+    
+    // Update chat away toggle visibility
+    updateChatAwayToggleVisibility();
+}
+
+function setActiveWindow(windowId) {
+    // Remove active class from all windows
+    document.querySelectorAll('.chat-window').forEach(window => {
+        window.classList.remove('active');
+    });
+    
+    // Add active class to the clicked window
+    const windowElement = document.querySelector(`[data-window-id="${windowId}"]`);
+    if (windowElement) {
+        windowElement.classList.add('active');
+        
+        // Enable the remove window button if there's more than one window
+        const removeBtn = document.getElementById('remove-window-btn');
+        removeBtn.disabled = document.querySelectorAll('.chat-window').length <= 1;
+    }
+}
+
+function addChatWindow(initialInput) {
+    const windowsContainer = document.getElementById('chat-windows-container');
+    const currentWindows = document.querySelectorAll('.chat-window');
+    const newWindowId = `window-${currentWindows.length + 1}`;
+
+    const newWindow = document.createElement('div');
+    newWindow.className = 'chat-window';
+    newWindow.setAttribute('data-window-id', newWindowId);
+
+    newWindow.innerHTML = `
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <label for="model-select-${newWindowId}" class="form-label mb-0">Model:</label>
+                    <select id="model-select-${newWindowId}" class="model-select form-select form-select-sm d-inline-block">
+                        <option value="claude-3-haiku-20240307">Claude 3 Haiku - Snel model</option>
+                        <option value="claude-3-sonnet-20240229">Claude 3 Sonnet - Gebalanceerd model</option>
+                        <option value="claude-3-opus-20240229">Claude 3 Opus - Geavanceerd model</option>
+                    </select>
+                </div>
+                <div>
+                    <button class="new-chat-btn btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-plus"></i> Nieuw gesprek
+                    </button>
+                </div>
+            </div>
+            <div class="card-body d-flex flex-column">
+                <div class="chat-messages flex-grow-1" id="chat-messages-${newWindowId}">
+                    <!-- Messages will appear here -->
+                </div>
+                <div class="chat-input mt-3">
+                    <div class="input-group">
+                        <textarea class="prompt-input form-control" id="input-${newWindowId}" placeholder="Stel je vraag aan Claude..." rows="3">${''}</textarea>
+                        <button class="send-prompt btn btn-primary" id="send-${newWindowId}">
+                            <i class="fas fa-paper-plane"></i> Versturen
+                        </button>
+                    </div>
+                    <div class="form-text text-end conversation-status">Nieuw gesprek</div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Add the new window to the container
+    windowsContainer.appendChild(newWindow);
+
+    setTimeout(() => {
+        console.log(`Initializing new chat window: ${newWindowId}`); // Debugging
+        initializeChatWindow(newWindow);
+        setActiveWindow(newWindowId);
+    }, 100); 
+
+    // Automatically send the initial input if there is one
+    if (initialInput) {
+        console.log("Adding last Claude response as user input:", initialInput); // Debugging
+        
+        //addMessageToChat(newWindowId, 'user', initialInput);
+
+        setTimeout(() => {
+            sendPrompt(newWindowId, initialInput + ' Kun je me hier wat meer over vertellen?');
+        }, 500); // Small delay to simulate user interaction
+    }
+
+    // Setup event listener for the send button
+    document.getElementById(`send-${newWindowId}`).addEventListener('click', function() {
+        sendPrompt(newWindowId);
+    });
+}
+function removeActiveWindow() {
+    const activeWindow = document.querySelector('.chat-window.active');
+    if (!activeWindow) return;
+    
+    const windowId = activeWindow.getAttribute('data-window-id');
+    
+    // Remove from global state
+    chatWindows.delete(windowId);
+    
+    // Remove the element
+    activeWindow.remove();
+    
+    // Set another window as active if available
+    const remainingWindows = document.querySelectorAll('.chat-window');
+    if (remainingWindows.length > 0) {
+        const firstWindow = remainingWindows[0];
+        setActiveWindow(firstWindow.getAttribute('data-window-id'));
+    }
+    
+    // Disable remove button if only one window remains
+    if (remainingWindows.length <= 1) {
+        document.getElementById('remove-window-btn').disabled = true;
+    }
+    
+    // Update chat away toggle visibility
+    updateChatAwayToggleVisibility();
+    
+    // If chat away is active but we don't have at least 2 windows, turn it off
+    if (chatAwayActive && remainingWindows.length < 2) {
+        const chatAwayToggle = document.getElementById('chat-away-toggle');
+        chatAwayToggle.checked = false;
+        chatAwayActive = false;
+    }
+}
+
+function getLayout() {
+    const container = document.getElementById('chat-windows-container');
+    if (container.classList.contains('layout-horizontal')) return 'horizontal';
+    if (container.classList.contains('layout-grid')) return 'grid';
+    return 'single';
+}
+
+function changeLayout(layout) {
+    const container = document.getElementById('chat-windows-container');
+    const layoutButtons = document.querySelectorAll('.window-layout-controls .btn');
+    
+    // Remove all layout classes
+    container.classList.remove('layout-single', 'layout-horizontal', 'layout-grid');
+    
+    // Remove active class from all layout buttons
+    layoutButtons.forEach(btn => btn.classList.remove('active'));
+    
+    // Add appropriate class and activate the correct button
+    switch (layout) {
+        case 'horizontal':
+            container.classList.add('layout-horizontal');
+            document.getElementById('layout-horizontal').classList.add('active');
+            break;
+        case 'grid':
+            container.classList.add('layout-grid');
+            document.getElementById('layout-grid').classList.add('active');
+            break;
+        default: // single
+            container.classList.add('layout-single');
+            document.getElementById('layout-single').classList.add('active');
+            break;
+    }
+}
+
+function loadConversation(windowId, conversationId) {
+    const windowData = chatWindows.get(windowId);
+    if (!windowData) return;
+    
+    windowData.conversationId = conversationId;
+    //setLastConversationId(conversationId); 
+
+    const windowElement = document.querySelector(`[data-window-id="${windowId}"]`);
+    const statusElement = windowElement.querySelector('.conversation-status');
+    
+    statusElement.textContent = 'Gesprek laden...';
+    
+    fetch(`/api/conversations/${conversationId}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const { conversation, messages } = data.data;
+                
+                // Update conversation status
+                statusElement.textContent = `Gesprek: ${conversation.title}`;
+                
+                // Select the model that was used in this conversation
+                const modelSelect = windowElement.querySelector('.model-select');
+                if (conversation.model) {
+                    for (let i = 0; i < modelSelect.options.length; i++) {
+                        if (modelSelect.options[i].value === conversation.model) {
+                            modelSelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                }
+                
+                // Clear and populate chat messages
+                const chatMessages = windowElement.querySelector('.chat-messages');
+                chatMessages.innerHTML = '';
+                
+                messages.forEach(message => {
+                    addMessageToChat(windowId, message.role, message.content);
+                });
+                
+                // Scroll to bottom
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            } else {
+                console.error('Error loading conversation:', data.error);
+                statusElement.textContent = 'Fout bij laden gesprek';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading conversation:', error);
+            statusElement.textContent = 'Fout bij laden gesprek';
+        });
+}
+
+function resetConversation(windowId) {
+    const windowData = chatWindows.get(windowId);
+    if (!windowData) return;
+
+    windowData.conversationId = null;
+
+    const windowElement = document.querySelector(`[data-window-id="${windowId}"]`);
+    const chatMessages = windowElement.querySelector('.chat-messages');
+    const statusElement = windowElement.querySelector('.conversation-status');
+    const promptInput = windowElement.querySelector('.prompt-input');
+
+    // Clear chat messages and reset the conversation status
+    chatMessages.innerHTML = '';
+    statusElement.textContent = 'Nieuw gesprek';
+
+    // Focus on the input
+    promptInput.focus();
+}
+
+
+function sendPrompt(windowId, customInput = null) {
+    const windowData = chatWindows.get(windowId);
+    if (!windowData || windowData.isWaitingForResponse) return;
+    
+    const windowElement = document.querySelector(`[data-window-id="${windowId}"]`);
+    const promptInput = windowElement.querySelector('.prompt-input');
+    let prompt = customInput || promptInput.value.trim();
+
+    if (prompt === '') {
+        return;
+    }
+    
+    // Add user message to chat
+    addMessageToChat(windowId, 'user', prompt);
+    
+    // Clear input only if it was not pre-filled
+    if (!customInput) {
+        promptInput.value = '';
+    }
+    
+    // Add loading indicator
+    const loadingId = 'loading-' + Date.now();
+    addLoadingMessage(windowId, loadingId);
+    
+    // Get selected model
+    const modelId = windowElement.querySelector('.model-select').value;
+    
+    // Set waiting flag
+    windowData.isWaitingForResponse = true;
+    
+    // Prepare request
+    const requestData = {
+        prompt: prompt,
+        model_id: modelId
+    };
+    
+    // Add conversation_id if continuing a conversation
+    if (windowData.conversationId) {
+        requestData.conversation_id = windowData.conversationId;
+    }
+    
+    // Send request to API
+    fetch('/api/prompt', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
+        },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Remove loading indicator
+        removeLoadingMessage(windowId, loadingId);
+        
+        // Reset waiting flag
+        windowData.isWaitingForResponse = false;
+        
+        if (data.success) {
+            // Use content or message property (to handle API response variations)
+            const content = data.content || data.message;
+            
+            // Add assistant response to chat
+            addMessageToChat(windowId, 'assistant', content);
+
+            // Update MCP status bar
+            updateMcpStatus(data.active_mcp_servers);
+            
+            // Update conversation_id if new conversation was created
+            if (data.conversation_id && !windowData.conversationId) {
+                windowData.conversationId = data.conversation_id;
+                setLastConversationId(data.conversation_id);
+
+                const statusElement = windowElement.querySelector('.conversation-status');
+                statusElement.textContent = `Gesprek: ${data.title || 'Onbenoemd gesprek'}`;
+            }
+            
+            // If chat away is active, forward the response to the next chat window
+            if (chatAwayActive && !chatAwayInProgress) {
+                forwardResponseToNextWindow(windowId, content);
+            }
+        } else {
+            // Add error message
+            addErrorMessage(windowId, data.error || 'Er is een fout opgetreden.');
+        }
+    })
+    .catch(error => {
+        // Remove loading indicator
+        removeLoadingMessage(windowId, loadingId);
+        
+        // Reset waiting flag
+        windowData.isWaitingForResponse = false;
+        
+        // Add error message
+        addErrorMessage(windowId, 'Er is een fout opgetreden bij het verwerken van je vraag.');
+        console.error('Error sending prompt:', error);
+    });
+}
+
+function addMessageToChat(windowId, role, content) {
+    const windowElement = document.querySelector(`[data-window-id="${windowId}"]`);
+    const chatMessages = windowElement.querySelector('.chat-messages');
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${role}`;
+    
+    const iconSpan = document.createElement('div');
+    iconSpan.className = 'message-icon';
+    
+    if (role === 'user') {
+        iconSpan.innerHTML = '<i class="fas fa-user me-1"></i> Jij';
+    } else {
+        iconSpan.innerHTML = '<i class="fas fa-robot me-1"></i> Claude';
+    }
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'message-content';
+    
+    // Apply markdown and code formatting
+    contentDiv.innerHTML = formatMessage(content);
+    
+    messageDiv.appendChild(iconSpan);
+    messageDiv.appendChild(contentDiv);
+    chatMessages.appendChild(messageDiv);
+    
+    // Apply syntax highlighting to code blocks if Prism is available
+    if (typeof Prism !== 'undefined') {
+        Prism.highlightAllUnder(messageDiv);
+    }
+    
+    // Scroll to bottom
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function addLoadingMessage(windowId, loadingId) {
+    const windowElement = document.querySelector(`[data-window-id="${windowId}"]`);
+    const chatMessages = windowElement.querySelector('.chat-messages');
+    
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'message assistant loading';
+    loadingDiv.id = loadingId;
+    
+    const iconSpan = document.createElement('div');
+    iconSpan.className = 'message-icon';
+    iconSpan.innerHTML = '<i class="fas fa-robot me-1"></i> Claude';
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'message-content';
+    contentDiv.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+    
+    loadingDiv.appendChild(iconSpan);
+    loadingDiv.appendChild(contentDiv);
+    chatMessages.appendChild(loadingDiv);
+    
+    // Scroll to bottom
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function removeLoadingMessage(windowId, loadingId) {
+    const loadingMessage = document.getElementById(loadingId);
+    if (loadingMessage) {
+        loadingMessage.remove();
+    }
+}
+
+function addErrorMessage(windowId, errorText) {
+    const windowElement = document.querySelector(`[data-window-id="${windowId}"]`);
+    const chatMessages = windowElement.querySelector('.chat-messages');
+    
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'message error';
+    
+    const iconSpan = document.createElement('div');
+    iconSpan.className = 'message-icon';
+    iconSpan.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i> Foutmelding';
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'message-content';
+    contentDiv.textContent = errorText;
+    
+    errorDiv.appendChild(iconSpan);
+    errorDiv.appendChild(contentDiv);
+    chatMessages.appendChild(errorDiv);
+    
+    // Scroll to bottom
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+// Function to show/hide the chat away button based on the number of windows
+function updateChatAwayToggleVisibility() {
+    const chatAwayContainer = document.getElementById('chat-away-container');
+    const chatWindows = document.querySelectorAll('.chat-window');
+    
+    if (chatWindows.length >= 2) {
+        chatAwayContainer.classList.remove('d-none');
+    } else {
+        chatAwayContainer.classList.add('d-none');
+        // Make sure chat away is turned off if we don't have at least 2 windows
+        const chatAwayToggle = document.getElementById('chat-away-toggle');
+        if (chatAwayToggle.checked) {
+            chatAwayToggle.checked = false;
+            chatAwayActive = false;
+        }
+    }
+}
+
+// Function to start the chat away process
+function startChatAway() {
+    console.log('Chat Away activated!');
+    // No need to do anything here - the forwarding process will start
+    // when the next response is received from either chat window
+}
+
+// Function to stop the chat away process
+function stopChatAway() {
+    console.log('Chat Away deactivated!');
+    chatAwayInProgress = false;
+}
+
+// Function to forward a response from one chat window to the next
+function forwardResponseToNextWindow(sourceWindowId, content) {
+    // Don't forward if chat away is not active
+    if (!chatAwayActive) return;
+    
+    // Mark that chat away is in progress to prevent infinite loops
+    chatAwayInProgress = true;
+    
+    // Get all chat windows
+    const allWindowElements = document.querySelectorAll('.chat-window');
+    if (allWindowElements.length < 2) {
+        chatAwayInProgress = false;
+        return;
+    }
+    
+    // Find the index of the current window
+    let currentIndex = -1;
+    for (let i = 0; i < allWindowElements.length; i++) {
+        if (allWindowElements[i].getAttribute('data-window-id') === sourceWindowId) {
+            currentIndex = i;
+            break;
+        }
+    }
+    
+    if (currentIndex === -1) {
+        chatAwayInProgress = false;
+        return;
+    }
+    
+    // Get the next window (wrap around to the first if we're at the last one)
+    const nextIndex = (currentIndex + 1) % allWindowElements.length;
+    const nextWindowElement = allWindowElements[nextIndex];
+    const nextWindowId = nextWindowElement.getAttribute('data-window-id');
+    
+    // Don't continue if the next window is waiting for a response
+    const nextWindowData = chatWindows.get(nextWindowId);
+    if (!nextWindowData || nextWindowData.isWaitingForResponse) {
+        chatAwayInProgress = false;
+        return;
+    }
+    
+    // Set the content as the prompt for the next window
+    const nextPromptInput = nextWindowElement.querySelector('.prompt-input');
+    nextPromptInput.value = content;
+    
+    // Use a short delay to make the interaction more natural and visible
+    setTimeout(() => {
+        // Send the prompt in the next window
+        sendPrompt(nextWindowId);
+        
+        // Reset the chat away in progress flag after sending
+        chatAwayInProgress = false;
+    }, 1000);
+}
+
+// Function to format message with markdown and syntax highlighting
+function formatMessage(message) {
+    // Escape HTML first
+    let formattedMessage = escapeHtml(message);
+    
+    // Convert code blocks with language specification ```language code ``` to HTML with appropriate classes
+    formattedMessage = formattedMessage.replace(/```([a-zA-Z0-9_]+)?\s*\n([\s\S]*?)```/g, (match, language, code) => {
+        const lang = language || 'plaintext';
+        return `<pre><code class="language-${lang}">${code}</code></pre>`;
+    });
+    
+    // Convert code blocks without language specification
+    formattedMessage = formattedMessage.replace(/```([\s\S]*?)```/g, (match, code) => {
+        return `<pre><code class="language-plaintext">${code}</code></pre>`;
+    });
+    
+    // Convert inline code `code` to HTML
+    formattedMessage = formattedMessage.replace(/`([^`]+)`/g, '<code class="language-plaintext">$1</code>');
+    
+    // Convert paragraphs (double newlines)
+    formattedMessage = formattedMessage.replace(/\n\n/g, '</p><p>');
+    
+    // Convert newlines to <br>
+    formattedMessage = formattedMessage.replace(/\n/g, '<br>');
+    
+    // Wrap in paragraph tags
+    formattedMessage = `<p>${formattedMessage}</p>`;
+    
+    return formattedMessage;
+}
+
+// Helper function to escape HTML
+function escapeHtml(unsafe) {
+    return unsafe
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+</script>
+{% endblock %}
+
+{% block styles %}
+<style>
+/* GitHub-style chat window styles - these override or supplement the main style.css */
+.chat-container {
+    margin: 0 auto;
+    padding: 16px;
+}
+
+/* Chat window active indicator - GitHub style */
+.chat-window.active {
+    border-color: #2da44e;
+}
+
+.card-header {
+    padding: 12px 16px;
+    font-size: 14px;
+}
+
+.card-body {
+    padding: 16px;
+}
+
+/* GitHub-style message bubbles */
+.message {
+    border: 1px solid var(--border-color);
+    margin-bottom: 12px;
+}
+
+.message-icon {
+    background-color: var(--secondary-bg);
+    border-bottom: 1px solid var(--border-color);
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--muted-text);
+    font-weight: 500;
+}
+
+/* Welcome screen adjustments */
+.welcome {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.welcome h2 {
+    font-weight: 600;
+    color: var(--foreground-color);
+}
+</style>
+{% endblock %}
