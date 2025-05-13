@@ -1,0 +1,4 @@
+Wanneer ik het commando 'ga' of 'ga' in combinatie met een repository geef, doe het volgende:
+Als nog niet duidelijk is om welke repository het gaat, vraag dat dan eerst aan de gebruiker.
+Ga verder met het ontwikkelen van deze repository. 
+Lees eerst werkwijze.txt voor specifieke instructies hoe deze repository verder ontwikkeld moet worden.
