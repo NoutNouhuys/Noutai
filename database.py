@@ -22,9 +22,10 @@ def init_db(app: Flask):
     Args:
         app: Flask application instance
     """
-    # Configure database URI
-    database_path = os.path.join(app.instance_path, 'anthropic_console.db')
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{database_path}'
+    # Configure database URI if not already set (tests may provide their own)
+    if not app.config.get('SQLALCHEMY_DATABASE_URI'):
+        database_path = os.path.join(app.instance_path, 'anthropic_console.db')
+        app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{database_path}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     # Make sure the instance folder exists

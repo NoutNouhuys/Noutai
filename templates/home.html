@@ -577,66 +577,50 @@ function sendPrompt(windowId, customInput = null) {
         requestData.conversation_id = windowData.conversationId;
     }
     
-    // Send request to API
-    fetch('/api/prompt', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
-        },
-        body: JSON.stringify(requestData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        // Remove loading indicator
+    const params = new URLSearchParams(requestData);
+    const eventSource = new EventSource('/api/prompt_stream?' + params.toString());
+
+    eventSource.addEventListener('log', function(e) {
+        const msg = JSON.parse(e.data);
+        addMessageToChat(windowId, 'log', msg);
+    });
+
+    eventSource.addEventListener('final', function(e) {
+        const data = JSON.parse(e.data);
+
         removeLoadingMessage(windowId, loadingId);
-        
-        // Reset waiting flag
         windowData.isWaitingForResponse = false;
-        
+
         if (data.success) {
             if (Array.isArray(data.logs)) {
-                data.logs.forEach(log => {
-                    addMessageToChat(windowId, 'system', log);
-                });
+                data.logs.forEach(log => addMessageToChat(windowId, 'log', log));
             }
-            // Use content or message property (to handle API response variations)
             const content = data.content || data.message;
-            
-            // Add assistant response to chat
             addMessageToChat(windowId, 'assistant', content);
-
-            // Update MCP status bar
             updateMcpStatus(data.active_mcp_servers);
-            
-            // Update conversation_id if new conversation was created
+
             if (data.conversation_id && !windowData.conversationId) {
                 windowData.conversationId = data.conversation_id;
                 setLastConversationId(data.conversation_id);
-
                 const statusElement = windowElement.querySelector('.conversation-status');
                 statusElement.textContent = `Gesprek: ${data.title || 'Onbenoemd gesprek'}`;
             }
-            
-            // If chat away is active, forward the response to the next chat window
+
             if (chatAwayActive && !chatAwayInProgress) {
                 forwardResponseToNextWindow(windowId, content);
             }
         } else {
-            // Add error message
             addErrorMessage(windowId, data.error || 'Er is een fout opgetreden.');
         }
-    })
-    .catch(error => {
-        // Remove loading indicator
+        eventSource.close();
+    });
+
+    eventSource.addEventListener('error', function(err) {
         removeLoadingMessage(windowId, loadingId);
-        
-        // Reset waiting flag
         windowData.isWaitingForResponse = false;
-        
-        // Add error message
         addErrorMessage(windowId, 'Er is een fout opgetreden bij het verwerken van je vraag.');
-        console.error('Error sending prompt:', error);
+        console.error('Error sending prompt:', err);
+        eventSource.close();
     });
 }
 
@@ -654,8 +638,10 @@ function addMessageToChat(windowId, role, content) {
         iconSpan.innerHTML = '<i class="fas fa-user me-1"></i> Jij';
     } else if (role === 'assistant') {
         iconSpan.innerHTML = '<i class="fas fa-robot me-1"></i> Claude';
-    } else {
+    } else if (role === 'log') {
         iconSpan.innerHTML = '<i class="fas fa-info-circle me-1"></i> Log';
+    } else {
+        iconSpan.innerHTML = '<i class="fas fa-info-circle me-1"></i> Systeem';
     }
     
     const contentDiv = document.createElement('div');

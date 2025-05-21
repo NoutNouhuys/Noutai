@@ -37,6 +37,12 @@ def init_oauth(app):
 
 def get_google_provider_cfg():
     """Retrieve Google's OAuth 2.0 endpoint configuration."""
+    if current_app.config.get('TESTING'):
+        return {
+            "authorization_endpoint": "https://accounts.google.com/o/oauth2/auth",
+            "token_endpoint": "https://oauth2.googleapis.com/token",
+            "userinfo_endpoint": "https://openidconnect.googleapis.com/v1/userinfo",
+        }
     return requests.get(current_app.config['GOOGLE_DISCOVERY_URL']).json()
 
 @auth_bp.route('/login')
@@ -122,7 +128,6 @@ def callback():
         return redirect(url_for('home'))
 
 @auth_bp.route('/logout')
-@login_required
 def logout():
     """Log out the current user."""
     logout_user()

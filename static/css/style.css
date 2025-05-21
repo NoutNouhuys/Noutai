@@ -424,6 +424,12 @@ main {
     margin-right: auto;
 }
 
+.message.log {
+    background-color: var(--secondary-bg);
+    margin-right: auto;
+    font-style: italic;
+}
+
 .message.error,
 .message.error-message {
     background-color: var(--message-error-bg);
@@ -445,6 +451,10 @@ main {
 .message.system-message .message-content,
 .message.system .message-content {
     color: var(--message-system-color);
+}
+
+.message.log .message-content {
+    color: var(--muted-text);
 }
 
 .message.error .message-content,

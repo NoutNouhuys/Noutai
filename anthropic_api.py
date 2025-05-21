@@ -7,7 +7,7 @@ import requests
 import subprocess
 import asyncio
 from typing import Dict, List, Optional, Tuple, Union, Any
-from anthropic import Anthropic
+import anthropic
 from flask import current_app
 from repositories.conversation_repository import ConversationRepository
 from config import BaseConfig
@@ -39,8 +39,8 @@ class AnthropicAPI:
             logger.error("Anthropic API key is not provided")
             raise ValueError("Anthropic API key is required but not provided")
         
-        # Initialize Anthropic client
-        self.client = Anthropic(api_key=self.api_key)
+        # Anthropic client will be lazily initialized
+        self.client = None
         
         # In-memory store for conversations (temporary until database)
         self.conversations = {}
@@ -187,7 +187,8 @@ class AnthropicAPI:
                 conversation_id: Optional[Union[str, int]] = None,
                 system_prompt: Optional[str] = None,
                 max_tokens: Optional[int] = None,
-                include_logs: bool = True) -> Dict[str, Any]:
+                include_logs: bool = True,
+                log_callback: Optional[callable] = None) -> Dict[str, Any]:
         """
         Send a prompt to Claude and get a response, optionally including context from MCP servers.
 
@@ -206,6 +207,14 @@ class AnthropicAPI:
         max_tokens = max_tokens or self.max_tokens
 
         logs: List[str] = []
+        def emit_log(message: str) -> None:
+            if include_logs:
+                logs.append(message)
+            if log_callback:
+                try:
+                    log_callback(message)
+                except Exception as callback_error:
+                    logger.error(f"Log callback failed: {callback_error}")
 
         # Convert conversation_id to string if it's an integer
         conversation_id_str = str(conversation_id) if conversation_id is not None else None
@@ -221,7 +230,7 @@ class AnthropicAPI:
                 mcp_connector_instance.connect_to_server(server_script_path, server_venv_path)
             )
             if include_logs:
-                logs.append("Verbinding met MCP-server opgezet")
+                emit_log("Verbinding met MCP-server opgezet")
             tools = loop.run_until_complete(mcp_connector_instance.get_tools())
         # add read werkwijze tool
         tools.append({
@@ -281,6 +290,9 @@ class AnthropicAPI:
         try:
             logger.debug(f"Sending prompt to Claude using model: {model_id}")
 
+            if self.client is None:
+                self.client = anthropic.Anthropic(api_key=self.api_key)
+
             message_params = {
                 "model": model_id,
                 "messages": messages,
@@ -296,7 +308,7 @@ class AnthropicAPI:
             response = self.client.messages.create(**message_params)
             print(f"Ontvangen message: {response.content}")
             if include_logs:
-                logs.append("Prompt verzonden naar Claude")
+                emit_log("Prompt verzonden naar Claude")
 
             tool_results = []
             tool_use_id_map = {}  # Track tool_use_id to correctly link with tool_result
@@ -321,12 +333,12 @@ class AnthropicAPI:
                                 f"Tool '{tool_name}' executed successfully with result: {tool_result} (type: {type(tool_result)})"
                             )
                             if include_logs:
-                                logs.append(f"Tool {tool_name} uitgevoerd")
+                                emit_log(f"Tool {tool_name} uitgevoerd")
                         except Exception as tool_error:
                             logger.error(f"Error during tool execution '{tool_name}': {str(tool_error)}")
                             tool_result = f"Tool '{tool_name}' failed with error: {str(tool_error)}"
                             if include_logs:
-                                logs.append(tool_result)
+                                emit_log(tool_result)
 
                         #print(f"DEBUG: tool_result: {tool_result}")
 
@@ -357,11 +369,11 @@ class AnthropicAPI:
                         response = self.client.messages.create(**message_params)
                         logger.info(f"Ontvangen message: {response.content}")
                         if include_logs:
-                            logs.append(f"Resultaat van {tool_name}: {tool_result}")
+                            emit_log(f"Resultaat van {tool_name}: {tool_result}")
 
             response_text = response.content[0].text
             if include_logs:
-                logs.append("Antwoord van Claude ontvangen")
+                emit_log("Antwoord van Claude ontvangen")
 
             # Create a new conversation if needed
             if not conversation_id_str:
