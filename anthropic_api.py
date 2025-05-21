@@ -47,6 +47,9 @@ class AnthropicAPI:
         
         # Configure default model and parameters
         self._configure_defaults()
+
+        # Load important repository files into memory cache
+        self._load_file_cache()
     
     def _configure_defaults(self):
         """Configure default model and parameters from app config"""
@@ -58,8 +61,24 @@ class AnthropicAPI:
         
         # Set default system prompt
         self.system_prompt = self.config.get('ANTHROPIC_SYSTEM_PROMPT') or None
-        
+
         logger.debug(f"AnthropicAPI configured with model: {self.default_model}, max_tokens: {self.max_tokens}")
+
+    def _load_file_cache(self) -> None:
+        """Load important repository files into an in-memory cache."""
+        self.file_cache = {}
+        files = {
+            "werkwijze": os.path.join("werkwijze", "werkwijze.txt"),
+            "system_prompt": "system_prompt.txt",
+            "project_structure": "project_structure.md",
+        }
+
+        for key, path in files.items():
+            try:
+                with open(path, "r", encoding="utf-8") as file:
+                    self.file_cache[key] = file.read()
+            except FileNotFoundError:
+                logger.warning(f"File {path} not found for cache key '{key}'")
 
     def get_available_models(self) -> List[Dict[str, str]]:
         """
@@ -283,10 +302,7 @@ class AnthropicAPI:
                     # TODO try except error
                         try:
                             if tool_name == "get_werkwijze":
-                                file_path = "werkwijze/werkwijze.txt"  # TODO get out config oid
-                                with open(file_path, "r") as file:
-                                    werkwijze = file.read()
-                                    tool_result = werkwijze
+                                tool_result = self.file_cache.get("werkwijze", "")
                             else:
                                 result = loop.run_until_complete(mcp_connector_instance.use_tool(tool_name=tool_name, tool_args=tool_args))
                                 tool_result = result.content
