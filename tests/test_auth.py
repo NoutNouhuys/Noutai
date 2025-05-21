@@ -18,24 +18,28 @@ class TestConfig(Config):
 
 @pytest.fixture
 def app():
-    """Create and configure a Flask app for testing"""
+    """Create and configure a Flask app for testing."""
     app = create_app(TestConfig)
-    app.config['WTF_CSRF_ENABLED'] = False  # Disable CSRF for testing
-    
-    # Create a test client using the Flask application
+    app.config['WTF_CSRF_ENABLED'] = False
+    return app
+
+
+@pytest.fixture
+def client(app):
+    """Test client for the Flask application."""
     with app.test_client() as client:
         with app.app_context():
             yield client
 
 
-def test_login_route(app):
+def test_login_route(client):
     """Test login route redirects to Google"""
     # Mock the get_google_provider_cfg function
     with patch('auth.get_google_provider_cfg') as mock_get_cfg:
         mock_get_cfg.return_value = {"authorization_endpoint": "https://accounts.google.com/o/oauth2/auth"}
         
         # Make request to login route
-        response = app.get('/auth/login')
+        response = client.get('/auth/login')
         
         # Verify redirect to Google
         assert response.status_code == 302  # Redirect status code
@@ -54,20 +58,20 @@ def test_callback_with_invalid_domain():
     pass
 
 
-def test_logout(app):
+def test_logout(client):
     """Test logout functionality"""
     # First need to simulate a login
-    with app.session_transaction() as sess:
+    with client.session_transaction() as sess:
         sess['user_id'] = 'test_user_id'
     
     # Now test logout
-    response = app.get('/auth/logout', follow_redirects=True)
+    response = client.get('/auth/logout', follow_redirects=True)
     
     # Check user is redirected to home page
     assert response.status_code == 200
     
     # Check session is cleared (user_id should not be in session)
-    with app.session_transaction() as sess:
+    with client.session_transaction() as sess:
         assert 'user_id' not in sess
 
 

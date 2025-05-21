@@ -400,6 +400,7 @@ main {
 .message.error-message,
 .message.user,
 .message.assistant,
+.message.system,
 .message.error {
     margin-bottom: 12px;
     border-radius: 6px;
@@ -417,7 +418,8 @@ main {
 }
 
 .message.assistant,
-.message.system-message {
+.message.system-message,
+.message.system {
     background-color: var(--message-system-bg);
     margin-right: auto;
 }
@@ -440,7 +442,8 @@ main {
 }
 
 .message.assistant .message-content,
-.message.system-message .message-content {
+.message.system-message .message-content,
+.message.system .message-content {
     color: var(--message-system-color);
 }
 
