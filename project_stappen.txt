@@ -1,0 +1,59 @@
+# Project Ontwikkelstappen
+
+## Afgeronde Stappen
+1. Basisarchitectuur opgezet met Flask
+2. Integratie met Anthropic Claude API
+3. Beveiliging en authenticatie implementeren
+4. Database en repository laag voor gesprekken opzetten
+5. API routes implementeren
+6. Log streaming toevoegen aan chat interface
+7. Real-time log streaming via SSE toevoegen
+8. ✅ Model-specifieke max_tokens instellingen implementeren voor verschillende Claude modellen
+
+## Huidige Stap
+- **Verbeter max token settings per Claude model type (AFGEROND)**
+  - In anthropic_api.py is nu een `max_tokens` veld toegevoegd aan elk model in de `get_available_models` functie
+  - De `get_model_max_tokens` methode is toegevoegd om de juiste max_tokens waarde op te halen voor een specifiek model
+  - De prompt verstuur logica gebruikt nu de max_tokens waarde van het geselecteerde model
+  - De bestaande configuratieparameter wordt behouden als override en fallback
+
+## Volgende Must-Have Stappen
+1. Toevoegen van unit tests voor model-specifieke max_tokens functionaliteit
+   - Bestand: tests/test_anthropic_api.py
+   - Test correct ophalen van model-specifieke max_tokens
+   - Test fallback naar default max_tokens voor onbekende modellen
+   - Test override van max_tokens via parameter
+
+2. Implementeren van betere foutafhandeling in MCP-connector
+   - Bestand: mcp_connector.py
+   - Robuustere timeout-afhandeling
+   - Betere logging van fouten
+   - Consistente foutpropagatie
+
+3. Toevoegen van rate limiting en retry-mechanisme voor Anthropic API
+   - Bestand: anthropic_api.py
+   - Implementeren van exponentiële backoff bij API rate limits
+   - Bijhouden van API-verbruik
+   - Configureerbare retry-instellingen
+
+4. Verbeteren van de gebruikersinterface voor modelselectie
+   - Bestanden: templates/chat.html, static/js/chat.js
+   - Tonen van model-capaciteiten (context lengte, max tokens)
+   - Mogelijkheid om max_tokens in te stellen per gesprek
+   - Visualisatie van tokenverbruik
+
+## Nice-to-Have Stappen
+1. Automatisch ophalen van modelspecificaties van Anthropic API
+   - Bestand: anthropic_api.py
+   - Dynamisch ophalen van beschikbare modellen
+   - Ophalen van actuele modellimieten
+
+2. Implementeren van streaming respons
+   - Bestand: anthropic_api.py, routes/api.py
+   - Progressive rendering van Claude antwoorden
+   - Weergave van generatieproces in real-time
+
+3. Ondersteuning voor meerdere LLM-providers
+   - Nieuwe bestanden: openai_api.py, gemini_api.py
+   - Gemeenschappelijke interface voor alle providers
+   - Mogelijkheid om provider te kiezen per gesprek
