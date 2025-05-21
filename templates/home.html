@@ -595,6 +595,11 @@ function sendPrompt(windowId, customInput = null) {
         windowData.isWaitingForResponse = false;
         
         if (data.success) {
+            if (Array.isArray(data.logs)) {
+                data.logs.forEach(log => {
+                    addMessageToChat(windowId, 'system', log);
+                });
+            }
             // Use content or message property (to handle API response variations)
             const content = data.content || data.message;
             
@@ -647,8 +652,10 @@ function addMessageToChat(windowId, role, content) {
     
     if (role === 'user') {
         iconSpan.innerHTML = '<i class="fas fa-user me-1"></i> Jij';
-    } else {
+    } else if (role === 'assistant') {
         iconSpan.innerHTML = '<i class="fas fa-robot me-1"></i> Claude';
+    } else {
+        iconSpan.innerHTML = '<i class="fas fa-info-circle me-1"></i> Log';
     }
     
     const contentDiv = document.createElement('div');

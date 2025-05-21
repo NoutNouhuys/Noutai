@@ -120,6 +120,8 @@ class TestAnthropicAPI(unittest.TestCase):
         self.assertEqual(response['message'], "This is a test response from Claude.")
         self.assertEqual(response['model'], "claude-3-haiku-20240307")
         self.assertIn('conversation_id', response)
+        self.assertIn('logs', response)
+        self.assertIsInstance(response['logs'], list)
         
         # Test error handling
         mock_client.messages.create.side_effect = Exception("Test error")
@@ -130,6 +132,7 @@ class TestAnthropicAPI(unittest.TestCase):
         # Check that the response indicates failure
         self.assertFalse(response['success'])
         self.assertEqual(response['error'], "Test error")
+        self.assertIn('logs', response)
 
 
 if __name__ == '__main__':
