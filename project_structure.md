@@ -1,0 +1,19 @@
+| Path                           | Description                                                                                                                                                              |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **`app.py`**                   | Flask application factory. Configures logging, security, database initialization and registers authentication and API routes. Launches the web server when run directly. |
+| **`auth.py`**                  | Handles Google OAuth login/logout using Flask‑Login. Provides a decorator to restrict access to `@lynxx.com` users.                                                      |
+| **`anthropic_api.py`**         | Wrapper around the Anthropic Claude API. Manages conversations, sends prompts (with optional MCP tool usage) and returns results.                                        |
+| **`mcp_connector.py`**         | Asynchronous helper for connecting to MCP servers and invoking tools via stdio.                                                                                          |
+| **`database.py`**              | Initializes SQLAlchemy, provides a session factory and runs migrations.                                                                                                  |
+| **`config.py`**                | Defines configuration classes for different environments (development, testing, production, docker) and a `get_config()` helper.                                         |
+| **`user.py`**                  | Simple file‑based user model (compatible with Flask‑Login) storing user info in the instance directory.                                                                  |
+| **`models/`**                  |                                                                                                                                                                          |
+|   `conversation.py`            | SQLAlchemy models `Conversation` and `Message`.                                                                                                                          |
+| **`repositories/`**            |                                                                                                                                                                          |
+|   `conversation_repository.py` | CRUD operations for conversations and messages.                                                                                                                          |
+| **`routes/`**                  |                                                                                                                                                                          |
+|   `api.py`                     | Blueprint containing API endpoints for models, conversations and prompts.                                                                                                |
+| **`tests/`**                   | Unit tests covering configuration, authentication, the API layer and database repository.                                                                                |
+| **`migrations/`**              | Alembic setup and a migration script to rename a model field.                                                                                                            |
+| **`static/`, `templates/`**    | Front‑end resources (CSS/JS) and HTML templates for the web interface.                                                                                                   |
+| **`werkwijze/werkwijze.txt`**  | Dutch instructions describing how development should proceed, e.g. using `project_info.txt` and `project_stappen.txt` to track progress.                                 |
