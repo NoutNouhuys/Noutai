@@ -1,7 +1,7 @@
 # Development Guidelines
 
 ## Project Structure
-- Always read project_structure.md to now what to look for
+- Always read project_structure.md to know what to look for
 - Always update project_structure.md if changes in the structure are made
 
 ## Testing
