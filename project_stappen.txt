@@ -18,42 +18,43 @@
   - De bestaande configuratieparameter wordt behouden als override en fallback
 
 ## Volgende Must-Have Stappen
-1. Toevoegen van unit tests voor model-specifieke max_tokens functionaliteit
-   - Bestand: tests/test_anthropic_api.py
-   - Test correct ophalen van model-specifieke max_tokens
-   - Test fallback naar default max_tokens voor onbekende modellen
-   - Test override van max_tokens via parameter
-
-2. Implementeren van betere foutafhandeling in MCP-connector
-   - Bestand: mcp_connector.py
-   - Robuustere timeout-afhandeling
-   - Betere logging van fouten
-   - Consistente foutpropagatie
-
-3. Toevoegen van rate limiting en retry-mechanisme voor Anthropic API
-   - Bestand: anthropic_api.py
-   - Implementeren van exponentiële backoff bij API rate limits
-   - Bijhouden van API-verbruik
-   - Configureerbare retry-instellingen
-
-4. Verbeteren van de gebruikersinterface voor modelselectie
-   - Bestanden: templates/chat.html, static/js/chat.js
-   - Tonen van model-capaciteiten (context lengte, max tokens)
-   - Mogelijkheid om max_tokens in te stellen per gesprek
-   - Visualisatie van tokenverbruik
-
-## Nice-to-Have Stappen
 1. Automatisch ophalen van modelspecificaties van Anthropic API
    - Bestand: anthropic_api.py
    - Dynamisch ophalen van beschikbare modellen
    - Ophalen van actuele modellimieten
 
-2. Implementeren van streaming respons
+2. Verbeteren van de gebruikersinterface voor modelselectie
+   - Bestanden: templates/chat.html, static/js/chat.js
+   - Tonen van model-capaciteiten (context lengte, max tokens)
+   - Mogelijkheid om max_tokens in te stellen per gesprek
+   - Visualisatie van tokenverbruik
+
+3. Toevoegen van unit tests voor model-specifieke max_tokens functionaliteit
+   - Bestand: tests/test_anthropic_api.py
+   - Test correct ophalen van model-specifieke max_tokens
+   - Test fallback naar default max_tokens voor onbekende modellen
+   - Test override van max_tokens via parameter
+
+4. Implementeren van betere foutafhandeling in MCP-connector
+   - Bestand: mcp_connector.py
+   - Robuustere timeout-afhandeling
+   - Betere logging van fouten
+   - Consistente foutpropagatie
+
+5. Toevoegen van rate limiting en retry-mechanisme voor Anthropic API
+   - Bestand: anthropic_api.py
+   - Implementeren van exponentiële backoff bij API rate limits
+   - Bijhouden van API-verbruik
+   - Configureerbare retry-instellingen
+
+## Nice-to-Have Stappen
+
+1. Implementeren van streaming respons
    - Bestand: anthropic_api.py, routes/api.py
    - Progressive rendering van Claude antwoorden
    - Weergave van generatieproces in real-time
 
-3. Ondersteuning voor meerdere LLM-providers
+2. Ondersteuning voor meerdere LLM-providers
    - Nieuwe bestanden: openai_api.py, gemini_api.py
    - Gemeenschappelijke interface voor alle providers
    - Mogelijkheid om provider te kiezen per gesprek
