@@ -18,6 +18,11 @@
   - De bestaande configuratieparameter wordt behouden als override en fallback
 
 ## Volgende Must-Have Stappen
+0. Check en implementatie van Cache Write en Cache Read
+   - Bestand: Onderzoek of er van Cache Write en Cache Read gerbuik wordt gemaakt
+   - Werkwijze.txt in Cache zetten
+   - MCP Tools List in Cache zetten
+
 1. Automatisch ophalen van modelspecificaties van Anthropic API
    - Bestand: anthropic_api.py
    - Dynamisch ophalen van beschikbare modellen
