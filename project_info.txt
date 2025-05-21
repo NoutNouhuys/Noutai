@@ -1,0 +1,86 @@
+# Projectoverzicht: Lynxx Anthropic Console
+
+De Lynxx Anthropic Console is een custom webapplicatie die Lynxx medewerkers toegang geeft tot Anthropic's Claude AI-modellen via een gebruiksvriendelijke interface, met organisatie-specifieke authenticatie en functionaliteit. Deze applicatie stelt medewerkers in staat om vragen te stellen aan Claude AI via een webinterface, te kiezen uit verschillende Claude modellen (Haiku, Sonnet, Opus), conversatiegeschiedenis op te slaan en te beheren, en veilig in te loggen via Google OAuth met @lynxx.com domeinverificatie.
+
+# Architectuur: Modulestructuur
+
+De applicatie volgt een modulaire architectuur en bestaat uit de volgende kerncomponenten:
+
+## Modules
+
+### 1. Hoofdapplicatie
+- Status: Te ontwikkelen
+- Bestandsnaam: app.py
+- Pad: /app.py
+- Functionaliteit: Flask applicatie startpunt, routering en configuratie
+- Afhankelijkheid: Alle andere modules
+
+### 2. Configuratie
+- Status: Te ontwikkelen
+- Bestandsnaam: config.py
+- Pad: /config.py
+- Functionaliteit: Applicatieconfiguratie voor verschillende omgevingen
+- Afhankelijkheid: Geen
+
+### 3. Authenticatie
+- Status: Te ontwikkelen
+- Bestandsnaam: auth.py
+- Pad: /auth.py
+- Functionaliteit: Google OAuth authenticatie en gebruikersbeheer
+- Afhankelijkheid: config.py
+
+### 4. Anthropic API Integratie
+- Status: Te ontwikkelen
+- Bestandsnaam: anthropic_api.py
+- Pad: /anthropic_api.py
+- Functionaliteit: Integratie met Anthropic's Claude API
+- Afhankelijkheid: config.py
+
+### 5. Database Module
+- Status: Te ontwikkelen
+- Bestandsnaam: database.py
+- Pad: /database.py
+- Functionaliteit: Database verbinding en sessie management
+- Afhankelijkheid: config.py
+
+### 6. Database Modellen
+- Status: Te ontwikkelen
+- Bestandsnaam: __init__.py, conversation.py
+- Pad: /models/__init__.py, /models/conversation.py
+- Functionaliteit: ORM modellen voor data opslag
+- Afhankelijkheid: database.py
+
+### 7. Data Repository Laag
+- Status: Te ontwikkelen
+- Bestandsnaam: __init__.py, conversation_repository.py
+- Pad: /repositories/__init__.py, /repositories/conversation_repository.py
+- Functionaliteit: Data toegang en manipulatie
+- Afhankelijkheid: models
+
+### 8. API Routes
+- Status: Te ontwikkelen
+- Bestandsnaam: __init__.py, api.py
+- Pad: /routes/__init__.py, /routes/api.py
+- Functionaliteit: API endpoints en request handling
+- Afhankelijkheid: auth.py, anthropic_api.py, repositories
+
+### 9. HTML Templates
+- Status: Te ontwikkelen
+- Bestandsnaam: base.html, home.html, login.html, conversations.html
+- Pad: /templates/
+- Functionaliteit: Frontend weergave
+- Afhankelijkheid: Geen
+
+### 10. Statische Bestanden
+- Status: Te ontwikkelen
+- Bestandsnaam: CSS, JS, afbeeldingen
+- Pad: /static/css/, /static/js/, /static/img/
+- Functionaliteit: Frontend styling en interactie
+- Afhankelijkheid: Geen
+
+### 11. Tests
+- Status: Te ontwikkelen
+- Bestandsnaam: Diverse testbestanden
+- Pad: /tests/
+- Functionaliteit: Unit en integratietests
+- Afhankelijkheid: Alle modules
