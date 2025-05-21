@@ -1,0 +1,87 @@
+# Project Information
+
+## A. Projectoverzicht
+AI Ontwikkelhulp is een webapplicatie die ontwikkelaars helpt bij het ontwikkelen van projecten door middel van interactie met AI-modellen zoals Claude. Het biedt een gebruiksvriendelijke interface voor het stellen van vragen, het beheren van gesprekken en het inzetten van AI-tools.
+
+## B. Architectuur
+De applicatie is gebouwd met Flask als backend framework en maakt gebruik van de Anthropic API om met Claude-modellen te communiceren. De architectuur volgt een modulaire opzet met duidelijke scheiding van verantwoordelijkheden.
+
+## C. Modules
+
+### app.py
+- **Status**: Actief
+- **Pad**: /app.py
+- **Functionaliteit**: Flask applicatie factory die logging, beveiliging, database-initialisatie configureert en authenticatie- en API-routes registreert. Start de webserver wanneer direct uitgevoerd.
+- **Afhankelijkheden**: auth, database, routes
+
+### auth.py
+- **Status**: Actief
+- **Pad**: /auth.py
+- **Functionaliteit**: Behandelt Google OAuth login/logout met Flask-Login. Biedt een decorator om toegang te beperken tot `@lynxx.com` gebruikers.
+- **Afhankelijkheden**: Flask-Login
+
+### anthropic_api.py
+- **Status**: Actief, bijgewerkt met model-specifieke token limieten
+- **Pad**: /anthropic_api.py
+- **Functionaliteit**: Wrapper rond de Anthropic Claude API. Beheert gesprekken, verstuurt prompts (met optionele MCP-toolgebruik) en retourneert resultaten. Implementeert nu model-specifieke maximum output tokens.
+- **Afhankelijkheden**: mcp_connector, repositories.conversation_repository
+
+### mcp_connector.py
+- **Status**: Actief
+- **Pad**: /mcp_connector.py
+- **Functionaliteit**: Asynchrone helper voor het verbinden met MCP-servers en het aanroepen van tools via stdio.
+- **Afhankelijkheden**: Geen
+
+### database.py
+- **Status**: Actief
+- **Pad**: /database.py
+- **Functionaliteit**: Initialiseert SQLAlchemy, biedt een session factory en voert migraties uit.
+- **Afhankelijkheden**: SQLAlchemy, models
+
+### config.py
+- **Status**: Actief
+- **Pad**: /config.py
+- **Functionaliteit**: Definieert configuratieklassen voor verschillende omgevingen (development, testing, production, docker) en een `get_config()` helper.
+- **Afhankelijkheden**: Geen
+
+### user.py
+- **Status**: Actief
+- **Pad**: /user.py
+- **Functionaliteit**: Eenvoudig bestandsgebaseerd gebruikersmodel (compatibel met Flask-Login) dat gebruikersinformatie opslaat in de instance directory.
+- **Afhankelijkheden**: Flask-Login
+
+### models/conversation.py
+- **Status**: Actief
+- **Pad**: /models/conversation.py
+- **Functionaliteit**: SQLAlchemy modellen `Conversation` en `Message`.
+- **Afhankelijkheden**: SQLAlchemy
+
+### repositories/conversation_repository.py
+- **Status**: Actief
+- **Pad**: /repositories/conversation_repository.py
+- **Functionaliteit**: CRUD-operaties voor gesprekken en berichten.
+- **Afhankelijkheden**: models.conversation
+
+### routes/api.py
+- **Status**: Actief
+- **Pad**: /routes/api.py
+- **Functionaliteit**: Blueprint met API-endpoints voor modellen, gesprekken en prompts.
+- **Afhankelijkheden**: anthropic_api
+
+### tests/
+- **Status**: Actief
+- **Pad**: /tests/
+- **Functionaliteit**: Unittests voor configuratie, authenticatie, de API-laag en database repository.
+- **Afhankelijkheden**: De te testen modules
+
+### migrations/
+- **Status**: Actief
+- **Pad**: /migrations/
+- **Functionaliteit**: Alembic setup en een migratiescript om een modelveld te hernoemen.
+- **Afhankelijkheden**: Alembic, models
+
+### static/, templates/
+- **Status**: Actief
+- **Pad**: /static/, /templates/
+- **Functionaliteit**: Frontend-resources (CSS/JS) en HTML-templates voor de webinterface.
+- **Afhankelijkheden**: Geen
