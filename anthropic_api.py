@@ -56,13 +56,13 @@ class AnthropicAPI:
         # Set default model
         self.default_model = self.config.get('ANTHROPIC_DEFAULT_MODEL') or 'claude-3-haiku-20240307'
         
-        # Set maximum token limit
+        # Set global maximum token limit (used as fallback or override)
         self.max_tokens = self.config.get('ANTHROPIC_MAX_TOKENS') or 4000
         
         # Set default system prompt
         self.system_prompt = self.config.get('ANTHROPIC_SYSTEM_PROMPT') or None
 
-        logger.debug(f"AnthropicAPI configured with model: {self.default_model}, max_tokens: {self.max_tokens}")
+        logger.debug(f"AnthropicAPI configured with model: {self.default_model}, global max_tokens: {self.max_tokens}")
 
     def _load_file_cache(self) -> None:
         """Load important repository files into an in-memory cache."""
@@ -80,12 +80,12 @@ class AnthropicAPI:
             except FileNotFoundError:
                 logger.warning(f"File {path} not found for cache key '{key}'")
 
-    def get_available_models(self) -> List[Dict[str, str]]:
+    def get_available_models(self) -> List[Dict[str, Any]]:
         """
         Get a list of available Claude models.
         
         Returns:
-            List of available models with name and description.
+            List of available models with name, description, context length and max output tokens.
         """
         # Define available models for use in the UI
         # This is hardcoded for now, but could be fetched from the API in the future
@@ -95,26 +95,48 @@ class AnthropicAPI:
                 "name": "Claude 3 Opus",
                 "description": "Most powerful for complex tasks",
                 "context_length": 200000,
+                "max_tokens": 4096,
             },
             {
                 "id": "claude-3-sonnet-20240229",
                 "name": "Claude 3 Sonnet",
                 "description": "Balance of intelligence and speed",
                 "context_length": 200000,
+                "max_tokens": 4096,
             },
             {
                 "id": "claude-3-haiku-20240307",
                 "name": "Claude 3 Haiku",
                 "description": "Fastest model for simpler tasks",
                 "context_length": 200000,
+                "max_tokens": 4096,
             },
             {
                 "id": "claude-3-7-sonnet-20250219",
                 "name":"Claude 3.7 Sonnet",
                 "description": "Current most intelligent model",
                 "context_length": 200000,
+                "max_tokens": 4096,
             }
         ]
+    
+    def get_model_max_tokens(self, model_id: str) -> int:
+        """
+        Get the maximum output tokens for a specific model.
+        
+        Args:
+            model_id: The ID of the model to get max tokens for
+            
+        Returns:
+            Maximum output tokens for the specified model or the default max_tokens
+        """
+        for model in self.get_available_models():
+            if model["id"] == model_id:
+                return model.get("max_tokens", self.max_tokens)
+        
+        # If model not found, return the default max_tokens
+        logger.warning(f"Model {model_id} not found in available models, using default max_tokens: {self.max_tokens}")
+        return self.max_tokens
     
     def create_conversation(self) -> str:
         """
@@ -198,13 +220,19 @@ class AnthropicAPI:
             conversation_id: Optional conversation ID to add to existing conversation
             system_prompt: Optional system prompt to control Claude's behavior
             max_tokens: Optional maximum number of tokens in the response
+            include_logs: Whether to include logs in the response
+            log_callback: Optional callback function for log messages
 
         Returns:
             Dictionary with response text and metadata
         """
         model_id = model_id or self.default_model
         system_prompt = system_prompt or self.system_prompt
-        max_tokens = max_tokens or self.max_tokens
+        
+        # Get model-specific max_tokens if not explicitly provided
+        if max_tokens is None:
+            max_tokens = self.get_model_max_tokens(model_id)
+            logger.debug(f"Using model-specific max_tokens: {max_tokens} for model: {model_id}")
 
         logs: List[str] = []
         def emit_log(message: str) -> None:
@@ -288,7 +316,7 @@ class AnthropicAPI:
         })
 
         try:
-            logger.debug(f"Sending prompt to Claude using model: {model_id}")
+            logger.debug(f"Sending prompt to Claude using model: {model_id} with max_tokens: {max_tokens}")
 
             if self.client is None:
                 self.client = anthropic.Anthropic(api_key=self.api_key)
