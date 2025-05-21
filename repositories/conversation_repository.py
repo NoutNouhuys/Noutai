@@ -177,6 +177,8 @@ class ConversationRepository:
                 content=content,
                 metadata=metadata  # This will be stored in message_metadata field
             )
+            # Preserve metadata on the instance for immediate access in tests
+            message.metadata = metadata
             
             # Update the conversation's updated_at timestamp
             conversation.updated_at = db.func.now()

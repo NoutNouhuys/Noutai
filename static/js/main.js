@@ -185,47 +185,41 @@ document.addEventListener('DOMContentLoaded', function() {
             isWaitingForResponse = true;
             addLoadingIndicator();
             
-            // Send prompt to API
-            fetch('/api/prompt', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken
-                },
-                body: JSON.stringify({
-                    prompt: prompt,
-                    model_id: selectedModel,
-                    conversation_id: currentConversationId
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                // Remove loading indicator
+            const params = new URLSearchParams({
+                prompt: prompt,
+                model_id: selectedModel,
+                conversation_id: currentConversationId || ''
+            });
+
+            const es = new EventSource('/api/prompt_stream?' + params.toString());
+
+            es.addEventListener('log', function(e) {
+                const msg = JSON.parse(e.data);
+                addLogMessage(msg);
+            });
+
+            es.addEventListener('final', function(e) {
+                const data = JSON.parse(e.data);
                 removeLoadingIndicator();
                 isWaitingForResponse = false;
-                
+
                 if (data.success) {
-                    // Add Claude's response to the chat
-                    // Gebruik message in plaats van content (fix voor bug #27)
                     addSystemMessage(data.message);
-                    
-                    // Update the conversation ID if necessary
                     if (data.conversation_id && !currentConversationId) {
                         currentConversationId = data.conversation_id;
                     }
                 } else {
-                    // Show error message
                     addErrorMessage(data.error || 'Er ging iets mis bij het verwerken van je verzoek.');
                 }
-            })
-            .catch(error => {
-                // Remove loading indicator
+                es.close();
+            });
+
+            es.addEventListener('error', function(err) {
                 removeLoadingIndicator();
                 isWaitingForResponse = false;
-                
-                // Show error message
                 addErrorMessage('Er ging iets mis bij het versturen van je bericht.');
-                console.error('Error bij het versturen van prompt:', error);
+                console.error('Error bij het versturen van prompt:', err);
+                es.close();
             });
         }
     }
@@ -260,6 +254,22 @@ document.addEventListener('DOMContentLoaded', function() {
         chatMessages.scrollTop = chatMessages.scrollHeight;
         
         // Apply syntax highlighting to all code blocks in this message
+        highlightCodeBlocks(messageDiv);
+    }
+
+    // Function to add log message to chat
+    function addLogMessage(message) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message log';
+
+        const formattedMessage = formatMessage(message);
+        messageDiv.innerHTML = `
+            <div class="message-content">
+                ${formattedMessage}
+            </div>
+        `;
+        chatMessages.appendChild(messageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
         highlightCodeBlocks(messageDiv);
     }
     

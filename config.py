@@ -139,7 +139,8 @@ def get_config():
         Config class appropriate for the current environment
     """
     env = os.environ.get('FLASK_ENV', 'default')
-    return config.get(env, config['default'])
+    config_class = config.get(env, config['default'])
+    return config_class()
 
 
 # For backwards compatibility with existing code

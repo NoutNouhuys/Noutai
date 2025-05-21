@@ -1,4 +1,7 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, Response
+import json
+import queue
+import threading
 from flask_login import login_required, current_user
 from anthropic_api import anthropic_api
 from auth import check_lynxx_domain
@@ -378,9 +381,51 @@ def send_prompt():
         response["active_mcp_servers"] = active_mcp_servers
 
         return jsonify(response)
-        
+
     except Exception as e:
         return jsonify({
             "success": False,
             "error": str(e)
         }), 500
+
+
+@api_bp.route('/prompt_stream', methods=['GET'])
+@login_required
+@check_lynxx_domain
+def send_prompt_stream():
+    """Stream logs and the final response from Claude via Server-Sent Events."""
+    prompt = request.args.get('prompt')
+    if not prompt:
+        return jsonify({"success": False, "error": "Prompt is required"}), 400
+
+    model_id = request.args.get('model_id', 'claude-3-haiku-20240307')
+    conversation_id = request.args.get('conversation_id')
+    system_prompt = request.args.get('system_prompt')
+
+    def event_stream():
+        q = queue.Queue()
+
+        def callback(msg: str) -> None:
+            q.put({'type': 'log', 'data': msg})
+
+        def worker():
+            result = anthropic_api.send_prompt(
+                prompt=prompt,
+                model_id=model_id,
+                conversation_id=conversation_id,
+                system_prompt=system_prompt,
+                log_callback=callback,
+            )
+            q.put({'type': 'final', 'data': result})
+
+        threading.Thread(target=worker).start()
+
+        while True:
+            item = q.get()
+            if item['type'] == 'log':
+                yield f"event: log\ndata: {json.dumps(item['data'])}\n\n"
+            elif item['type'] == 'final':
+                yield f"event: final\ndata: {json.dumps(item['data'])}\n\n"
+                break
+
+    return Response(event_stream(), mimetype='text/event-stream')
