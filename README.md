@@ -201,6 +201,14 @@ De volgende Claude modellen zijn beschikbaar:
 - **Claude 3 Sonnet**: Gebalanceerd model (snelheid/kwaliteit)
 - **Claude 3 Opus**: Hoogste kwaliteit voor complexe taken
 
+## Caching
+
+Het project bevat een eenvoudige in-memory cache via `cache_manager.py`.  Deze
+cache wordt gebruikt voor het opslaan van werkwijze- en systeem bestanden en de
+beschikbare MCP-tools.  De standaard vervaltijd kan worden ingesteld met de
+`CACHE_DEFAULT_EXPIRATION` variabele in de configuratie (standaard 300
+seconden).
+
 ## Tests uitvoeren
 
 ```bash
