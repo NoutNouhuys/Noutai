@@ -12,6 +12,12 @@ from flask import current_app
 from repositories.conversation_repository import ConversationRepository
 from config import BaseConfig
 import mcp_connector
+from cache_manager import (
+    write_to_cache,
+    read_from_cache,
+    is_cache_valid,
+    clear_cache,
+)
 
 # Setup logger
 logger = logging.getLogger(__name__)
@@ -66,7 +72,6 @@ class AnthropicAPI:
 
     def _load_file_cache(self) -> None:
         """Load important repository files into an in-memory cache."""
-        self.file_cache = {}
         files = {
             "werkwijze": os.path.join("werkwijze", "werkwijze.txt"),
             "system_prompt": "system_prompt.txt",
@@ -76,7 +81,7 @@ class AnthropicAPI:
         for key, path in files.items():
             try:
                 with open(path, "r", encoding="utf-8") as file:
-                    self.file_cache[key] = file.read()
+                    write_to_cache(key, file.read())
             except FileNotFoundError:
                 logger.warning(f"File {path} not found for cache key '{key}'")
 
@@ -253,13 +258,22 @@ class AnthropicAPI:
         loop = ensure_event_loop()
         mcp_connector_instance = mcp_connector.MCPConnector()
         tools = []
+        tools_cache_key = "mcp_tools"
         if server_script_path:
             loop.run_until_complete(
                 mcp_connector_instance.connect_to_server(server_script_path, server_venv_path)
             )
             if include_logs:
                 emit_log("Verbinding met MCP-server opgezet")
-            tools = loop.run_until_complete(mcp_connector_instance.get_tools())
+            if is_cache_valid(tools_cache_key):
+                tools = read_from_cache(tools_cache_key) or []
+            else:
+                tools = loop.run_until_complete(mcp_connector_instance.get_tools())
+                write_to_cache(
+                    tools_cache_key,
+                    tools,
+                    expiry=self.config.get("CACHE_DEFAULT_EXPIRATION", BaseConfig.CACHE_DEFAULT_EXPIRATION),
+                )
         # add read werkwijze tool
         tools.append({
             "name": "get_werkwijze",
@@ -350,7 +364,9 @@ class AnthropicAPI:
                     # TODO try except error
                         try:
                             if tool_name == "get_werkwijze":
-                                tool_result = self.file_cache.get("werkwijze", "")
+                                if not is_cache_valid("werkwijze"):
+                                    self._load_file_cache()
+                                tool_result = read_from_cache("werkwijze") or ""
                             else:
                                 result = loop.run_until_complete(
                                     mcp_connector_instance.use_tool(tool_name=tool_name, tool_args=tool_args)

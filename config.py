@@ -57,6 +57,9 @@ class BaseConfig:
     UPLOAD_FOLDER = 'uploads'
     ALLOWED_EXTENSIONS = {'txt', 'pdf', 'csv', 'xlsx', 'docx'}
 
+    # Caching
+    CACHE_DEFAULT_EXPIRATION = int(os.environ.get('CACHE_DEFAULT_EXPIRATION', 300))
+
 
 class DevelopmentConfig(BaseConfig):
     """Development configuration with debug features enabled"""
