@@ -259,15 +259,17 @@ class AnthropicAPI:
         mcp_connector_instance = mcp_connector.MCPConnector()
         tools = []
         tools_cache_key = "mcp_tools"
+        connection_opened = False
         if server_script_path:
-            loop.run_until_complete(
-                mcp_connector_instance.connect_to_server(server_script_path, server_venv_path)
-            )
-            if include_logs:
-                emit_log("Verbinding met MCP-server opgezet")
             if is_cache_valid(tools_cache_key):
                 tools = read_from_cache(tools_cache_key) or []
             else:
+                loop.run_until_complete(
+                    mcp_connector_instance.connect_to_server(server_script_path, server_venv_path)
+                )
+                connection_opened = True
+                if include_logs:
+                    emit_log("Verbinding met MCP-server opgezet")
                 tools = loop.run_until_complete(mcp_connector_instance.get_tools())
                 write_to_cache(
                     tools_cache_key,
@@ -377,6 +379,13 @@ class AnthropicAPI:
                                     self._load_file_cache()
                                 tool_result = read_from_cache("werkwijze") or ""
                             else:
+                                if not mcp_connector_instance.session:
+                                    loop.run_until_complete(
+                                        mcp_connector_instance.connect_to_server(server_script_path, server_venv_path)
+                                    )
+                                    connection_opened = True
+                                    if include_logs:
+                                        emit_log("Verbinding met MCP-server opgezet")
                                 result = loop.run_until_complete(
                                     mcp_connector_instance.use_tool(tool_name=tool_name, tool_args=tool_args)
                                 )
@@ -453,6 +462,12 @@ class AnthropicAPI:
                 "conversation_id": conversation_id,
                 "logs": logs if include_logs else [],
             }
+        finally:
+            if connection_opened:
+                try:
+                    loop.run_until_complete(mcp_connector_instance.close())
+                except Exception as close_error:
+                    logger.error(f"Failed to close MCP connection: {close_error}")
 
 
 def get_anthropic_api():
