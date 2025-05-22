@@ -68,6 +68,7 @@ GOOGLE_CLIENT_SECRET=ABC
 
 # Anthropic API Configuration
 ANTHROPIC_API_KEY=ABC
+ANTHROPIC_CACHE_TTL=5m
 
 MCP_SERVER_SCRIPT = ABC
 MCP_SERVER_VENV_PATH = ABC
@@ -208,6 +209,7 @@ cache wordt gebruikt voor het opslaan van werkwijze- en systeem bestanden en de
 beschikbare MCP-tools.  De standaard vervaltijd kan worden ingesteld met de
 `CACHE_DEFAULT_EXPIRATION` variabele in de configuratie (standaard 300
 seconden).
+Gebruik `ANTHROPIC_CACHE_TTL` om de TTL voor prompt caching richting Claude in te stellen (standaard `5m`).
 
 ## Tests uitvoeren
 

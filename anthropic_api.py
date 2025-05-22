@@ -64,11 +64,17 @@ class AnthropicAPI:
         
         # Set global maximum token limit (used as fallback or override)
         self.max_tokens = self.config.get('ANTHROPIC_MAX_TOKENS') or 4000
+
+        # TTL for Anthropic prompt caching
+        self.cache_ttl = self.config.get('ANTHROPIC_CACHE_TTL', '5m')
         
         # Set default system prompt
         self.system_prompt = self.config.get('ANTHROPIC_SYSTEM_PROMPT') or None
 
-        logger.debug(f"AnthropicAPI configured with model: {self.default_model}, global max_tokens: {self.max_tokens}")
+        logger.debug(
+            f"AnthropicAPI configured with model: {self.default_model}, "
+            f"global max_tokens: {self.max_tokens}, cache_ttl: {self.cache_ttl}"
+        )
 
     def _load_file_cache(self) -> None:
         """Load important repository files into an in-memory cache."""
@@ -86,6 +92,12 @@ class AnthropicAPI:
             except FileNotFoundError:
                 logger.warning(f"File {path} not found for cache key '{key}'")
                 write_to_cache(key, None)
+
+    def _apply_cache_control(self, messages: List[Dict[str, Any]]) -> None:
+        """Mark the stable prefix of messages for Anthropic prompt caching."""
+        if len(messages) <= 1:
+            return
+        messages[-2]["cache_control"] = {"type": "ephemeral", "ttl": self.cache_ttl}
 
     def get_available_models(self) -> List[Dict[str, Any]]:
         """
@@ -411,6 +423,7 @@ class AnthropicAPI:
                     logger.error(f"Failed to load conversation from database: {str(db_error)}")
 
         messages.append({"role": "user", "content": prompt})
+        self._apply_cache_control(messages)
 
         message_params = {"model": model_id, "messages": messages, "max_tokens": max_tokens}
         if system_prompt:
