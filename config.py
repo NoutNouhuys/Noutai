@@ -2,6 +2,9 @@ import os
 import logging
 from dotenv import load_dotenv
 
+# Setup module logger
+logger = logging.getLogger(__name__)
+
 # Load environment variables from .env file if present
 load_dotenv()
 
@@ -25,8 +28,15 @@ class BaseConfig:
     ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY')
     ANTHROPIC_DEFAULT_MODEL = os.environ.get('ANTHROPIC_DEFAULT_MODEL') or 'claude-3-haiku-20240307'
     ANTHROPIC_MAX_TOKENS = int(os.environ.get('ANTHROPIC_MAX_TOKENS') or 4000)
-    with open('system_prompt.txt', 'r') as file:
-        ANTHROPIC_SYSTEM_PROMPT = file.read()
+
+    _base_path = os.path.dirname(__file__)
+    _system_prompt_path = os.path.join(_base_path, 'system_prompt.txt')
+    try:
+        with open(_system_prompt_path, 'r', encoding='utf-8') as file:
+            ANTHROPIC_SYSTEM_PROMPT = file.read()
+    except FileNotFoundError:
+        logger.warning(f"system_prompt.txt not found at {_system_prompt_path}")
+        ANTHROPIC_SYSTEM_PROMPT = None
     
     # Database Configuration
     DATABASE_URI = os.environ.get('DATABASE_URI') or 'sqlite:///app.db'

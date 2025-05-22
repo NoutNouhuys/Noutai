@@ -72,10 +72,11 @@ class AnthropicAPI:
 
     def _load_file_cache(self) -> None:
         """Load important repository files into an in-memory cache."""
+        base_path = os.path.dirname(__file__)
         files = {
-            "werkwijze": os.path.join("werkwijze", "werkwijze.txt"),
-            "system_prompt": "system_prompt.txt",
-            "project_structure": "project_structure.md",
+            "werkwijze": os.path.join(base_path, "werkwijze", "werkwijze.txt"),
+            "system_prompt": os.path.join(base_path, "system_prompt.txt"),
+            "project_structure": os.path.join(base_path, "project_structure.md"),
         }
 
         for key, path in files.items():
@@ -84,6 +85,7 @@ class AnthropicAPI:
                     write_to_cache(key, file.read())
             except FileNotFoundError:
                 logger.warning(f"File {path} not found for cache key '{key}'")
+                write_to_cache(key, None)
 
     def get_available_models(self) -> List[Dict[str, Any]]:
         """
