@@ -285,6 +285,15 @@ class AnthropicAPI:
             }
         })
 
+        # ensure tools have unique names
+        unique_tools = []
+        seen = set()
+        for t in tools:
+            if t["name"] not in seen:
+                unique_tools.append(t)
+                seen.add(t["name"])
+        tools = unique_tools
+
         # Initialize message list for API call
         messages = []
 
