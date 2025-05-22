@@ -14,7 +14,7 @@
 |   `conversation_repository.py` | CRUD operations for conversations and messages.                                                                                                                          |
 | **`routes/`**                  |                                                                                                                                                                          |
 |   `api.py`                     | Blueprint containing API endpoints for models, conversations and prompts.                                                                                                |
-| **`tests/`**                   | Unit tests covering configuration, authentication, the API layer and database repository.                                                                                |
+| **`tests/`**                   | Unit tests covering configuration, authentication, the API layer and database repository and tool deduplication.                                                                                |
 | **`migrations/`**              | Alembic setup and a migration script to rename a model field.                                                                                                            |
 | **`static/`, `templates/`**    | Front‑end resources (CSS/JS) and HTML templates for the web interface.                                                                                                   |
 | **`werkwijze/werkwijze.txt`**  | Dutch instructions describing how development should proceed, e.g. using `project_info.txt` and `project_stappen.txt` to track progress.                                 |
