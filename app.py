@@ -56,10 +56,11 @@ def create_app(config_class=None):
 
 def configure_logging(app):
     log_format = app.config.get('LOG_FORMAT', '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    
+    log_level = app.config.get('LOG_LEVEL', logging.INFO)
+
     # Zet basisniveau op WARNING zodat externe libs stil blijven
-    logging.basicConfig(level=logging.INFO, format=log_format)
-    
+    logging.basicConfig(level=log_level, format=log_format)
+
     # Stel logniveau expliciet in voor je eigen modules
     for module in [
         'app',
@@ -67,9 +68,9 @@ def configure_logging(app):
         'api',  # afhankelijk van hoe je het importeert
         'routes.api'
     ]:
-        logging.getLogger(module).setLevel(logging.INFO)
+        logging.getLogger(module).setLevel(log_level)
 
-    app.logger.setLevel(logging.INFO)
+    app.logger.setLevel(log_level)
     app.logger.info(f"Application starting in {os.environ.get('FLASK_ENV', 'default')} mode")
 
 def configure_security(app):
