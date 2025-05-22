@@ -211,37 +211,167 @@ class AnthropicAPI:
             "content": system_message,
             "timestamp": timestamp + 0.001  # Ensure it comes after user message
         })
+
+    async def _send_prompt_async(
+        self,
+        message_params: Dict[str, Any],
+        server_script_path: Optional[str],
+        server_venv_path: Optional[str],
+        include_logs: bool,
+        emit_log: callable,
+    ) -> str:
+        """Internal coroutine to send the prompt and handle tool use."""
+        mcp_connector_instance = mcp_connector.MCPConnector()
+        tools: List[Dict[str, Any]] = []
+        tools_cache_key = "mcp_tools"
+        connection_opened = False
+
+        try:
+            if server_script_path:
+                if is_cache_valid(tools_cache_key):
+                    tools = read_from_cache(tools_cache_key) or []
+                else:
+                    await mcp_connector_instance.connect_to_server(
+                        server_script_path, server_venv_path
+                    )
+                    connection_opened = True
+                    if include_logs:
+                        emit_log("Verbinding met MCP-server opgezet")
+                    tools = await mcp_connector_instance.get_tools()
+                    write_to_cache(
+                        tools_cache_key,
+                        tools,
+                        expiry=self.config.get(
+                            "CACHE_DEFAULT_EXPIRATION",
+                            BaseConfig.CACHE_DEFAULT_EXPIRATION,
+                        ),
+                    )
+
+            tools.append(
+                {
+                    "name": "get_werkwijze",
+                    "description": (
+                        "Read the werkwijze for the project. "
+                        "This is important as it gives the steps to take for development."
+                    ),
+                    "input_schema": {"type": "object", "properties": {}, "required": []},
+                }
+            )
+
+            unique_tools = []
+            seen = set()
+            for t in tools:
+                if t["name"] not in seen:
+                    unique_tools.append(t)
+                    seen.add(t["name"])
+            tools = unique_tools
+
+            message_params["tools"] = tools
+
+            if self.client is None:
+                self.client = anthropic.Anthropic(api_key=self.api_key)
+
+            response = self.client.messages.create(**message_params)
+            print(f"Ontvangen message: {response.content}")
+            if include_logs:
+                emit_log("Prompt verzonden naar Claude")
+
+            while response.stop_reason == "tool_use":
+                for c in response.content:
+                    if c.type != "tool_use":
+                        continue
+                    tool_name = c.name
+                    tool_args = c.input
+                    tool_id = c.id
+
+                    try:
+                        if tool_name == "get_werkwijze":
+                            if not is_cache_valid("werkwijze"):
+                                self._load_file_cache()
+                            tool_result = read_from_cache("werkwijze") or ""
+                        else:
+                            if not mcp_connector_instance.session:
+                                await mcp_connector_instance.connect_to_server(
+                                    server_script_path, server_venv_path
+                                )
+                                connection_opened = True
+                                if include_logs:
+                                    emit_log("Verbinding met MCP-server opgezet")
+                            result = await mcp_connector_instance.use_tool(
+                                tool_name=tool_name, tool_args=tool_args
+                            )
+                            tool_result = result.content
+
+                        logger.info(
+                            f"Tool '{tool_name}' executed successfully with result: {tool_result}"
+                        )
+                        if include_logs:
+                            emit_log(f"Tool {tool_name} uitgevoerd")
+                    except Exception as tool_error:
+                        logger.error(
+                            f"Error during tool execution '{tool_name}': {str(tool_error)}"
+                        )
+                        tool_result = (
+                            f"Tool '{tool_name}' failed with error: {str(tool_error)}"
+                        )
+                        if include_logs:
+                            emit_log(tool_result)
+
+                    message_params["messages"].append(
+                        {"role": response.role, "content": response.content}
+                    )
+
+                    tool_result_payload = {
+                        "type": "tool_result",
+                        "tool_use_id": tool_id,
+                        "content": tool_result,
+                    }
+                    next_messages = message_params["messages"].copy()
+                    tool_result_message = {
+                        "role": "user",
+                        "content": [tool_result_payload],
+                    }
+
+                    next_messages.append(tool_result_message)
+                    message_params["messages"] = next_messages
+                    response = self.client.messages.create(**message_params)
+                    logger.info(f"Ontvangen message: {response.content}")
+                    if include_logs:
+                        emit_log(f"Resultaat van {tool_name}: {tool_result}")
+
+            response_text = response.content[0].text
+            if include_logs:
+                emit_log("Antwoord van Claude ontvangen")
+
+            return response_text
+        finally:
+            if connection_opened:
+                try:
+                    await mcp_connector_instance.close()
+                except Exception as close_error:
+                    logger.error(f"Failed to close MCP connection: {close_error}")
     
-    def send_prompt(self, prompt: str, model_id: Optional[str] = None,
-                conversation_id: Optional[Union[str, int]] = None,
-                system_prompt: Optional[str] = None,
-                max_tokens: Optional[int] = None,
-                include_logs: bool = True,
-                log_callback: Optional[callable] = None) -> Dict[str, Any]:
-        """
-        Send a prompt to Claude and get a response, optionally including context from MCP servers.
+    def send_prompt(
+        self,
+        prompt: str,
+        model_id: Optional[str] = None,
+        conversation_id: Optional[Union[str, int]] = None,
+        system_prompt: Optional[str] = None,
+        max_tokens: Optional[int] = None,
+        include_logs: bool = True,
+        log_callback: Optional[callable] = None,
+    ) -> Dict[str, Any]:
+        """Send a prompt to Claude and return the response."""
 
-        Args:
-            prompt: The user's prompt text
-            model_id: The Claude model to use (defaults to configured default)
-            conversation_id: Optional conversation ID to add to existing conversation
-            system_prompt: Optional system prompt to control Claude's behavior
-            max_tokens: Optional maximum number of tokens in the response
-            include_logs: Whether to include logs in the response
-            log_callback: Optional callback function for log messages
-
-        Returns:
-            Dictionary with response text and metadata
-        """
         model_id = model_id or self.default_model
         system_prompt = system_prompt or self.system_prompt
-        
-        # Get model-specific max_tokens if not explicitly provided
+
         if max_tokens is None:
             max_tokens = self.get_model_max_tokens(model_id)
             logger.debug(f"Using model-specific max_tokens: {max_tokens} for model: {model_id}")
 
         logs: List[str] = []
+
         def emit_log(message: str) -> None:
             if include_logs:
                 logs.append(message)
@@ -251,202 +381,63 @@ class AnthropicAPI:
                 except Exception as callback_error:
                     logger.error(f"Log callback failed: {callback_error}")
 
-        # Convert conversation_id to string if it's an integer
         conversation_id_str = str(conversation_id) if conversation_id is not None else None
 
-        # Retrieve context from MCP servers
-        server_script_path = os.environ.get('MCP_SERVER_SCRIPT')
-        server_venv_path = os.environ.get('MCP_SERVER_VENV_PATH')
         loop = ensure_event_loop()
-        mcp_connector_instance = mcp_connector.MCPConnector()
-        tools = []
-        tools_cache_key = "mcp_tools"
-        connection_opened = False
-        if server_script_path:
-            if is_cache_valid(tools_cache_key):
-                tools = read_from_cache(tools_cache_key) or []
-            else:
-                loop.run_until_complete(
-                    mcp_connector_instance.connect_to_server(server_script_path, server_venv_path)
-                )
-                connection_opened = True
-                if include_logs:
-                    emit_log("Verbinding met MCP-server opgezet")
-                tools = loop.run_until_complete(mcp_connector_instance.get_tools())
-                write_to_cache(
-                    tools_cache_key,
-                    tools,
-                    expiry=self.config.get("CACHE_DEFAULT_EXPIRATION", BaseConfig.CACHE_DEFAULT_EXPIRATION),
-                )
-        # add read werkwijze tool
-        tools.append({
-            "name": "get_werkwijze",
-            "description": "Read the werkwijze for the project. This is important as it gives the steps to take for development.",
-            "input_schema": {
-                "type": "object",
-                "properties": {},
-                "required": []
-            }
-        })
 
-        # ensure tools have unique names
-        unique_tools = []
-        seen = set()
-        for t in tools:
-            if t["name"] not in seen:
-                unique_tools.append(t)
-                seen.add(t["name"])
-        tools = unique_tools
+        messages: List[Dict[str, Any]] = []
 
-        # Initialize message list for API call
-        messages = []
-
-        # If we have a conversation ID, try to load messages from memory or database
         if conversation_id_str:
-            # First check if we have it in memory
             if conversation_id_str in self.conversations:
                 for msg in self.conversations[conversation_id_str]:
-                    messages.append({
-                        "role": msg["role"],
-                        "content": msg["content"]
-                    })
+                    messages.append({"role": msg["role"], "content": msg["content"]})
             else:
-                # Try to load from database and populate memory cache
                 try:
                     if isinstance(conversation_id, int):
                         logger.info(f"Loading conversation {conversation_id} from database")
                         db_messages = ConversationRepository.get_messages(conversation_id)
-
-                        # Initialize the in-memory conversation
                         self.conversations[conversation_id_str] = []
-
                         for msg in db_messages:
-                            api_msg = {
-                                "role": msg.role,
-                                "content": msg.content
-                            }
+                            api_msg = {"role": msg.role, "content": msg.content}
                             messages.append(api_msg)
-
-                            # Also add to in-memory cache
-                            self.conversations[conversation_id_str].append({
-                                "role": msg.role,
-                                "content": msg.content,
-                                "timestamp": msg.created_at.timestamp()
-                            })
+                            self.conversations[conversation_id_str].append(
+                                {
+                                    "role": msg.role,
+                                    "content": msg.content,
+                                    "timestamp": msg.created_at.timestamp(),
+                                }
+                            )
                 except Exception as db_error:
                     logger.error(f"Failed to load conversation from database: {str(db_error)}")
 
-        # Add the new user message
-        messages.append({
-            "role": "user",
-            "content": prompt
-        })
+        messages.append({"role": "user", "content": prompt})
+
+        message_params = {"model": model_id, "messages": messages, "max_tokens": max_tokens}
+        if system_prompt:
+            message_params["system"] = system_prompt
+
+        server_script_path = os.environ.get("MCP_SERVER_SCRIPT")
+        server_venv_path = os.environ.get("MCP_SERVER_VENV_PATH")
 
         try:
-            logger.debug(f"Sending prompt to Claude using model: {model_id} with max_tokens: {max_tokens}")
+            response_text = loop.run_until_complete(
+                self._send_prompt_async(
+                    message_params,
+                    server_script_path,
+                    server_venv_path,
+                    include_logs,
+                    emit_log,
+                )
+            )
 
-            if self.client is None:
-                self.client = anthropic.Anthropic(api_key=self.api_key)
-
-            message_params = {
-                "model": model_id,
-                "messages": messages,
-                "max_tokens": max_tokens,
-                "tools": tools,
-            }
-
-            # Add system prompt if provided
-            if system_prompt:
-                message_params["system"] = system_prompt
-
-            # Call the Anthropic API
-            response = self.client.messages.create(**message_params)
-            print(f"Ontvangen message: {response.content}")
-            if include_logs:
-                emit_log("Prompt verzonden naar Claude")
-
-            tool_results = []
-            tool_use_id_map = {}  # Track tool_use_id to correctly link with tool_result
-            while response.stop_reason == "tool_use":
-                for c in response.content:
-                    if c.type == "tool_use":
-                        tool_name = c.name
-                        tool_args = c.input
-                        tool_id = c.id
-                    
-                    # TODO try except error
-                        try:
-                            if tool_name == "get_werkwijze":
-                                if not is_cache_valid("werkwijze"):
-                                    self._load_file_cache()
-                                tool_result = read_from_cache("werkwijze") or ""
-                            else:
-                                if not mcp_connector_instance.session:
-                                    loop.run_until_complete(
-                                        mcp_connector_instance.connect_to_server(server_script_path, server_venv_path)
-                                    )
-                                    connection_opened = True
-                                    if include_logs:
-                                        emit_log("Verbinding met MCP-server opgezet")
-                                result = loop.run_until_complete(
-                                    mcp_connector_instance.use_tool(tool_name=tool_name, tool_args=tool_args)
-                                )
-                                tool_result = result.content
-
-                            logger.info(
-                                f"Tool '{tool_name}' executed successfully with result: {tool_result} (type: {type(tool_result)})"
-                            )
-                            if include_logs:
-                                emit_log(f"Tool {tool_name} uitgevoerd")
-                        except Exception as tool_error:
-                            logger.error(f"Error during tool execution '{tool_name}': {str(tool_error)}")
-                            tool_result = f"Tool '{tool_name}' failed with error: {str(tool_error)}"
-                            if include_logs:
-                                emit_log(tool_result)
-
-                        #print(f"DEBUG: tool_result: {tool_result}")
-
-                        message_params["messages"].append({
-                            "role": response.role,
-                            "content": response.content
-                        })
-
-                        # Store the result and associate it with the tool_use_id
-                        tool_results.append(tool_result)
-                        tool_use_id_map[tool_id] = tool_result  # Store the result with tool_use_id
-
-
-                        # Update message history with tool result
-                        tool_result_payload = {
-                            "type": "tool_result",
-                            "tool_use_id": tool_id,
-                            "content": tool_result,
-                        }
-                        next_messages = message_params["messages"].copy()
-                        tool_result_message = {
-                            "role": "user",  # Results are sent back in the 'user' role
-                            "content": [tool_result_payload]
-                        }
-
-                        next_messages.append(tool_result_message)
-                        message_params["messages"] = next_messages
-                        response = self.client.messages.create(**message_params)
-                        logger.info(f"Ontvangen message: {response.content}")
-                        if include_logs:
-                            emit_log(f"Resultaat van {tool_name}: {tool_result}")
-
-            response_text = response.content[0].text
-            if include_logs:
-                emit_log("Antwoord van Claude ontvangen")
-
-            # Create a new conversation if needed
             if not conversation_id_str:
                 conversation_id_str = self.create_conversation()
 
-            # Add to conversation history in memory
             self.add_to_conversation(conversation_id_str, prompt, response_text)
 
-            logger.info(f"Successfully received response from Anthropic API, conversation: {conversation_id_str}")
+            logger.info(
+                f"Successfully received response from Anthropic API, conversation: {conversation_id_str}"
+            )
 
             return {
                 "conversation_id": conversation_id or conversation_id_str,
@@ -464,12 +455,6 @@ class AnthropicAPI:
                 "conversation_id": conversation_id,
                 "logs": logs if include_logs else [],
             }
-        finally:
-            if connection_opened:
-                try:
-                    loop.run_until_complete(mcp_connector_instance.close())
-                except Exception as close_error:
-                    logger.error(f"Failed to close MCP connection: {close_error}")
 
 
 def get_anthropic_api():
