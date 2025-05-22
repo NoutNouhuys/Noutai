@@ -12,10 +12,11 @@
     --input-border: #d0d7de;
     --footer-bg: #f6f8fa;
     --footer-text: #57606a;
-    --message-user-bg: #f6f8fa;
+    --message-user-bg: #e6f4ff;
     --message-user-color: #24292f;
-    --message-system-bg: #ffffff;
+    --message-system-bg: #e8f5e9;
     --message-system-color: #24292f;
+    --message-log-bg: #f5f5f5;
     --message-error-bg: #ffebe9;
     --message-error-color: #cf222e;
     --code-bg: #f6f8fa;
@@ -50,10 +51,11 @@
     --input-border: #30363d;
     --footer-bg: #161b22;
     --footer-text: #8b949e;
-    --message-user-bg: #0d1117;
+    --message-user-bg: #102b3f;
     --message-user-color: #c9d1d9;
-    --message-system-bg: #161b22;
+    --message-system-bg: #1a2d1a;
     --message-system-color: #c9d1d9;
+    --message-log-bg: #272727;
     --message-error-bg: #5a1d1d;
     --message-error-color: #ff7b72;
     --code-bg: #0d1117;
@@ -316,6 +318,7 @@ main {
 .chat-messages {
     height: 400px;
     overflow-y: auto;
+    overflow-x: hidden;
     border: 1px solid var(--border-color);
     border-radius: 6px;
     padding: 12px;
@@ -425,7 +428,7 @@ main {
 }
 
 .message.log {
-    background-color: var(--secondary-bg);
+    background-color: var(--message-log-bg);
     margin-right: auto;
     font-style: italic;
 }
@@ -455,6 +458,7 @@ main {
 
 .message.log .message-content {
     color: var(--muted-text);
+    white-space: pre-wrap;
 }
 
 .message.error .message-content,
