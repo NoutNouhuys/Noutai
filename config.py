@@ -28,6 +28,7 @@ class BaseConfig:
     ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY')
     ANTHROPIC_DEFAULT_MODEL = os.environ.get('ANTHROPIC_DEFAULT_MODEL') or 'claude-3-haiku-20240307'
     ANTHROPIC_MAX_TOKENS = int(os.environ.get('ANTHROPIC_MAX_TOKENS') or 4000)
+    ANTHROPIC_CACHE_TTL = os.environ.get('ANTHROPIC_CACHE_TTL', '5m')
 
     _base_path = os.path.dirname(__file__)
     _system_prompt_path = os.path.join(_base_path, 'system_prompt.txt')
