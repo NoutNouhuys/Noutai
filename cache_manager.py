@@ -1,4 +1,5 @@
 """Simple in-memory cache manager."""
+import copy
 import time
 from typing import Any, Dict, Optional
 
@@ -15,13 +16,20 @@ def write_to_cache(key: str, value: Any, expiry: Optional[float] = None) -> None
 
 
 def read_from_cache(key: str) -> Optional[Any]:
-    """Retrieve a value from the cache if it has not expired."""
+    """Return a cached value if valid.
+
+    Lists and dicts are returned as deep copies so that mutations on the
+    returned object do not modify the stored value.
+    """
     if key not in _cache:
         return None
     if not is_cache_valid(key):
         _cache.pop(key, None)
         return None
-    return _cache[key]["value"]
+    value = _cache[key]["value"]
+    if isinstance(value, (dict, list)):
+        return copy.deepcopy(value)
+    return value
 
 
 def is_cache_valid(key: str) -> bool:

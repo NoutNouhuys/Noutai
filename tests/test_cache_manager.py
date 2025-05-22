@@ -28,6 +28,13 @@ class TestCacheManager(unittest.TestCase):
         clear_cache('a')
         self.assertIsNone(read_from_cache('a'))
 
+    def test_read_returns_copy_for_mutable(self):
+        data = [1, 2, 3]
+        write_to_cache('list', data)
+        cached = read_from_cache('list')
+        cached.append(4)
+        self.assertEqual(read_from_cache('list'), [1, 2, 3])
+
 
 if __name__ == '__main__':
     unittest.main()
