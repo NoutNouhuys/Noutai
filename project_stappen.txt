@@ -6,6 +6,7 @@
 2. [✓] Integratie met Anthropic Claude API
 3. [✓] Implementatie van werkwijze en system prompt
 4. [✓] Verwijderen van de overbodige get_werkwijze tool (de werkwijze wordt al automatisch toegevoegd aan de system prompt)
+5. [✓] Fix: System prompt wordt correct in LLM cache geladen (bugfix)
 
 ## Huidige stap
 
