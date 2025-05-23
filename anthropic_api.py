@@ -239,17 +239,6 @@ class AnthropicAPI:
                     emit_log("Verbinding met MCP-server opgezet")
                 tools = await mcp_connector_instance.get_tools()
 
-            tools.append(
-                {
-                    "name": "get_werkwijze",
-                    "description": (
-                        "Read the werkwijze for the project. "
-                        "This is important as it gives the steps to take for development."
-                    ),
-                    "input_schema": {"type": "object", "properties": {}, "required": []},
-                }
-            )
-
             unique_tools = []
             seen = set()
             for t in tools:
@@ -277,20 +266,17 @@ class AnthropicAPI:
                     tool_id = c.id
 
                     try:
-                        if tool_name == "get_werkwijze":
-                            tool_result = self.werkwijze or "Werkwijze not found"
-                        else:
-                            if not mcp_connector_instance.session:
-                                await mcp_connector_instance.connect_to_server(
-                                    server_script_path, server_venv_path
-                                )
-                                connection_opened = True
-                                if include_logs:
-                                    emit_log("Verbinding met MCP-server opgezet")
-                            result = await mcp_connector_instance.use_tool(
-                                tool_name=tool_name, tool_args=tool_args
+                        if not mcp_connector_instance.session:
+                            await mcp_connector_instance.connect_to_server(
+                                server_script_path, server_venv_path
                             )
-                            tool_result = result.content
+                            connection_opened = True
+                            if include_logs:
+                                emit_log("Verbinding met MCP-server opgezet")
+                        result = await mcp_connector_instance.use_tool(
+                            tool_name=tool_name, tool_args=tool_args
+                        )
+                        tool_result = result.content
 
                         logger.info(
                             f"Tool '{tool_name}' executed successfully with result: {tool_result}"
