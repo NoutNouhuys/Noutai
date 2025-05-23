@@ -117,6 +117,20 @@ class AnthropicAPI:
                 "description": "Current most intelligent model",
                 "context_length": 200000,
                 "max_tokens": 20480,
+            },
+            {
+                "id": "claude-sonnet-4-20250514",
+                "name":"Claude 4 Sonnet",
+                "description": "Improved reasoning and intelligence capabilities compared to Claude Sonnet 3.7",
+                "context_length": 200000,
+                "max_tokens": 20480,
+            },
+            {
+                "id": "claude-opus-4-20250514",
+                "name":"Claude 4 Opus",
+                "description": "Most capable model with superior reasoning and intelligence, Slower than Sonnet models,Best for complex tasks requiring deep analysis",
+                "context_length": 200000,
+                "max_tokens": 20480,
             }
         ]
     
