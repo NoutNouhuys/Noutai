@@ -6,7 +6,6 @@
 | **`mcp_connector.py`**         | Asynchronous helper for connecting to MCP servers and invoking tools via stdio.                                                                                          |
 | **`database.py`**              | Initializes SQLAlchemy, provides a session factory and runs migrations.                                                                                                  |
 | **`config.py`**                | Defines configuration classes for different environments (development, testing, production, docker) and a `get_config()` helper.                                         |
-| **`cache_manager.py`**         | Simple in-memory cache used for werkwijze and MCP tool results. |
 | **`user.py`**                  | Simple file‑based user model (compatible with Flask‑Login) storing user info in the instance directory.                                                                  |
 | **`models/`**                  |                                                                                                                                                                          |
 |   `conversation.py`            | SQLAlchemy models `Conversation` and `Message`.                                                                                                                          |

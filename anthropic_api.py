@@ -12,12 +12,6 @@ from flask import current_app
 from repositories.conversation_repository import ConversationRepository
 from config import BaseConfig
 import mcp_connector
-from cache_manager import (
-    write_to_cache,
-    read_from_cache,
-    is_cache_valid,
-    clear_cache,
-)
 
 # Setup logger
 logger = logging.getLogger(__name__)
@@ -53,9 +47,6 @@ class AnthropicAPI:
         
         # Configure default model and parameters
         self._configure_defaults()
-
-        # Load important repository files into memory cache
-        self._load_file_cache()
     
     def _configure_defaults(self):
         """Configure default model and parameters from app config"""
@@ -76,22 +67,16 @@ class AnthropicAPI:
             f"global max_tokens: {self.max_tokens}, cache_ttl: {self.cache_ttl}"
         )
 
-    def _load_file_cache(self) -> None:
-        """Load important repository files into an in-memory cache."""
-        base_path = os.path.dirname(__file__)
-        files = {
-            "werkwijze": os.path.join(base_path, "werkwijze", "werkwijze.txt"),
-            "system_prompt": os.path.join(base_path, "system_prompt.txt"),
-            "project_structure": os.path.join(base_path, "project_structure.md"),
-        }
+    def _read_werkwijze(self) -> str:
+        """Read the werkwijze instructions from disk."""
+        path = os.path.join(os.path.dirname(__file__), "werkwijze", "werkwijze.txt")
+        try:
+            with open(path, "r", encoding="utf-8") as file:
+                return file.read()
+        except FileNotFoundError:
+            logger.warning(f"Werkwijze file not found at {path}")
+            return ""
 
-        for key, path in files.items():
-            try:
-                with open(path, "r", encoding="utf-8") as file:
-                    write_to_cache(key, file.read())
-            except FileNotFoundError:
-                logger.warning(f"File {path} not found for cache key '{key}'")
-                write_to_cache(key, None)
 
     def _apply_cache_control(self, messages: List[Dict[str, Any]]) -> None:
         """Mark the stable prefix of messages for Anthropic prompt caching."""
@@ -235,29 +220,17 @@ class AnthropicAPI:
         """Internal coroutine to send the prompt and handle tool use."""
         mcp_connector_instance = mcp_connector.MCPConnector()
         tools: List[Dict[str, Any]] = []
-        tools_cache_key = "mcp_tools"
         connection_opened = False
 
         try:
             if server_script_path:
-                if is_cache_valid(tools_cache_key):
-                    tools = read_from_cache(tools_cache_key) or []
-                else:
-                    await mcp_connector_instance.connect_to_server(
-                        server_script_path, server_venv_path
-                    )
-                    connection_opened = True
-                    if include_logs:
-                        emit_log("Verbinding met MCP-server opgezet")
-                    tools = await mcp_connector_instance.get_tools()
-                    write_to_cache(
-                        tools_cache_key,
-                        tools,
-                        expiry=self.config.get(
-                            "CACHE_DEFAULT_EXPIRATION",
-                            BaseConfig.CACHE_DEFAULT_EXPIRATION,
-                        ),
-                    )
+                await mcp_connector_instance.connect_to_server(
+                    server_script_path, server_venv_path
+                )
+                connection_opened = True
+                if include_logs:
+                    emit_log("Verbinding met MCP-server opgezet")
+                tools = await mcp_connector_instance.get_tools()
 
             tools.append(
                 {
@@ -298,9 +271,7 @@ class AnthropicAPI:
 
                     try:
                         if tool_name == "get_werkwijze":
-                            if not is_cache_valid("werkwijze"):
-                                self._load_file_cache()
-                            tool_result = read_from_cache("werkwijze") or ""
+                            tool_result = self._read_werkwijze()
                         else:
                             if not mcp_connector_instance.session:
                                 await mcp_connector_instance.connect_to_server(
