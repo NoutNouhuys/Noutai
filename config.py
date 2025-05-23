@@ -1,6 +1,8 @@
 import os
 import logging
+from functools import cached_property
 from dotenv import load_dotenv
+from anthropic_config import AnthropicConfig
 
 # Setup module logger
 logger = logging.getLogger(__name__)
@@ -24,31 +26,6 @@ class BaseConfig:
     GOOGLE_CLIENT_SECRET = os.environ.get('GOOGLE_CLIENT_SECRET')
     GOOGLE_DISCOVERY_URL = 'https://accounts.google.com/.well-known/openid-configuration'
     
-    # Anthropic API Configuration
-    ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY')
-    ANTHROPIC_DEFAULT_MODEL = os.environ.get('ANTHROPIC_DEFAULT_MODEL') or 'claude-3-haiku-20240307'
-    ANTHROPIC_MAX_TOKENS = int(os.environ.get('ANTHROPIC_MAX_TOKENS') or 4000)
-    ANTHROPIC_CACHE_TTL = os.environ.get('ANTHROPIC_CACHE_TTL', '5m')
-
-    # Load system prompt from file
-    _base_path = os.path.dirname(__file__)
-    _system_prompt_path = os.path.join(_base_path, 'system_prompt.txt')
-    try:
-        with open(_system_prompt_path, 'r', encoding='utf-8') as file:
-            ANTHROPIC_SYSTEM_PROMPT = file.read()
-    except FileNotFoundError:
-        logger.warning(f"system_prompt.txt not found at {_system_prompt_path}")
-        ANTHROPIC_SYSTEM_PROMPT = None
-    
-    # Load werkwijze from file
-    _werkwijze_path = os.path.join(_base_path, 'werkwijze', 'werkwijze.txt')
-    try:
-        with open(_werkwijze_path, 'r', encoding='utf-8') as file:
-            ANTHROPIC_WERKWIJZE = file.read()
-    except FileNotFoundError:
-        logger.warning(f"werkwijze.txt not found at {_werkwijze_path}")
-        ANTHROPIC_WERKWIJZE = None
-    
     # Database Configuration
     DATABASE_URI = os.environ.get('DATABASE_URI') or 'sqlite:///app.db'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -64,10 +41,6 @@ class BaseConfig:
     # Logging Configuration
     LOG_LEVEL = logging.INFO
     LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-
-    # MCP Configuration
-    MCP_SERVERS = os.getenv("MCP_SERVERS", "").split(",")
-    #print(f"DEBUG: Hier wordt MCP_SERVERS WEL GELADEN MAAR: {MCP_SERVERS}")
     
     # Rate Limiting
     RATE_LIMITING_ENABLED = True
@@ -77,7 +50,63 @@ class BaseConfig:
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB max file size
     UPLOAD_FOLDER = 'uploads'
     ALLOWED_EXTENSIONS = {'txt', 'pdf', 'csv', 'xlsx', 'docx'}
-
+    
+    @cached_property
+    def anthropic_config(self) -> AnthropicConfig:
+        """Lazy-loaded Anthropic configuration."""
+        # Create a config dict from current instance attributes for backwards compatibility
+        config_dict = {
+            'ANTHROPIC_API_KEY': os.environ.get('ANTHROPIC_API_KEY'),
+            'ANTHROPIC_DEFAULT_MODEL': os.environ.get('ANTHROPIC_DEFAULT_MODEL') or 'claude-3-haiku-20240307',
+            'ANTHROPIC_MAX_TOKENS': int(os.environ.get('ANTHROPIC_MAX_TOKENS') or 4000),
+            'ANTHROPIC_CACHE_TTL': os.environ.get('ANTHROPIC_CACHE_TTL', '5m'),
+            'MCP_SERVERS': os.getenv("MCP_SERVERS", ""),
+        }
+        return AnthropicConfig(config_dict=config_dict)
+    
+    def get_anthropic_config_dict(self) -> dict:
+        """Get Anthropic configuration as a dictionary for backwards compatibility."""
+        config = self.anthropic_config
+        return {
+            'ANTHROPIC_API_KEY': config.api_key if hasattr(config, '_api_key') and config._api_key else os.environ.get('ANTHROPIC_API_KEY'),
+            'ANTHROPIC_DEFAULT_MODEL': config.default_model,
+            'ANTHROPIC_MAX_TOKENS': config.max_tokens,
+            'ANTHROPIC_CACHE_TTL': config.cache_ttl,
+            'ANTHROPIC_SYSTEM_PROMPT': config.system_prompt,
+            'ANTHROPIC_WERKWIJZE': config.werkwijze,
+            'MCP_SERVERS': config.mcp_servers,
+        }
+    
+    def __getattr__(self, name):
+        """Provide backwards compatibility for Anthropic config attributes."""
+        if name.startswith('ANTHROPIC_') or name == 'MCP_SERVERS':
+            config_dict = self.get_anthropic_config_dict()
+            if name in config_dict:
+                return config_dict[name]
+        raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+    
+    def validate(self) -> bool:
+        """
+        Validate the configuration.
+        
+        Returns:
+            True if configuration is valid
+            
+        Raises:
+            ValueError: If required configuration is missing
+        """
+        # Validate base config
+        if not self.SECRET_KEY or self.SECRET_KEY == 'dev-key-unsafe-for-production':
+            logger.warning("Using default SECRET_KEY - not safe for production")
+            
+        # Validate Anthropic config if needed
+        try:
+            self.anthropic_config.validate()
+        except ValueError as e:
+            logger.error(f"Anthropic configuration validation failed: {e}")
+            # Don't raise here as Anthropic might not be required for all operations
+            
+        return True
 
 
 class DevelopmentConfig(BaseConfig):
@@ -115,9 +144,24 @@ class ProductionConfig(BaseConfig):
     DEBUG = False
     TESTING = False
     
-    # Ensure these are set in production environment 
-    # and not using default development values
-    def __init__(self):
+    # Security settings for production
+    SESSION_COOKIE_SECURE = True
+    REMEMBER_COOKIE_SECURE = True
+    SSL_REDIRECT = True
+    
+    # Enable rate limiting in production
+    RATE_LIMITING_ENABLED = True
+    
+    def validate(self) -> bool:
+        """
+        Validate production configuration.
+        
+        Returns:
+            True if configuration is valid
+            
+        Raises:
+            ValueError: If required configuration is missing
+        """
         if not os.environ.get('SECRET_KEY'):
             raise ValueError("Production environment requires SECRET_KEY to be set")
         
@@ -126,14 +170,8 @@ class ProductionConfig(BaseConfig):
         
         if not os.environ.get('GOOGLE_CLIENT_ID') or not os.environ.get('GOOGLE_CLIENT_SECRET'):
             raise ValueError("Production environment requires Google OAuth credentials to be set")
-    
-    # Security settings for production
-    SESSION_COOKIE_SECURE = True
-    REMEMBER_COOKIE_SECURE = True
-    SSL_REDIRECT = True
-    
-    # Enable rate limiting in production
-    RATE_LIMITING_ENABLED = True
+            
+        return super().validate()
 
 
 class DockerConfig(ProductionConfig):
