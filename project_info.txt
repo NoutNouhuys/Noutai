@@ -1,87 +1,58 @@
-# Project Information
+# Project Informatie: aiontwikkelhulp
 
-## A. Projectoverzicht
-AI Ontwikkelhulp is een webapplicatie die ontwikkelaars helpt bij het ontwikkelen van projecten door middel van interactie met AI-modellen zoals Claude. Het biedt een gebruiksvriendelijke interface voor het stellen van vragen, het beheren van gesprekken en het inzetten van AI-tools.
+## Projectoverzicht
+De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze.
 
-## B. Architectuur
-De applicatie is gebouwd met Flask als backend framework en maakt gebruik van de Anthropic API om met Claude-modellen te communiceren. De architectuur volgt een modulaire opzet met duidelijke scheiding van verantwoordelijkheden.
+## Architectuur
+De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruikers te helpen bij het ontwikkelen van software met behulp van AI:
 
-## C. Modules
+### Core Modules:
+- Flask web-applicatie (app.py)
+- Anthropic API integratie (anthropic_api.py)
+- MCP Connector voor tools integratie (mcp_connector.py)
+- Configuratie (config.py)
+- Repository beheer
 
-### app.py
-- **Status**: Actief
-- **Pad**: /app.py
-- **Functionaliteit**: Flask applicatie factory die logging, beveiliging, database-initialisatie configureert en authenticatie- en API-routes registreert. Start de webserver wanneer direct uitgevoerd.
-- **Afhankelijkheden**: auth, database, routes
-
-### auth.py
-- **Status**: Actief
-- **Pad**: /auth.py
-- **Functionaliteit**: Behandelt Google OAuth login/logout met Flask-Login. Biedt een decorator om toegang te beperken tot `@lynxx.com` gebruikers.
-- **Afhankelijkheden**: Flask-Login
+## Modules
 
 ### anthropic_api.py
-- **Status**: Actief, bijgewerkt met model-specifieke token limieten
+- **Status**: Actief, onderhouden
 - **Pad**: /anthropic_api.py
-- **Functionaliteit**: Wrapper rond de Anthropic Claude API. Beheert gesprekken, verstuurt prompts (met optionele MCP-toolgebruik) en retourneert resultaten. Implementeert nu model-specifieke maximum output tokens.
-- **Afhankelijkheden**: mcp_connector, repositories.conversation_repository
+- **Functionaliteit**: Zorgt voor de integratie met de Anthropic Claude API. Handelt prompts, conversaties en tooling af.
+- **Afhankelijkheden**: config.py, mcp_connector.py, repositories
+
+### config.py
+- **Status**: Actief, onderhouden
+- **Pad**: /config.py
+- **Functionaliteit**: Verzorgt de configuratie van de applicatie, inclusief API sleutels, model parameters en system prompts.
+- **Afhankelijkheden**: Geen directe afhankelijkheden
 
 ### mcp_connector.py
 - **Status**: Actief
 - **Pad**: /mcp_connector.py
-- **Functionaliteit**: Asynchrone helper voor het verbinden met MCP-servers en het aanroepen van tools via stdio.
-- **Afhankelijkheden**: Geen
+- **Functionaliteit**: Zorgt voor communicatie met externe tools die AI kan gebruiken.
+- **Afhankelijkheden**: Geen directe afhankelijkheden binnen het project
 
-### database.py
+### app.py
 - **Status**: Actief
-- **Pad**: /database.py
-- **Functionaliteit**: Initialiseert SQLAlchemy, biedt een session factory en voert migraties uit.
-- **Afhankelijkheden**: SQLAlchemy, models
+- **Pad**: /app.py
+- **Functionaliteit**: Flask web-applicatie die de gebruikersinterface biedt.
+- **Afhankelijkheden**: anthropic_api.py, config.py
 
-### config.py
+### werkwijze/werkwijze.txt
 - **Status**: Actief
-- **Pad**: /config.py
-- **Functionaliteit**: Definieert configuratieklassen voor verschillende omgevingen (development, testing, production, docker) en een `get_config()` helper.
-- **Afhankelijkheden**: Geen
+- **Pad**: /werkwijze/werkwijze.txt
+- **Functionaliteit**: Bevat instructies voor het AI-model over hoe repository-ontwikkeling moet verlopen.
+- **Afhankelijkheden**: Wordt gebruikt door anthropic_api.py
 
-### user.py
+### system_prompt.txt
 - **Status**: Actief
-- **Pad**: /user.py
-- **Functionaliteit**: Eenvoudig bestandsgebaseerd gebruikersmodel (compatibel met Flask-Login) dat gebruikersinformatie opslaat in de instance directory.
-- **Afhankelijkheden**: Flask-Login
+- **Pad**: /system_prompt.txt
+- **Functionaliteit**: Bevat de basis system prompt voor het AI-model.
+- **Afhankelijkheden**: Wordt gebruikt door anthropic_api.py
 
-### models/conversation.py
-- **Status**: Actief
-- **Pad**: /models/conversation.py
-- **Functionaliteit**: SQLAlchemy modellen `Conversation` en `Message`.
-- **Afhankelijkheden**: SQLAlchemy
+## Recente Wijzigingen
 
-### repositories/conversation_repository.py
-- **Status**: Actief
-- **Pad**: /repositories/conversation_repository.py
-- **Functionaliteit**: CRUD-operaties voor gesprekken en berichten.
-- **Afhankelijkheden**: models.conversation
-
-### routes/api.py
-- **Status**: Actief
-- **Pad**: /routes/api.py
-- **Functionaliteit**: Blueprint met API-endpoints voor modellen, gesprekken en prompts.
-- **Afhankelijkheden**: anthropic_api
-
-### tests/
-- **Status**: Actief
-- **Pad**: /tests/
-- **Functionaliteit**: Unittests voor configuratie, authenticatie, de API-laag en database repository.
-- **Afhankelijkheden**: De te testen modules
-
-### migrations/
-- **Status**: Actief
-- **Pad**: /migrations/
-- **Functionaliteit**: Alembic setup en een migratiescript om een modelveld te hernoemen.
-- **Afhankelijkheden**: Alembic, models
-
-### static/, templates/
-- **Status**: Actief
-- **Pad**: /static/, /templates/
-- **Functionaliteit**: Frontend-resources (CSS/JS) en HTML-templates voor de webinterface.
-- **Afhankelijkheden**: Geen
+### Verwijderen van get_werkwijze tool
+- De `get_werkwijze` tool is verwijderd uit `anthropic_api.py` omdat deze overbodig was naast de automatische integratie van de werkwijze in de system prompt.
+- De werkwijze wordt nog steeds automatisch in de system prompt opgenomen via de `send_prompt` functie.
