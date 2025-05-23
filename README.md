@@ -216,6 +216,14 @@ pytest tests/test_config.py
 pytest tests/test_anthropic_api.py
 ```
 
+## Werkwijze integratie
+
+De functie `AnthropicAPI.send_prompt` accepteert nu optioneel een `repo_path`.
+Wanneer dit pad een `werkwijze/werkwijze.txt` bevat, wordt deze tekst als een
+`system` bericht toegevoegd voordat de gebruikersprompt wordt verzonden. Dit
+bericht wordt gemarkeerd met cache-control metadata zodat het tijdelijk kan
+worden opgeslagen door het model.
+
 ## Bijdragen aan het project
 
 Zie [CONTRIBUTING.md](CONTRIBUTING.md) voor richtlijnen over het bijdragen aan dit project.

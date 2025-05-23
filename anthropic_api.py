@@ -67,9 +67,20 @@ class AnthropicAPI:
             f"global max_tokens: {self.max_tokens}, cache_ttl: {self.cache_ttl}"
         )
 
-    def _read_werkwijze(self) -> str:
-        """Read the werkwijze instructions from disk."""
-        path = os.path.join(os.path.dirname(__file__), "werkwijze", "werkwijze.txt")
+    def _read_werkwijze(self, repo_path: Optional[str] = None) -> str:
+        """Read the werkwijze instructions from disk.
+
+        Args:
+            repo_path: Optional repository path to read the werkwijze from.
+
+        Returns:
+            Contents of the werkwijze file or an empty string if not found.
+        """
+        if repo_path:
+            path = os.path.join(repo_path, "werkwijze", "werkwijze.txt")
+        else:
+            path = os.path.join(os.path.dirname(__file__), "werkwijze", "werkwijze.txt")
+
         try:
             with open(path, "r", encoding="utf-8") as file:
                 return file.read()
@@ -215,9 +226,23 @@ class AnthropicAPI:
         server_script_path: Optional[str],
         server_venv_path: Optional[str],
         include_logs: bool,
+        repo_path: Optional[str],
         emit_log: callable,
     ) -> str:
-        """Internal coroutine to send the prompt and handle tool use."""
+        """Internal coroutine to send the prompt and handle tool use.
+
+        Args:
+            message_params: Parameters for the Anthropic API call.
+            server_script_path: Optional path to an MCP server script.
+            server_venv_path: Optional path to the server's virtual environment.
+            include_logs: Whether to emit log messages.
+            repo_path: Repository path for locating ``werkwijze.txt`` when the
+                ``get_werkwijze`` tool is invoked.
+            emit_log: Callback for log emission.
+
+        Returns:
+            The text content from the model's response.
+        """
         mcp_connector_instance = mcp_connector.MCPConnector()
         tools: List[Dict[str, Any]] = []
         connection_opened = False
@@ -271,7 +296,7 @@ class AnthropicAPI:
 
                     try:
                         if tool_name == "get_werkwijze":
-                            tool_result = self._read_werkwijze()
+                            tool_result = self._read_werkwijze(repo_path)
                         else:
                             if not mcp_connector_instance.session:
                                 await mcp_connector_instance.connect_to_server(
@@ -343,8 +368,23 @@ class AnthropicAPI:
         max_tokens: Optional[int] = None,
         include_logs: bool = True,
         log_callback: Optional[callable] = None,
+        repo_path: Optional[str] = None,
     ) -> Dict[str, Any]:
-        """Send a prompt to Claude and return the response."""
+        """Send a prompt to Claude and return the response.
+
+        Args:
+            prompt: User prompt to send.
+            model_id: Optional model identifier.
+            conversation_id: Conversation ID to continue.
+            system_prompt: Optional system prompt override.
+            max_tokens: Maximum output tokens.
+            include_logs: Whether to capture log messages.
+            log_callback: Optional callback for log messages.
+            repo_path: Path to a repository containing ``werkwijze/werkwijze.txt``.
+
+        Returns:
+            Dictionary with response data and metadata.
+        """
 
         model_id = model_id or self.default_model
         system_prompt = system_prompt or self.system_prompt
@@ -393,6 +433,16 @@ class AnthropicAPI:
                 except Exception as db_error:
                     logger.error(f"Failed to load conversation from database: {str(db_error)}")
 
+        if repo_path:
+            werkwijze_path = os.path.join(repo_path, "werkwijze", "werkwijze.txt")
+            if os.path.isfile(werkwijze_path):
+                try:
+                    with open(werkwijze_path, "r", encoding="utf-8") as f:
+                        werkwijze_text = f.read()
+                    messages.append({"role": "system", "content": werkwijze_text})
+                except Exception as read_error:
+                    logger.error(f"Failed to read werkwijze: {read_error}")
+
         messages.append({"role": "user", "content": prompt})
         self._apply_cache_control(messages)
 
@@ -410,6 +460,7 @@ class AnthropicAPI:
                     server_script_path,
                     server_venv_path,
                     include_logs,
+                    repo_path,
                     emit_log,
                 )
             )
