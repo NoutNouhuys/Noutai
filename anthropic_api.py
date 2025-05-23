@@ -61,33 +61,14 @@ class AnthropicAPI:
         
         # Set default system prompt
         self.system_prompt = self.config.get('ANTHROPIC_SYSTEM_PROMPT') or None
+        
+        # Set default werkwijze
+        self.werkwijze = self.config.get('ANTHROPIC_WERKWIJZE') or None
 
         logger.debug(
             f"AnthropicAPI configured with model: {self.default_model}, "
             f"global max_tokens: {self.max_tokens}, cache_ttl: {self.cache_ttl}"
         )
-
-    def _read_werkwijze(self, repo_path: Optional[str] = None) -> str:
-        """Read the werkwijze instructions from disk.
-
-        Args:
-            repo_path: Optional repository path to read the werkwijze from.
-
-        Returns:
-            Contents of the werkwijze file or an empty string if not found.
-        """
-        if repo_path:
-            path = os.path.join(repo_path, "werkwijze", "werkwijze.txt")
-        else:
-            path = os.path.join(os.path.dirname(__file__), "werkwijze", "werkwijze.txt")
-
-        try:
-            with open(path, "r", encoding="utf-8") as file:
-                return file.read()
-        except FileNotFoundError:
-            logger.warning(f"Werkwijze file not found at {path}")
-            return ""
-
 
     def _apply_cache_control(self, messages: List[Dict[str, Any]]) -> None:
         """Mark the stable prefix of messages for Anthropic prompt caching."""
@@ -226,7 +207,6 @@ class AnthropicAPI:
         server_script_path: Optional[str],
         server_venv_path: Optional[str],
         include_logs: bool,
-        repo_path: Optional[str],
         emit_log: callable,
     ) -> str:
         """Internal coroutine to send the prompt and handle tool use.
@@ -236,8 +216,6 @@ class AnthropicAPI:
             server_script_path: Optional path to an MCP server script.
             server_venv_path: Optional path to the server's virtual environment.
             include_logs: Whether to emit log messages.
-            repo_path: Repository path for locating ``werkwijze.txt`` when the
-                ``get_werkwijze`` tool is invoked.
             emit_log: Callback for log emission.
 
         Returns:
@@ -296,7 +274,7 @@ class AnthropicAPI:
 
                     try:
                         if tool_name == "get_werkwijze":
-                            tool_result = self._read_werkwijze(repo_path)
+                            tool_result = self.werkwijze or "Werkwijze not found"
                         else:
                             if not mcp_connector_instance.session:
                                 await mcp_connector_instance.connect_to_server(
@@ -380,7 +358,7 @@ class AnthropicAPI:
             max_tokens: Maximum output tokens.
             include_logs: Whether to capture log messages.
             log_callback: Optional callback for log messages.
-            repo_path: Path to a repository containing ``werkwijze/werkwijze.txt``.
+            repo_path: Path to a repository (no longer used for werkwijze.txt loading).
 
         Returns:
             Dictionary with response data and metadata.
@@ -433,15 +411,9 @@ class AnthropicAPI:
                 except Exception as db_error:
                     logger.error(f"Failed to load conversation from database: {str(db_error)}")
 
-        if repo_path:
-            werkwijze_path = os.path.join(repo_path, "werkwijze", "werkwijze.txt")
-            if os.path.isfile(werkwijze_path):
-                try:
-                    with open(werkwijze_path, "r", encoding="utf-8") as f:
-                        werkwijze_text = f.read()
-                    messages.append({"role": "system", "content": werkwijze_text})
-                except Exception as read_error:
-                    logger.error(f"Failed to read werkwijze: {read_error}")
+        # Always include werkwijze in the conversation if available
+        if self.werkwijze:
+            messages.append({"role": "system", "content": self.werkwijze})
 
         messages.append({"role": "user", "content": prompt})
         self._apply_cache_control(messages)
@@ -460,7 +432,6 @@ class AnthropicAPI:
                     server_script_path,
                     server_venv_path,
                     include_logs,
-                    repo_path,
                     emit_log,
                 )
             )
