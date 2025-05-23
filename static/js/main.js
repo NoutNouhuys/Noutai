@@ -143,20 +143,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Function to load available models
-    function loadAvailableModels() {
+    function loadAvailableModels(selectEl = modelSelect) {
+        if (!selectEl) {
+            return;
+        }
+
         fetch('/api/models')
         .then(response => response.json())
         .then(data => {
             if (data.success && data.models) {
                 // Clear existing options
-                modelSelect.innerHTML = '';
-                
+                selectEl.innerHTML = '';
+
                 // Add models to dropdown
                 data.models.forEach(model => {
                     const option = document.createElement('option');
                     option.value = model.id;
                     option.textContent = `${model.name} - ${model.description}`;
-                    modelSelect.appendChild(option);
+                    selectEl.appendChild(option);
                 });
             } else {
                 console.error('Kon modellen niet laden:', data.error);

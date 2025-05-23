@@ -38,8 +38,7 @@ class TestToolDeduplication(unittest.TestCase):
         called_tools = mock_client.messages.create.call_args[1]['tools']
         names = [t['name'] for t in called_tools]
         self.assertEqual(len(names), len(set(names)))
-        self.assertIn('get_werkwijze', names)
-        self.assertIn('tool1', names)
+        self.assertEqual(names, ['tool1'])
 
 
 if __name__ == '__main__':
