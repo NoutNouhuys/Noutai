@@ -91,14 +91,14 @@ class AnthropicAPI:
                 "name": "Claude 3 Opus",
                 "description": "Most powerful for complex tasks",
                 "context_length": 200000,
-                "max_tokens": 4096,
+                "max_tokens": 20480,
             },
             {
                 "id": "claude-3-sonnet-20240229",
                 "name": "Claude 3 Sonnet",
                 "description": "Balance of intelligence and speed",
                 "context_length": 200000,
-                "max_tokens": 4096,
+                "max_tokens": 8192,
             },
             {
                 "id": "claude-3-haiku-20240307",
@@ -112,7 +112,7 @@ class AnthropicAPI:
                 "name":"Claude 3.7 Sonnet",
                 "description": "Current most intelligent model",
                 "context_length": 200000,
-                "max_tokens": 4096,
+                "max_tokens": 20480,
             }
         ]
     
