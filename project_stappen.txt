@@ -6,17 +6,27 @@
 2. [✓] Integratie met Anthropic Claude API
 3. [✓] Implementatie van werkwijze en system prompt
 4. [✓] Verwijderen van de overbodige get_werkwijze tool (de werkwijze wordt al automatisch toegevoegd aan de system prompt)
+5. [✓] Refactoring van config.py en anthropic_api.py (Issue #30)
+   - Implementatie lazy loading voor configuratiebestanden
+   - Centralisatie Anthropic configuratie in anthropic_config.py
+   - Splitsing AnthropicAPI in kleinere componenten:
+     - anthropic_client.py voor pure API communicatie
+     - conversation_manager.py voor conversatie beheer
+     - mcp_integration.py voor MCP server integratie
+   - Toevoeging unit tests voor nieuwe modules
+   - Behoud backwards compatibility
 
 ## Huidige stap
 
-- Geen actuele openstaande stappen op dit moment
+- Wachten op goedkeuring pull request voor refactoring
 
 ## Toekomstige stappen (Must-have)
 
-1. Toevoegen van unit tests voor de anthropic_api module
+1. Uitbreiden van unit tests voor alle modules
 2. Verbeteren van error handling in de anthropic_api module
 3. Documentatie uitbreiden en verbeteren
 4. Verbeteren van logging functionaliteit
+5. Implementeren van proper storage backend voor ConversationManager
 
 ## Toekomstige stappen (Nice-to-have)
 
@@ -25,3 +35,4 @@
 3. Toevoegen van streaming response ondersteuning voor snellere feedback
 4. Implementeren van een systeem voor het opslaan en analyseren van gebruikte prompts
 5. Toevoegen van ondersteuning voor andere AI modellen naast Claude
+6. Verplaatsen van model configuratie naar een configuratiebestand in plaats van hardcoded
