@@ -70,15 +70,19 @@ class AnthropicAPI:
             f"global max_tokens: {self.max_tokens}, cache_ttl: {self.cache_ttl}"
         )
 
-    def _apply_cache_control(self, messages: List[Dict[str, Any]]) -> None:
-        """Apply prompt caching if supported by the API.
-
-        The Anthropic API no longer accepts the ``cache_control`` field inside
-        message objects.  To avoid request errors we skip setting this flag.
-        The method remains for future compatibility so existing calls do not
-        fail if caching is reintroduced later.
+    def _apply_cache_control(self, params: Dict[str, Any]) -> None:
+        """Apply prompt caching to the message parameters if supported by the API.
+        
+        Args:
+            params: The message parameters dictionary to update with cache control.
         """
-        return
+        # Check if caching is supported and enabled
+        if not self.cache_ttl:
+            return
+        
+        # Add cache control to the API parameters
+        params["cache_control"] = {"ttl": self.cache_ttl}
+        logger.debug(f"Added cache control with TTL: {self.cache_ttl}")
 
     def get_available_models(self) -> List[Dict[str, Any]]:
         """
@@ -409,11 +413,15 @@ class AnthropicAPI:
                 system_prompt = self.werkwijze
 
         messages.append({"role": "user", "content": prompt})
-        self._apply_cache_control(messages)
 
         message_params = {"model": model_id, "messages": messages, "max_tokens": max_tokens}
+        
+        # Apply cache control to the message parameters
+        self._apply_cache_control(message_params)
+        
         if system_prompt:
             message_params["system"] = system_prompt
+            logger.debug("Added system prompt to message parameters")
 
         server_script_path = os.environ.get("MCP_SERVER_SCRIPT")
         server_venv_path = os.environ.get("MCP_SERVER_VENV_PATH")
