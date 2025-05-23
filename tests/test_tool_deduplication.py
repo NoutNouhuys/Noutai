@@ -3,17 +3,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import os
 
 from anthropic_api import AnthropicAPI
-from cache_manager import clear_cache
 
 
 class TestToolDeduplication(unittest.TestCase):
     def setUp(self):
         os.environ['ANTHROPIC_API_KEY'] = 'test-key'
         os.environ['MCP_SERVER_SCRIPT'] = 'script.py'
-        clear_cache()
 
     def tearDown(self):
-        clear_cache()
         os.environ.pop('MCP_SERVER_SCRIPT', None)
         os.environ.pop('ANTHROPIC_API_KEY', None)
 
