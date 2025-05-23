@@ -22,23 +22,13 @@ class TestWerkwijzeRepo(unittest.TestCase):
         mock_anthropic.return_value = mock_client
 
         api = AnthropicAPI(api_key='test-key')
+        api.werkwijze = 'instructies'
 
-        temp_dir = tempfile.mkdtemp()
-        os.makedirs(os.path.join(temp_dir, 'werkwijze'), exist_ok=True)
-        werkwijze_file = os.path.join(temp_dir, 'werkwijze', 'werkwijze.txt')
-        with open(werkwijze_file, 'w', encoding='utf-8') as f:
-            f.write('instructies')
+        api.send_prompt('vraag', include_logs=False)
 
-        try:
-            api.send_prompt('vraag', repo_path=temp_dir, include_logs=False)
-        finally:
-            shutil.rmtree(temp_dir)
-
-        messages = mock_client.messages.create.call_args[1]['messages']
-        self.assertEqual(messages[-2]['role'], 'system')
-        self.assertEqual(messages[-2]['content'], 'instructies')
-        self.assertIn('cache_control', messages[-2])
-        self.assertEqual(messages[-2]['cache_control']['ttl'], '5m')
+        params = mock_client.messages.create.call_args[1]
+        self.assertIn('system', params)
+        self.assertIn('instructies', params['system'])
 
 
 if __name__ == '__main__':

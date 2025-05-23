@@ -411,9 +411,12 @@ class AnthropicAPI:
                 except Exception as db_error:
                     logger.error(f"Failed to load conversation from database: {str(db_error)}")
 
-        # Always include werkwijze in the conversation if available
+        # Combine configured werkwijze with any provided system prompt
         if self.werkwijze:
-            messages.append({"role": "system", "content": self.werkwijze})
+            if system_prompt:
+                system_prompt = f"{system_prompt}\n\n{self.werkwijze}"
+            else:
+                system_prompt = self.werkwijze
 
         messages.append({"role": "user", "content": prompt})
         self._apply_cache_control(messages)
