@@ -71,10 +71,14 @@ class AnthropicAPI:
         )
 
     def _apply_cache_control(self, messages: List[Dict[str, Any]]) -> None:
-        """Mark the stable prefix of messages for Anthropic prompt caching."""
-        if len(messages) <= 1:
-            return
-        messages[-2]["cache_control"] = {"type": "ephemeral", "ttl": self.cache_ttl}
+        """Apply prompt caching if supported by the API.
+
+        The Anthropic API no longer accepts the ``cache_control`` field inside
+        message objects.  To avoid request errors we skip setting this flag.
+        The method remains for future compatibility so existing calls do not
+        fail if caching is reintroduced later.
+        """
+        return
 
     def get_available_models(self) -> List[Dict[str, Any]]:
         """
