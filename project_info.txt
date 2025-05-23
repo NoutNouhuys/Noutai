@@ -56,3 +56,8 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 ### Verwijderen van get_werkwijze tool
 - De `get_werkwijze` tool is verwijderd uit `anthropic_api.py` omdat deze overbodig was naast de automatische integratie van de werkwijze in de system prompt.
 - De werkwijze wordt nog steeds automatisch in de system prompt opgenomen via de `send_prompt` functie.
+
+### Fix: System prompt wordt correct in LLM cache geladen
+- De `_apply_cache_control` functie in `anthropic_api.py` is verbeterd om caching correct toe te passen op de Anthropic API aanroepen.
+- Cache controle wordt nu direct op message_params toegepast in plaats van op individuele berichten.
+- Het cache_ttl wordt nu correct doorgegeven aan de API om de system prompt in de cache te laden.
