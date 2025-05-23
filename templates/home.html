@@ -67,10 +67,7 @@
                         <div>
                             <label for="model-select-window-1" class="form-label mb-0">Model:</label>
                             <select id="model-select-window-1" class="model-select form-select form-select-sm d-inline-block" style="width: auto;">
-                                <option value="claude-3-haiku-20240307">Claude 3 Haiku - Snel model</option>
-                                <option value="claude-3-sonnet-20240229">Claude 3 Sonnet - Gebalanceerd model</option>
-                                <option value="claude-3-opus-20240229">Claude 3 Opus - Geavanceerd model</option>
-                                <option value="claude-3-7-sonnet-20250219">Claude 3.7 Sonnet</option>
+                                <option selected disabled>Modellen laden...</option>
                             </select>
                         </div>
                         <div>
@@ -182,6 +179,29 @@ function fetchLastAssistantMessage() {
                 reject(error);
             });
     });
+}
+
+function populateModelSelect(selectEl) {
+    if (!selectEl) return;
+
+    fetch('/api/models')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.models) {
+                selectEl.innerHTML = '';
+                data.models.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.id;
+                    option.textContent = `${model.name} - ${model.description}`;
+                    selectEl.appendChild(option);
+                });
+            } else {
+                console.error('Kon modellen niet laden:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error bij het laden van modellen:', error);
+        });
 }
 
 
@@ -302,6 +322,10 @@ function initializeChatWindow(windowElement) {
         resetConversation(windowId);
     });
     
+    // Load available models for this window
+    const selectEl = windowElement.querySelector('.model-select');
+    populateModelSelect(selectEl);
+
     // Make this window active
     setActiveWindow(windowId);
     
@@ -341,9 +365,7 @@ function addChatWindow(initialInput) {
                 <div>
                     <label for="model-select-${newWindowId}" class="form-label mb-0">Model:</label>
                     <select id="model-select-${newWindowId}" class="model-select form-select form-select-sm d-inline-block">
-                        <option value="claude-3-haiku-20240307">Claude 3 Haiku - Snel model</option>
-                        <option value="claude-3-sonnet-20240229">Claude 3 Sonnet - Gebalanceerd model</option>
-                        <option value="claude-3-opus-20240229">Claude 3 Opus - Geavanceerd model</option>
+                        <option selected disabled>Modellen laden...</option>
                     </select>
                 </div>
                 <div>
@@ -375,8 +397,10 @@ function addChatWindow(initialInput) {
     setTimeout(() => {
         console.log(`Initializing new chat window: ${newWindowId}`); // Debugging
         initializeChatWindow(newWindow);
+        const selectEl = newWindow.querySelector('.model-select');
+        populateModelSelect(selectEl);
         setActiveWindow(newWindowId);
-    }, 100); 
+    }, 100);
 
     // Automatically send the initial input if there is one
     if (initialInput) {
