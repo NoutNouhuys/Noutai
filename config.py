@@ -30,6 +30,7 @@ class BaseConfig:
     ANTHROPIC_MAX_TOKENS = int(os.environ.get('ANTHROPIC_MAX_TOKENS') or 4000)
     ANTHROPIC_CACHE_TTL = os.environ.get('ANTHROPIC_CACHE_TTL', '5m')
 
+    # Load system prompt from file
     _base_path = os.path.dirname(__file__)
     _system_prompt_path = os.path.join(_base_path, 'system_prompt.txt')
     try:
@@ -38,6 +39,15 @@ class BaseConfig:
     except FileNotFoundError:
         logger.warning(f"system_prompt.txt not found at {_system_prompt_path}")
         ANTHROPIC_SYSTEM_PROMPT = None
+    
+    # Load werkwijze from file
+    _werkwijze_path = os.path.join(_base_path, 'werkwijze', 'werkwijze.txt')
+    try:
+        with open(_werkwijze_path, 'r', encoding='utf-8') as file:
+            ANTHROPIC_WERKWIJZE = file.read()
+    except FileNotFoundError:
+        logger.warning(f"werkwijze.txt not found at {_werkwijze_path}")
+        ANTHROPIC_WERKWIJZE = None
     
     # Database Configuration
     DATABASE_URI = os.environ.get('DATABASE_URI') or 'sqlite:///app.db'
