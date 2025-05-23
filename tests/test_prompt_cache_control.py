@@ -12,7 +12,7 @@ class TestPromptCacheControl(unittest.TestCase):
         os.environ.pop('ANTHROPIC_API_KEY', None)
 
     @patch('anthropic.Anthropic')
-    def test_cache_control_added(self, mock_anthropic):
+    def test_no_cache_control_set(self, mock_anthropic):
         mock_client = MagicMock()
         response_obj = MagicMock()
         content = MagicMock()
@@ -29,8 +29,7 @@ class TestPromptCacheControl(unittest.TestCase):
         api.send_prompt('Next', conversation_id=conv_id, include_logs=False)
 
         messages = mock_client.messages.create.call_args[1]['messages']
-        self.assertIn('cache_control', messages[-2])
-        self.assertEqual(messages[-2]['cache_control']['ttl'], '5m')
+        self.assertNotIn('cache_control', messages[-2])
 
 if __name__ == '__main__':
     unittest.main()
