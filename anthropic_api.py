@@ -427,7 +427,15 @@ class AnthropicAPI:
 
         message_params = {"model": model_id, "messages": messages, "max_tokens": max_tokens}
         if system_prompt:
-            message_params["system"] = system_prompt
+            message_params["system"] = [
+                    {
+                        "type": "text",
+                        "text": system_prompt,
+                        # Markeer dit blok als cachebaar – de eerste keer = Cache Write,
+                        # volgende keren identieke blok = Cache Read (-90 % kosten)
+                        "cache_control": {"type": "ephemeral"},
+                    }
+                ]
 
         server_script_path = os.environ.get("MCP_SERVER_SCRIPT")
         server_venv_path = os.environ.get("MCP_SERVER_VENV_PATH")
