@@ -1,65 +1,27 @@
-# Project Ontwikkelstappen
+# Project Stappen
 
-## Afgeronde Stappen
-1. Basisarchitectuur opgezet met Flask
-2. Integratie met Anthropic Claude API
-3. Beveiliging en authenticatie implementeren
-4. Database en repository laag voor gesprekken opzetten
-5. API routes implementeren
-6. Log streaming toevoegen aan chat interface
-7. Real-time log streaming via SSE toevoegen
-8. ✅ Model-specifieke max_tokens instellingen implementeren voor verschillende Claude modellen
+## Voltooide stappen
 
-## Huidige Stap
-- **Verbeter max token settings per Claude model type (AFGEROND)**
-  - In anthropic_api.py is nu een `max_tokens` veld toegevoegd aan elk model in de `get_available_models` functie
-  - De `get_model_max_tokens` methode is toegevoegd om de juiste max_tokens waarde op te halen voor een specifiek model
-  - De prompt verstuur logica gebruikt nu de max_tokens waarde van het geselecteerde model
-  - De bestaande configuratieparameter wordt behouden als override en fallback
+1. [✓] Initiële opzet van de aiontwikkelhulp applicatie
+2. [✓] Integratie met Anthropic Claude API
+3. [✓] Implementatie van werkwijze en system prompt
+4. [✓] Verwijderen van de overbodige get_werkwijze tool (de werkwijze wordt al automatisch toegevoegd aan de system prompt)
 
-## Volgende Must-Have Stappen
-0. Check en implementatie van Cache Write en Cache Read
-   - Bestand: Onderzoek of er van Cache Write en Cache Read gerbuik wordt gemaakt
-   - Werkwijze.txt in Cache zetten
-   - MCP Tools List in Cache zetten
+## Huidige stap
 
-1. Automatisch ophalen van modelspecificaties van Anthropic API
-   - Bestand: anthropic_api.py
-   - Dynamisch ophalen van beschikbare modellen
-   - Ophalen van actuele modellimieten
+- Geen actuele openstaande stappen op dit moment
 
-2. Verbeteren van de gebruikersinterface voor modelselectie
-   - Bestanden: templates/chat.html, static/js/chat.js
-   - Tonen van model-capaciteiten (context lengte, max tokens)
-   - Mogelijkheid om max_tokens in te stellen per gesprek
-   - Visualisatie van tokenverbruik
+## Toekomstige stappen (Must-have)
 
-3. Toevoegen van unit tests voor model-specifieke max_tokens functionaliteit
-   - Bestand: tests/test_anthropic_api.py
-   - Test correct ophalen van model-specifieke max_tokens
-   - Test fallback naar default max_tokens voor onbekende modellen
-   - Test override van max_tokens via parameter
+1. Toevoegen van unit tests voor de anthropic_api module
+2. Verbeteren van error handling in de anthropic_api module
+3. Documentatie uitbreiden en verbeteren
+4. Verbeteren van logging functionaliteit
 
-4. Implementeren van betere foutafhandeling in MCP-connector
-   - Bestand: mcp_connector.py
-   - Robuustere timeout-afhandeling
-   - Betere logging van fouten
-   - Consistente foutpropagatie
+## Toekomstige stappen (Nice-to-have)
 
-5. Toevoegen van rate limiting en retry-mechanisme voor Anthropic API
-   - Bestand: anthropic_api.py
-   - Implementeren van exponentiële backoff bij API rate limits
-   - Bijhouden van API-verbruik
-   - Configureerbare retry-instellingen
-
-## Nice-to-Have Stappen
-
-1. Implementeren van streaming respons
-   - Bestand: anthropic_api.py, routes/api.py
-   - Progressive rendering van Claude antwoorden
-   - Weergave van generatieproces in real-time
-
-2. Ondersteuning voor meerdere LLM-providers
-   - Nieuwe bestanden: openai_api.py, gemini_api.py
-   - Gemeenschappelijke interface voor alle providers
-   - Mogelijkheid om provider te kiezen per gesprek
+1. UI verbeteren voor gebruiksvriendelijkheid
+2. Toevoegen van gebruikers authenticatie
+3. Toevoegen van streaming response ondersteuning voor snellere feedback
+4. Implementeren van een systeem voor het opslaan en analyseren van gebruikte prompts
+5. Toevoegen van ondersteuning voor andere AI modellen naast Claude
