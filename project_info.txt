@@ -13,19 +13,49 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - Configuratie (config.py)
 - Repository beheer
 
+### Nieuwe Modules (Refactoring):
+- Anthropic configuratie (anthropic_config.py)
+- Anthropic client (anthropic_client.py)
+- Conversation manager (conversation_manager.py)
+- MCP integratie (mcp_integration.py)
+
 ## Modules
 
 ### anthropic_api.py
-- **Status**: Actief, onderhouden
+- **Status**: Gerefactored
 - **Pad**: /anthropic_api.py
-- **Functionaliteit**: Zorgt voor de integratie met de Anthropic Claude API. Handelt prompts, conversaties en tooling af.
-- **Afhankelijkheden**: config.py, mcp_connector.py, repositories
+- **Functionaliteit**: High-level API voor interactie met Anthropic Claude modellen. Coördineert tussen client, conversation management, en MCP integratie.
+- **Afhankelijkheden**: anthropic_config.py, anthropic_client.py, conversation_manager.py, mcp_integration.py, repositories
+
+### anthropic_config.py
+- **Status**: Nieuw toegevoegd
+- **Pad**: /anthropic_config.py
+- **Functionaliteit**: Centralized Anthropic-specifieke configuratie met lazy loading en validatie.
+- **Afhankelijkheden**: Geen directe afhankelijkheden
+
+### anthropic_client.py
+- **Status**: Nieuw toegevoegd
+- **Pad**: /anthropic_client.py
+- **Functionaliteit**: Pure API communicatie met Claude modellen, gescheiden van business logic.
+- **Afhankelijkheden**: anthropic_config.py
+
+### conversation_manager.py
+- **Status**: Nieuw toegevoegd
+- **Pad**: /conversation_manager.py
+- **Functionaliteit**: Beheert conversatie staat en geschiedenis, ondersteunt storage backends.
+- **Afhankelijkheden**: repositories (optioneel voor database storage)
+
+### mcp_integration.py
+- **Status**: Nieuw toegevoegd
+- **Pad**: /mcp_integration.py
+- **Functionaliteit**: Beheert MCP server connecties en tool gebruik.
+- **Afhankelijkheden**: mcp_connector.py, anthropic_config.py
 
 ### config.py
-- **Status**: Actief, onderhouden
+- **Status**: Gerefactored
 - **Pad**: /config.py
-- **Functionaliteit**: Verzorgt de configuratie van de applicatie, inclusief API sleutels, model parameters en system prompts.
-- **Afhankelijkheden**: Geen directe afhankelijkheden
+- **Functionaliteit**: Verzorgt de algemene applicatie configuratie. Anthropic-specifieke config is verplaatst naar anthropic_config.py.
+- **Afhankelijkheden**: anthropic_config.py
 
 ### mcp_connector.py
 - **Status**: Actief
@@ -43,16 +73,31 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Status**: Actief
 - **Pad**: /werkwijze/werkwijze.txt
 - **Functionaliteit**: Bevat instructies voor het AI-model over hoe repository-ontwikkeling moet verlopen.
-- **Afhankelijkheden**: Wordt gebruikt door anthropic_api.py
+- **Afhankelijkheden**: Wordt gebruikt door anthropic_config.py (lazy loaded)
 
 ### system_prompt.txt
 - **Status**: Actief
 - **Pad**: /system_prompt.txt
 - **Functionaliteit**: Bevat de basis system prompt voor het AI-model.
-- **Afhankelijkheden**: Wordt gebruikt door anthropic_api.py
+- **Afhankelijkheden**: Wordt gebruikt door anthropic_config.py (lazy loaded)
+
+### tests/test_anthropic_config.py
+- **Status**: Nieuw toegevoegd
+- **Pad**: /tests/test_anthropic_config.py
+- **Functionaliteit**: Unit tests voor AnthropicConfig module.
+- **Afhankelijkheden**: anthropic_config.py
+
+### tests/test_conversation_manager.py
+- **Status**: Nieuw toegevoegd
+- **Pad**: /tests/test_conversation_manager.py
+- **Functionaliteit**: Unit tests voor ConversationManager module.
+- **Afhankelijkheden**: conversation_manager.py
 
 ## Recente Wijzigingen
 
-### Verwijderen van get_werkwijze tool
-- De `get_werkwijze` tool is verwijderd uit `anthropic_api.py` omdat deze overbodig was naast de automatische integratie van de werkwijze in de system prompt.
-- De werkwijze wordt nog steeds automatisch in de system prompt opgenomen via de `send_prompt` functie.
+### Refactoring van config.py en anthropic_api.py (Issue #30)
+- **Configuratie Management**: Implementatie van lazy loading voor configuratiebestanden, centralisatie van Anthropic configuratie in aparte module
+- **Code Duplicatie**: Verwijdering van dubbele configuratie logic, consolidatie van API key validatie
+- **Architectuur Verbetering**: Splitsing van AnthropicAPI in kleinere, gefocuste componenten met duidelijke verantwoordelijkheden
+- **Backwards Compatibility**: Behoud van bestaande interfaces voor minimale impact op bestaande code
+- **Testing**: Toevoeging van unit tests voor nieuwe modules
