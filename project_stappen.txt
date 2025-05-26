@@ -52,43 +52,48 @@
    - Oplossing: User ID wordt vastgelegd voordat thread start
    - Flask app context wordt correct doorgegeven aan worker functie
    - Worker functie accepteert nu app en user_id als parameters
+10. [✓] Toevoegen opmaak in weergave van log (Issue #41)
+   - Implementatie van LogFormatter JavaScript module
+   - Automatische detectie van log types (JSON, tool use, results, errors)
+   - JSON syntax highlighting met kleurcodering
+   - Collapsible log sections voor lange content
+   - Speciale formatting voor verschillende log types:
+     - Tool gebruik met headers en parameters
+     - Result berichten met gestructureerde weergave
+     - Error berichten met rode accenten
+   - Dark mode support volledig geïntegreerd
+   - Responsive design voor mobile devices
 
 ## Huidige stap
 
-- Pull request review voor conversation persistence implementatie en bugfix
+- Pull request aanmaken voor log formatting implementatie
 
 ## Toekomstige stappen (Must-have)
 
-1. Toevoegen opmaak in weergave van log (Issue #41)
-   - Implementeren van log message formatting
-   - Kleurcodering voor verschillende log types
-   - Timestamp toevoegen aan log berichten
-   - Collapsible log sections voor betere leesbaarheid
-
-2. Performance optimalisatie en monitoring
+1. Performance optimalisatie en monitoring
    - Database query optimalisatie voor grote datasets
    - Caching strategieën voor frequently accessed conversations
    - Performance metrics en monitoring dashboard
 
-3. Gebruikerservaring verbeteringen
+2. Gebruikerservaring verbeteringen
    - Real-time updates voor conversation changes
    - Export/import functionaliteit voor conversations
    - Advanced search filters (datum range, model type, etc.)
    - Conversation templates en favorites
 
-4. Veiligheid en compliance
+3. Veiligheid en compliance
    - Audit logging voor conversation operations
    - Data retention policies implementatie
    - Encryption voor sensitive conversation data
    - GDPR compliance features (data export/deletion)
 
-5. Error handling en monitoring uitbreiding
+4. Error handling en monitoring uitbreiding
    - Comprehensive error tracking en reporting
    - Health checks voor database connectiviteit
    - Automatic recovery mechanisms
    - User-friendly error messages en guidance
 
-6. API rate limiting en quotas
+5. API rate limiting en quotas
    - Per-user rate limiting implementation
    - Conversation count quotas
    - Usage analytics en reporting
@@ -115,7 +120,7 @@
    - Mobile app development
 
 4. UI/UX verbeteringen
-   - Dark/light mode toggle
+   - Dark/light mode toggle verbetering
    - Customizable interface layouts
    - Keyboard shortcuts en accessibility
    - Responsive design optimalisatie

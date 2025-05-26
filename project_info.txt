@@ -22,6 +22,8 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 ### Frontend Modules:
 - templates/home.html - Hoofdtemplate met chat interface
 - static/css/style.css - Styling voor de applicatie
+- static/js/log-formatter.js - Log formatting functionaliteit
+- static/css/log-formatter.css - Styling voor geformatteerde logs
 
 ## Modules
 
@@ -80,10 +82,10 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: anthropic_api.py, ConversationManager, ConversationRepository, Flask app context
 
 ### templates/home.html
-- **Status**: Actief (bijgewerkt)
+- **Status**: Actief (bijgewerkt met log formatter)
 - **Pad**: /templates/home.html
-- **Functionaliteit**: Hoofdtemplate voor de chat interface. Ondersteunt nu gesplitste weergave van chat en log berichten in aparte kolommen. Geïntegreerd met conversation persistence.
-- **Afhankelijkheden**: base.html, static/css/style.css
+- **Functionaliteit**: Hoofdtemplate voor de chat interface. Ondersteunt nu gesplitste weergave van chat en log berichten in aparte kolommen. Geïntegreerd met conversation persistence en enhanced log formatting.
+- **Afhankelijkheden**: base.html, static/css/style.css, static/js/log-formatter.js, static/css/log-formatter.css
 
 ### templates/conversations.html
 - **Status**: Actief (bijgewerkt voor persistence)
@@ -96,6 +98,18 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Pad**: /static/css/style.css
 - **Functionaliteit**: Styling voor de applicatie inclusief GitHub-achtige thema's. Ondersteunt nu de gesplitste kolom layout voor chat en logs.
 - **Afhankelijkheden**: Geen
+
+### static/js/log-formatter.js
+- **Status**: Nieuw toegevoegd
+- **Pad**: /static/js/log-formatter.js
+- **Functionaliteit**: JavaScript module voor het formatteren van log berichten. Detecteert log types (JSON, tool use, results, errors) en past passende formatting toe. Ondersteunt collapsible logs voor lange content.
+- **Afhankelijkheden**: Geen
+
+### static/css/log-formatter.css
+- **Status**: Nieuw toegevoegd
+- **Pad**: /static/css/log-formatter.css
+- **Functionaliteit**: CSS styling voor geformatteerde log berichten. Bevat kleurcodering voor verschillende log types, JSON syntax highlighting, en responsive design.
+- **Afhankelijkheden**: Gebruikt CSS variabelen uit style.css
 
 ### werkwijze/werkwijze.txt
 - **Status**: Actief
@@ -158,6 +172,22 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: routes/api.py, ConversationManager, ConversationRepository
 
 ## Recente Wijzigingen
+
+### Implementatie van Log Formatting (Issue #41)
+- **UI Verbetering**: Log berichten worden nu automatisch geformatteerd voor betere leesbaarheid
+- **Log Type Detectie**: Automatische detectie van verschillende log types:
+  - JSON data met syntax highlighting
+  - Tool gebruik met duidelijke headers
+  - Result berichten met gestructureerde weergave
+  - Error berichten met rode accenten
+- **Collapsible Logs**: Lange log berichten kunnen in- en uitgeklapt worden
+- **Kleurcodering**: Verschillende kleuren voor verschillende onderdelen van logs
+- **Dark Mode Support**: Volledig geïntegreerd met het bestaande thema systeem
+- **Bestanden toegevoegd**:
+  - static/js/log-formatter.js - JavaScript module voor log formatting
+  - static/css/log-formatter.css - Styling voor geformatteerde logs
+- **Bestanden gewijzigd**:
+  - templates/home.html - Integratie van log formatter
 
 ### Bugfix: AttributeError in send_prompt_stream (Issue #42)
 - **Probleem**: Thread context had geen toegang tot current_user.id, wat resulteerde in AttributeError
