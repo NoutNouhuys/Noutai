@@ -15,10 +15,15 @@
      - mcp_integration.py voor MCP server integratie
    - Toevoeging unit tests voor nieuwe modules
    - Behoud backwards compatibility
+6. [✓] Implementatie van project_info.txt caching (Issue #35)
+   - Toevoegen van project_info property aan AnthropicConfig met lazy loading
+   - Uitbreiden van AnthropicClient om project_info in ephemeral cache te plaatsen
+   - Aanpassen van AnthropicAPI om project_info conditioneel mee te sturen
+   - Toevoegen van unit tests voor nieuwe functionaliteit
 
 ## Huidige stap
 
-- Wachten op goedkeuring pull request voor refactoring
+- Wachten op goedkeuring pull request voor project_info caching
 
 ## Toekomstige stappen (Must-have)
 
