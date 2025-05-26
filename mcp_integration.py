@@ -153,7 +153,7 @@ class MCPIntegration:
         # Check cache first if conversation manager is available
         if self.conversation_manager and conversation_id:
             if self.conversation_manager.has_repo_context(conversation_id, repo_key):
-                logger.debug(f"Using cached project_structure.md for {repo_key}")
+                logger.debug(f"Using cached project_info.txt for {repo_key}")
                 return self.conversation_manager.get_repo_context(conversation_id, repo_key)
         
         # Try to fetch the file
@@ -163,7 +163,7 @@ class MCPIntegration:
                 {
                     "owner": owner,
                     "repo": repo,
-                    "path": "project_structure.md"
+                    "path": "project_info.txt"
                 }
             )
             
@@ -178,7 +178,7 @@ class MCPIntegration:
                 
                 # Check if file was found (not a 404 error)
                 if "404" not in str(content) and "Not Found" not in str(content):
-                    logger.info(f"Found project_structure.md in {repo_key}")
+                    logger.info(f"Found project_info.txt in {repo_key}")
                     
                     # Cache the content if conversation manager is available
                     if self.conversation_manager and conversation_id:
@@ -188,7 +188,7 @@ class MCPIntegration:
                     
                     return content
                 else:
-                    logger.info(f"No project_structure.md found in {repo_key}")
+                    logger.info(f"No project_info.txt found in {repo_key}")
                     
                     # Cache the fact that file doesn't exist
                     if self.conversation_manager and conversation_id:
@@ -199,7 +199,7 @@ class MCPIntegration:
                     return None
             
         except Exception as e:
-            logger.error(f"Failed to get project_structure.md for {repo_key}: {str(e)}")
+            logger.error(f"Failed to get project_info.txt for {repo_key}: {str(e)}")
         
         return None
             
