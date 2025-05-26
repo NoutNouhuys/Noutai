@@ -74,10 +74,10 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: anthropic_api.py, config.py
 
 ### routes/api.py
-- **Status**: Volledig uitgebreid met conversation persistence
+- **Status**: Volledig uitgebreid met conversation persistence (bugfix toegepast)
 - **Pad**: /routes/api.py
-- **Functionaliteit**: API endpoints voor conversation management inclusief pagination, search, bulk operations, CRUD operaties met database persistence. Geïntegreerd met ConversationManager voor robuuste data handling.
-- **Afhankelijkheden**: anthropic_api.py, ConversationManager, ConversationRepository
+- **Functionaliteit**: API endpoints voor conversation management inclusief pagination, search, bulk operations, CRUD operaties met database persistence. Geïntegreerd met ConversationManager voor robuuste data handling. Bugfix toegepast voor thread context issue in send_prompt_stream functie.
+- **Afhankelijkheden**: anthropic_api.py, ConversationManager, ConversationRepository, Flask app context
 
 ### templates/home.html
 - **Status**: Actief (bijgewerkt)
@@ -158,6 +158,15 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: routes/api.py, ConversationManager, ConversationRepository
 
 ## Recente Wijzigingen
+
+### Bugfix: AttributeError in send_prompt_stream (Issue #42)
+- **Probleem**: Thread context had geen toegang tot current_user.id, wat resulteerde in AttributeError
+- **Oplossing**: 
+  - User ID wordt nu vastgelegd voordat de thread start
+  - Flask app context wordt doorgegeven aan de worker functie
+  - Worker functie accepteert nu app en user_id als parameters
+- **Impact**: Streaming endpoints werken nu correct met database persistence in thread context
+- **Bestanden gewijzigd**: routes/api.py
 
 ### Implementatie van Conversation Persistence (Issue #39)
 - **Database Integratie**: Volledig geïntegreerde ConversationManager met database backend
