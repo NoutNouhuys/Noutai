@@ -90,7 +90,7 @@ class AnthropicConfig:
                 "name": "Claude 3 Opus",
                 "description": "Most powerful for complex tasks",
                 "context_length": 200000,
-                "max_tokens": 20480,
+                "max_tokens": 4096,
             },
             {
                 "id": "claude-3-sonnet-20240229",
