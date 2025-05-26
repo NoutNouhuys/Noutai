@@ -44,10 +44,10 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: anthropic_config.py
 
 ### conversation_manager.py
-- **Status**: Nieuw toegevoegd
+- **Status**: Volledig geïntegreerd met database
 - **Pad**: /conversation_manager.py
-- **Functionaliteit**: Beheert conversatie staat en geschiedenis, ondersteunt storage backends.
-- **Afhankelijkheden**: repositories (optioneel voor database storage)
+- **Functionaliteit**: Beheert conversatie staat en geschiedenis met robuuste database persistentie. Ondersteunt pagination, search, metadata beheer, soft delete. Behoudt backwards compatibility met in-memory storage.
+- **Afhankelijkheden**: repositories (ConversationRepository voor database operaties)
 
 ### mcp_integration.py
 - **Status**: Nieuw toegevoegd
@@ -73,11 +73,23 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Functionaliteit**: Flask web-applicatie die de gebruikersinterface biedt.
 - **Afhankelijkheden**: anthropic_api.py, config.py
 
+### routes/api.py
+- **Status**: Volledig uitgebreid met conversation persistence (bugfix toegepast)
+- **Pad**: /routes/api.py
+- **Functionaliteit**: API endpoints voor conversation management inclusief pagination, search, bulk operations, CRUD operaties met database persistence. Geïntegreerd met ConversationManager voor robuuste data handling. Bugfix toegepast voor thread context issue in send_prompt_stream functie.
+- **Afhankelijkheden**: anthropic_api.py, ConversationManager, ConversationRepository, Flask app context
+
 ### templates/home.html
 - **Status**: Actief (bijgewerkt)
 - **Pad**: /templates/home.html
-- **Functionaliteit**: Hoofdtemplate voor de chat interface. Ondersteunt nu gesplitste weergave van chat en log berichten in aparte kolommen.
+- **Functionaliteit**: Hoofdtemplate voor de chat interface. Ondersteunt nu gesplitste weergave van chat en log berichten in aparte kolommen. Geïntegreerd met conversation persistence.
 - **Afhankelijkheden**: base.html, static/css/style.css
+
+### templates/conversations.html
+- **Status**: Actief (bijgewerkt voor persistence)
+- **Pad**: /templates/conversations.html
+- **Functionaliteit**: Template voor conversation management interface. Ondersteunt conversation listing, search, rename, delete operations met real-time updates.
+- **Afhankelijkheden**: base.html, API endpoints
 
 ### static/css/style.css
 - **Status**: Actief (bijgewerkt)
@@ -103,6 +115,24 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Functionaliteit**: Bevat projectinformatie die wordt gecached voor betere performance bij ontwikkel-gerelateerde vragen.
 - **Afhankelijkheden**: Wordt gebruikt door anthropic_config.py (lazy loaded)
 
+### repositories/conversation_repository.py
+- **Status**: Actief (volledig geïntegreerd)
+- **Pad**: /repositories/conversation_repository.py
+- **Functionaliteit**: CRUD operaties voor conversations en messages met SQLAlchemy. Ondersteunt soft delete, bulk operations, en transaction management.
+- **Afhankelijkheden**: models/conversation.py, database.py
+
+### models/conversation.py
+- **Status**: Actief (bijgewerkt)
+- **Pad**: /models/conversation.py
+- **Functionaliteit**: Database modellen voor conversations en messages. Ondersteunt metadata storage, timestamps, en relationships.
+- **Afhankelijkheden**: database.py (SQLAlchemy)
+
+### database.py
+- **Status**: Actief
+- **Pad**: /database.py
+- **Functionaliteit**: Database configuratie en session management voor SQLAlchemy.
+- **Afhankelijkheden**: Flask-SQLAlchemy
+
 ### tests/test_anthropic_config.py
 - **Status**: Actief (bijgewerkt)
 - **Pad**: /tests/test_anthropic_config.py
@@ -116,12 +146,46 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: anthropic_client.py, anthropic_config.py
 
 ### tests/test_conversation_manager.py
-- **Status**: Nieuw toegevoegd
+- **Status**: Volledig uitgebreid
 - **Pad**: /tests/test_conversation_manager.py
-- **Functionaliteit**: Unit tests voor ConversationManager module.
+- **Functionaliteit**: Comprehensive unit tests voor ConversationManager inclusief database integration, CRUD operations, search, pagination, error handling.
 - **Afhankelijkheden**: conversation_manager.py
 
+### tests/test_api_conversation_persistence.py
+- **Status**: Nieuw toegevoegd
+- **Pad**: /tests/test_api_conversation_persistence.py
+- **Functionaliteit**: API tests voor conversation persistence endpoints inclusief pagination, search, bulk operations, authentication, authorization.
+- **Afhankelijkheden**: routes/api.py, ConversationManager, ConversationRepository
+
 ## Recente Wijzigingen
+
+### Bugfix: AttributeError in send_prompt_stream (Issue #42)
+- **Probleem**: Thread context had geen toegang tot current_user.id, wat resulteerde in AttributeError
+- **Oplossing**: 
+  - User ID wordt nu vastgelegd voordat de thread start
+  - Flask app context wordt doorgegeven aan de worker functie
+  - Worker functie accepteert nu app en user_id als parameters
+- **Impact**: Streaming endpoints werken nu correct met database persistence in thread context
+- **Bestanden gewijzigd**: routes/api.py
+
+### Implementatie van Conversation Persistence (Issue #39)
+- **Database Integratie**: Volledig geïntegreerde ConversationManager met database backend
+- **API Uitbreiding**: Nieuwe endpoints voor conversation management:
+  - GET /api/conversations (met pagination)
+  - GET /api/conversations/search (search functionaliteit)
+  - POST /api/conversations (create met metadata)
+  - PUT/PATCH /api/conversations/<id> (update titel/status)
+  - DELETE /api/conversations/<id> (soft/hard delete)
+  - DELETE /api/conversations/bulk (bulk delete operaties)
+- **Persistence Features**:
+  - Lazy loading met pagination voor grote conversation lijsten
+  - Conversation search op titel en content
+  - Conversation metadata (titel, laatste update, model)
+  - Soft delete functionaliteit voor data behoud
+  - Bulk operations voor conversation management
+- **Error Handling**: Robuuste foutafhandeling en logging
+- **Testing**: Uitgebreide unit tests voor nieuwe functionaliteit
+- **Backwards Compatibility**: Behoud van bestaande in-memory functionaliteit
 
 ### Implementatie van gesplitste chat/log kolommen (Issue #36)
 - **UI Verbetering**: Chat en log berichten worden nu in aparte kolommen weergegeven (70/30 verdeling)
