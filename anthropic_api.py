@@ -37,7 +37,8 @@ class AnthropicAPI:
         # Initialize components
         self.client = AnthropicClient(self.anthropic_config)
         self.conversation_manager = ConversationManager()
-        self.mcp_integration = MCPIntegration(self.anthropic_config)
+        # Pass conversation manager to MCP integration for caching
+        self.mcp_integration = MCPIntegration(self.anthropic_config, self.conversation_manager)
         
         # For backwards compatibility
         self.api_key = self.anthropic_config.api_key
@@ -117,7 +118,8 @@ class AnthropicAPI:
         max_tokens: int,
         system_prompt: Optional[str],
         emit_log: callable,
-        include_logs: bool
+        include_logs: bool,
+        conversation_id: Optional[Union[str, int]] = None
     ) -> str:
         """
         Internal async method to send prompt and handle tool usage.
@@ -129,6 +131,7 @@ class AnthropicAPI:
             system_prompt: System prompt
             emit_log: Logging callback
             include_logs: Whether to emit logs
+            conversation_id: Optional conversation ID for context caching
             
         Returns:
             Response text from the model
@@ -141,6 +144,24 @@ class AnthropicAPI:
                 if include_logs:
                     emit_log("Verbinding met MCP-server opgezet")
                 tools = await self.mcp_integration.get_tools()
+        
+        # Get cached repository contexts
+        repo_contexts = {}
+        if conversation_id:
+            repo_contexts = self.conversation_manager.get_all_repo_contexts(conversation_id)
+            if repo_contexts:
+                logger.info(f"Using cached project structures for {len(repo_contexts)} repositories")
+                
+                # Add repository contexts to system prompt
+                context_text = "\n\n## Repository Context\n\n"
+                for repo_key, context in repo_contexts.items():
+                    if context:  # Only add non-empty contexts
+                        context_text += f"### {repo_key}\n\n{context}\n\n"
+                
+                if system_prompt:
+                    system_prompt = f"{system_prompt}{context_text}"
+                else:
+                    system_prompt = context_text
         
         try:
             # Send initial message
@@ -168,7 +189,8 @@ class AnthropicAPI:
                         "system": system_prompt,
                         "tools": tools
                     },
-                    log_callback=emit_log if include_logs else None
+                    log_callback=emit_log if include_logs else None,
+                    conversation_id=conversation_id
                 )
             
             response_text = response.content[0].text
@@ -280,7 +302,8 @@ class AnthropicAPI:
                     max_tokens=max_tokens,
                     system_prompt=system_prompt,
                     emit_log=emit_log,
-                    include_logs=include_logs
+                    include_logs=include_logs,
+                    conversation_id=conversation_id
                 )
             )
             
