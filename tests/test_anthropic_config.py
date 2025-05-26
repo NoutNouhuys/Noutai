@@ -106,6 +106,37 @@ class TestAnthropicConfig(unittest.TestCase):
         config = AnthropicConfig(config_dict={'ANTHROPIC_SYSTEM_PROMPT': 'Config prompt'})
         self.assertEqual(config.system_prompt, 'Config prompt')
     
+    @patch('builtins.open', new_callable=mock_open, read_data='Test project info')
+    def test_project_info_lazy_loading(self, mock_file):
+        """Test lazy loading of project info."""
+        config = AnthropicConfig()
+        
+        # Should not load until accessed
+        mock_file.assert_not_called()
+        
+        # Access the property
+        info = config.project_info
+        self.assertEqual(info, 'Test project info')
+        mock_file.assert_called_once()
+        
+        # Second access should use cached value
+        info2 = config.project_info
+        self.assertEqual(info2, 'Test project info')
+        mock_file.assert_called_once()  # Still only called once
+    
+    def test_project_info_from_config_dict(self):
+        """Test project info from config dictionary."""
+        config = AnthropicConfig(config_dict={'ANTHROPIC_PROJECT_INFO': 'Config project info'})
+        self.assertEqual(config.project_info, 'Config project info')
+    
+    @patch('builtins.open', side_effect=FileNotFoundError)
+    def test_project_info_file_not_found(self, mock_file):
+        """Test project info when file is not found."""
+        config = AnthropicConfig()
+        info = config.project_info
+        self.assertIsNone(info)
+        mock_file.assert_called_once()
+    
     def test_available_models(self):
         """Test available models configuration."""
         config = AnthropicConfig()
