@@ -80,6 +80,22 @@ class AnthropicConfig:
             logger.warning(f"werkwijze.txt not found at {werkwijze_path}")
             return None
     
+    @cached_property
+    def project_info(self) -> Optional[str]:
+        """Lazy load project info from file."""
+        # Check if already in config dict
+        if 'ANTHROPIC_PROJECT_INFO' in self.config_dict:
+            return self.config_dict['ANTHROPIC_PROJECT_INFO']
+            
+        # Try to load from file
+        project_info_path = os.path.join(self._base_path, 'project_info.txt')
+        try:
+            with open(project_info_path, 'r', encoding='utf-8') as file:
+                return file.read()
+        except FileNotFoundError:
+            logger.warning(f"project_info.txt not found at {project_info_path}")
+            return None
+    
     @property
     def available_models(self) -> List[Dict[str, Any]]:
         """Get available models configuration."""
