@@ -24,19 +24,19 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 ### anthropic_api.py
 - **Status**: Gerefactored
 - **Pad**: /anthropic_api.py
-- **Functionaliteit**: High-level API voor interactie met Anthropic Claude modellen. Coördineert tussen client, conversation management, en MCP integratie.
+- **Functionaliteit**: High-level API voor interactie met Anthropic Claude modellen. Coördineert tussen client, conversation management, en MCP integratie. Ondersteunt conditionele inclusie van project_info in cache.
 - **Afhankelijkheden**: anthropic_config.py, anthropic_client.py, conversation_manager.py, mcp_integration.py, repositories
 
 ### anthropic_config.py
-- **Status**: Nieuw toegevoegd
+- **Status**: Actief (bijgewerkt)
 - **Pad**: /anthropic_config.py
-- **Functionaliteit**: Centralized Anthropic-specifieke configuratie met lazy loading en validatie.
+- **Functionaliteit**: Centralized Anthropic-specifieke configuratie met lazy loading en validatie. Ondersteunt nu ook lazy loading van project_info.txt.
 - **Afhankelijkheden**: Geen directe afhankelijkheden
 
 ### anthropic_client.py
-- **Status**: Nieuw toegevoegd
+- **Status**: Actief (bijgewerkt)
 - **Pad**: /anthropic_client.py
-- **Functionaliteit**: Pure API communicatie met Claude modellen, gescheiden van business logic.
+- **Functionaliteit**: Pure API communicatie met Claude modellen. Ondersteunt ephemeral caching van zowel system prompt als project_info.
 - **Afhankelijkheden**: anthropic_config.py
 
 ### conversation_manager.py
@@ -81,11 +81,23 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Functionaliteit**: Bevat de basis system prompt voor het AI-model.
 - **Afhankelijkheden**: Wordt gebruikt door anthropic_config.py (lazy loaded)
 
+### project_info.txt
+- **Status**: Actief
+- **Pad**: /project_info.txt
+- **Functionaliteit**: Bevat projectinformatie die wordt gecached voor betere performance bij ontwikkel-gerelateerde vragen.
+- **Afhankelijkheden**: Wordt gebruikt door anthropic_config.py (lazy loaded)
+
 ### tests/test_anthropic_config.py
-- **Status**: Nieuw toegevoegd
+- **Status**: Actief (bijgewerkt)
 - **Pad**: /tests/test_anthropic_config.py
-- **Functionaliteit**: Unit tests voor AnthropicConfig module.
+- **Functionaliteit**: Unit tests voor AnthropicConfig module, inclusief tests voor project_info caching.
 - **Afhankelijkheden**: anthropic_config.py
+
+### tests/test_anthropic_client.py
+- **Status**: Nieuw toegevoegd
+- **Pad**: /tests/test_anthropic_client.py
+- **Functionaliteit**: Unit tests voor AnthropicClient module, inclusief tests voor project_info caching.
+- **Afhankelijkheden**: anthropic_client.py, anthropic_config.py
 
 ### tests/test_conversation_manager.py
 - **Status**: Nieuw toegevoegd
@@ -94,6 +106,13 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: conversation_manager.py
 
 ## Recente Wijzigingen
+
+### Implementatie van project_info.txt caching (Issue #35)
+- **Configuratie uitbreiding**: Toevoeging van lazy loading voor project_info.txt in AnthropicConfig
+- **Cache ondersteuning**: AnthropicClient ondersteunt nu ephemeral caching van project_info naast system prompt
+- **Conditionele inclusie**: AnthropicAPI bepaalt automatisch wanneer project_info moet worden meegestuurd op basis van de prompt inhoud
+- **Performance verbetering**: Verminderde API latency voor ontwikkel-gerelateerde vragen door project informatie te cachen
+- **Testing**: Uitgebreide unit tests voor nieuwe caching functionaliteit
 
 ### Refactoring van config.py en anthropic_api.py (Issue #30)
 - **Configuratie Management**: Implementatie van lazy loading voor configuratiebestanden, centralisatie van Anthropic configuratie in aparte module

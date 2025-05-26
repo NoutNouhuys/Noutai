@@ -44,6 +44,7 @@ class AnthropicClient:
         model: Optional[str] = None,
         max_tokens: Optional[int] = None,
         system: Optional[str] = None,
+        project_info: Optional[str] = None,
         tools: Optional[List[Dict[str, Any]]] = None,
         **kwargs
     ) -> anthropic.types.Message:
@@ -55,6 +56,7 @@ class AnthropicClient:
             model: Model to use (defaults to config default)
             max_tokens: Maximum tokens for response
             system: System prompt
+            project_info: Project information to include in cache
             tools: Available tools for the model
             **kwargs: Additional parameters for the API
             
@@ -73,20 +75,33 @@ class AnthropicClient:
             **kwargs
         }
         
+        # Build system prompts array with caching
+        system_parts = []
+        
         if system:
-            # Support for cached system prompts
-            params["system"] = [
-                {
-                    "type": "text",
-                    "text": system,
-                    "cache_control": {"type": "ephemeral"},
-                }
-            ]
+            system_parts.append({
+                "type": "text",
+                "text": system,
+                "cache_control": {"type": "ephemeral"},
+            })
+            
+        if project_info:
+            # Add project info to the cached system context
+            system_parts.append({
+                "type": "text",
+                "text": f"\n\n# Project Information\n{project_info}",
+                "cache_control": {"type": "ephemeral"},
+            })
+            
+        if system_parts:
+            params["system"] = system_parts
             
         if tools:
             params["tools"] = tools
             
         logger.debug(f"Sending message to Anthropic API with model: {model}, max_tokens: {max_tokens}")
+        if project_info:
+            logger.debug("Including project_info in ephemeral cache")
         
         try:
             response = self.client.messages.create(**params)
