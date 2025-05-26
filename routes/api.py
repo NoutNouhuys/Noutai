@@ -608,9 +608,9 @@ def send_prompt_stream():
         while True:
             item = q.get()
             if item['type'] == 'log':
-                yield f"event: log\\ndata: {json.dumps(item['data'])}\\n\\n"
+                yield f"event: log\ndata: {json.dumps(item['data'])}\n\n"  # Enkele backslashes!
             elif item['type'] == 'final':
-                yield f"event: final\\ndata: {json.dumps(item['data'])}\\n\\n"
+                yield f"event: final\ndata: {json.dumps(item['data'])}\n\n"  # Enkele backslashes!
                 break
 
     return Response(event_stream(), mimetype='text/event-stream')
