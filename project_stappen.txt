@@ -20,10 +20,16 @@
    - Uitbreiden van AnthropicClient om project_info in ephemeral cache te plaatsen
    - Aanpassen van AnthropicAPI om project_info conditioneel mee te sturen
    - Toevoegen van unit tests voor nieuwe functionaliteit
+7. [✓] Implementatie van gesplitste chat/log kolommen (Issue #36)
+   - UI layout aanpassing voor horizontaal gesplitste weergave
+   - Chat berichten links (70%), log berichten rechts (30%)
+   - JavaScript aanpassingen voor gescheiden message handling
+   - CSS styling voor kolom layout en responsive design
+   - Behoud van chat away functionaliteit alleen voor chat berichten
 
 ## Huidige stap
 
-- Wachten op goedkeuring pull request voor project_info caching
+- Wachten op goedkeuring pull request voor gesplitste chat/log kolommen
 
 ## Toekomstige stappen (Must-have)
 
