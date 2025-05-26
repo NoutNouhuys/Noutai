@@ -4,7 +4,7 @@ Handles communication with MCP servers for tool usage.
 """
 import logging
 import asyncio
-from typing import Dict, List, Optional, Any, Callable
+from typing import Dict, List, Optional, Any, Callable, Union
 import mcp_connector
 from anthropic_config import AnthropicConfig
 
@@ -277,7 +277,7 @@ class MCPIntegration:
                 logger.info(f"Received follow-up response after tool use")
                 
                 if log_callback:
-                    log_callback(f"Result from {tool_name}: {result.get('content', '')}"""[:200] + "...")
+                    log_callback(f"Result from {tool_name}: {result.get('content', '')}"[:200] + "...")
                     
         return response
     
