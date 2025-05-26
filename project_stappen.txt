@@ -15,10 +15,16 @@
      - mcp_integration.py voor MCP server integratie
    - Toevoeging unit tests voor nieuwe modules
    - Behoud backwards compatibility
+6. [✓] Implementatie Repository Context Caching (Issue #33)
+   - Uitbreiding ConversationManager met repository context caching methodes
+   - Toevoeging get_repo_project_structure_with_cache aan MCPIntegration
+   - Automatische detectie van repository-gerelateerde tool gebruik
+   - Integratie van gecachte contexts in system prompt
+   - Logging voor debugging en monitoring
 
 ## Huidige stap
 
-- Wachten op goedkeuring pull request voor refactoring
+- Wachten op goedkeuring pull request voor repository context caching
 
 ## Toekomstige stappen (Must-have)
 
