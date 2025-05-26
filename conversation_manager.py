@@ -184,6 +184,81 @@ class ConversationManager:
         conversation_id_str = str(conversation_id)
         return conversation_id_str in self._conversations
     
+    def add_repo_context(
+        self,
+        conversation_id: Union[str, int],
+        repo_key: str,
+        context: str
+    ) -> None:
+        """
+        Add repository context to a conversation.
+        
+        Args:
+            conversation_id: ID of the conversation
+            repo_key: Repository identifier (e.g., "owner/repo")
+            context: Repository context content
+        """
+        conversation = self.get_conversation(conversation_id)
+        
+        # Initialize repo_contexts in metadata if not exists
+        if "repo_contexts" not in conversation.metadata:
+            conversation.metadata["repo_contexts"] = {}
+        
+        conversation.metadata["repo_contexts"][repo_key] = context
+        logger.debug(f"Added repo context for {repo_key} to conversation {conversation_id}")
+    
+    def get_repo_context(
+        self,
+        conversation_id: Union[str, int],
+        repo_key: str
+    ) -> Optional[str]:
+        """
+        Get repository context from a conversation.
+        
+        Args:
+            conversation_id: ID of the conversation
+            repo_key: Repository identifier (e.g., "owner/repo")
+            
+        Returns:
+            Repository context content or None if not found
+        """
+        conversation = self.get_conversation(conversation_id)
+        return conversation.metadata.get("repo_contexts", {}).get(repo_key)
+    
+    def has_repo_context(
+        self,
+        conversation_id: Union[str, int],
+        repo_key: str
+    ) -> bool:
+        """
+        Check if repository context exists for a conversation.
+        
+        Args:
+            conversation_id: ID of the conversation
+            repo_key: Repository identifier (e.g., "owner/repo")
+            
+        Returns:
+            True if context exists
+        """
+        conversation = self.get_conversation(conversation_id)
+        return repo_key in conversation.metadata.get("repo_contexts", {})
+    
+    def get_all_repo_contexts(
+        self,
+        conversation_id: Union[str, int]
+    ) -> Dict[str, str]:
+        """
+        Get all repository contexts for a conversation.
+        
+        Args:
+            conversation_id: ID of the conversation
+            
+        Returns:
+            Dictionary of repo_key -> context mappings
+        """
+        conversation = self.get_conversation(conversation_id)
+        return conversation.metadata.get("repo_contexts", {})
+    
     def _load_from_storage(self, conversation_id: int) -> Optional[Conversation]:
         """
         Load conversation from storage backend.
