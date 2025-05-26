@@ -19,6 +19,10 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - Conversation manager (conversation_manager.py)
 - MCP integratie (mcp_integration.py)
 
+### Frontend Modules:
+- templates/home.html - Hoofdtemplate met chat interface
+- static/css/style.css - Styling voor de applicatie
+
 ## Modules
 
 ### anthropic_api.py
@@ -69,6 +73,18 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Functionaliteit**: Flask web-applicatie die de gebruikersinterface biedt.
 - **Afhankelijkheden**: anthropic_api.py, config.py
 
+### templates/home.html
+- **Status**: Actief (bijgewerkt)
+- **Pad**: /templates/home.html
+- **Functionaliteit**: Hoofdtemplate voor de chat interface. Ondersteunt nu gesplitste weergave van chat en log berichten in aparte kolommen.
+- **Afhankelijkheden**: base.html, static/css/style.css
+
+### static/css/style.css
+- **Status**: Actief (bijgewerkt)
+- **Pad**: /static/css/style.css
+- **Functionaliteit**: Styling voor de applicatie inclusief GitHub-achtige thema's. Ondersteunt nu de gesplitste kolom layout voor chat en logs.
+- **Afhankelijkheden**: Geen
+
 ### werkwijze/werkwijze.txt
 - **Status**: Actief
 - **Pad**: /werkwijze/werkwijze.txt
@@ -106,6 +122,12 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: conversation_manager.py
 
 ## Recente Wijzigingen
+
+### Implementatie van gesplitste chat/log kolommen (Issue #36)
+- **UI Verbetering**: Chat en log berichten worden nu in aparte kolommen weergegeven (70/30 verdeling)
+- **JavaScript aanpassingen**: Nieuwe `addLogMessage()` functie voor het toevoegen van logs aan de juiste kolom
+- **CSS uitbreiding**: Nieuwe styles voor de gesplitste kolom layout met responsive design
+- **Functionaliteit behoud**: Chat away werkt alleen met chat berichten, logs worden niet doorgestuurd
 
 ### Implementatie van project_info.txt caching (Issue #35)
 - **Configuratie uitbreiding**: Toevoeging van lazy loading voor project_info.txt in AnthropicConfig

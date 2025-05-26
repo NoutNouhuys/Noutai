@@ -315,15 +315,69 @@ main {
     margin-top: 16px;
 }
 
-.chat-messages {
-    height: 400px;
-    overflow-y: auto;
-    overflow-x: hidden;
+/* Split column layout for chat and logs */
+.chat-window-content {
+    display: flex;
+    gap: 16px;
+    height: 500px; /* Fixed height for scrolling */
+}
+
+.chat-column {
+    flex: 1 1 70%;
+    display: flex;
+    flex-direction: column;
     border: 1px solid var(--border-color);
     border-radius: 6px;
+    overflow: hidden;
+}
+
+.log-column {
+    flex: 1 1 30%;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.column-header {
+    background-color: var(--secondary-bg);
+    border-bottom: 1px solid var(--border-color);
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted-text);
+}
+
+.chat-messages,
+.log-messages {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
     padding: 12px;
-    margin-bottom: 12px;
     background-color: var(--chat-messages-bg);
+}
+
+/* Log message styles */
+.log-message {
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    background-color: var(--message-log-bg);
+    border-radius: 6px;
+    font-size: 13px;
+    border: 1px solid var(--border-color);
+}
+
+.log-timestamp {
+    color: var(--muted-text);
+    font-size: 12px;
+    margin-right: 8px;
+}
+
+.log-content {
+    color: var(--foreground-color);
+    white-space: pre-wrap;
+    word-break: break-word;
 }
 
 .chat-input {
@@ -880,5 +934,17 @@ footer {
     .window-layout-controls {
         margin-top: 8px;
         margin-left: 0;
+    }
+    
+    /* Make columns stack on mobile */
+    .chat-window-content {
+        flex-direction: column;
+        height: auto;
+    }
+    
+    .chat-column,
+    .log-column {
+        flex: 1 1 auto;
+        height: 300px;
     }
 }

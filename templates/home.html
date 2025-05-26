@@ -77,8 +77,23 @@
                         </div>
                     </div>
                     <div class="card-body d-flex flex-column">
-                        <div class="chat-messages flex-grow-1" id="chat-messages-window-1">
-                            <!-- Chat messages will be added here dynamically -->
+                        <div class="chat-window-content flex-grow-1">
+                            <div class="chat-column">
+                                <div class="column-header">
+                                    <i class="fas fa-comments me-1"></i> Chat
+                                </div>
+                                <div class="chat-messages" id="chat-messages-window-1">
+                                    <!-- Chat messages will be added here dynamically -->
+                                </div>
+                            </div>
+                            <div class="log-column">
+                                <div class="column-header">
+                                    <i class="fas fa-list me-1"></i> Logs
+                                </div>
+                                <div class="log-messages" id="log-messages-window-1">
+                                    <!-- Log messages will be added here dynamically -->
+                                </div>
+                            </div>
                         </div>
                         <div class="chat-input mt-3">
                             <div class="input-group">
@@ -375,8 +390,23 @@ function addChatWindow(initialInput) {
                 </div>
             </div>
             <div class="card-body d-flex flex-column">
-                <div class="chat-messages flex-grow-1" id="chat-messages-${newWindowId}">
-                    <!-- Messages will appear here -->
+                <div class="chat-window-content flex-grow-1">
+                    <div class="chat-column">
+                        <div class="column-header">
+                            <i class="fas fa-comments me-1"></i> Chat
+                        </div>
+                        <div class="chat-messages" id="chat-messages-${newWindowId}">
+                            <!-- Chat messages will appear here -->
+                        </div>
+                    </div>
+                    <div class="log-column">
+                        <div class="column-header">
+                            <i class="fas fa-list me-1"></i> Logs
+                        </div>
+                        <div class="log-messages" id="log-messages-${newWindowId}">
+                            <!-- Log messages will appear here -->
+                        </div>
+                    </div>
                 </div>
                 <div class="chat-input mt-3">
                     <div class="input-group">
@@ -519,16 +549,24 @@ function loadConversation(windowId, conversationId) {
                     }
                 }
                 
-                // Clear and populate chat messages
+                // Clear chat and log messages
                 const chatMessages = windowElement.querySelector('.chat-messages');
+                const logMessages = windowElement.querySelector('.log-messages');
                 chatMessages.innerHTML = '';
+                logMessages.innerHTML = '';
                 
+                // Populate messages in the appropriate columns
                 messages.forEach(message => {
-                    addMessageToChat(windowId, message.role, message.content);
+                    if (message.role === 'log') {
+                        addLogMessage(windowId, message.content);
+                    } else {
+                        addMessageToChat(windowId, message.role, message.content);
+                    }
                 });
                 
                 // Scroll to bottom
                 chatMessages.scrollTop = chatMessages.scrollHeight;
+                logMessages.scrollTop = logMessages.scrollHeight;
             } else {
                 console.error('Error loading conversation:', data.error);
                 statusElement.textContent = 'Fout bij laden gesprek';
@@ -548,11 +586,13 @@ function resetConversation(windowId) {
 
     const windowElement = document.querySelector(`[data-window-id="${windowId}"]`);
     const chatMessages = windowElement.querySelector('.chat-messages');
+    const logMessages = windowElement.querySelector('.log-messages');
     const statusElement = windowElement.querySelector('.conversation-status');
     const promptInput = windowElement.querySelector('.prompt-input');
 
-    // Clear chat messages and reset the conversation status
+    // Clear both chat and log messages
     chatMessages.innerHTML = '';
+    logMessages.innerHTML = '';
     statusElement.textContent = 'Nieuw gesprek';
 
     // Focus on the input
@@ -606,7 +646,7 @@ function sendPrompt(windowId, customInput = null) {
 
     eventSource.addEventListener('log', function(e) {
         const msg = JSON.parse(e.data);
-        addMessageToChat(windowId, 'log', msg);
+        addLogMessage(windowId, msg);
     });
 
     eventSource.addEventListener('final', function(e) {
@@ -617,7 +657,7 @@ function sendPrompt(windowId, customInput = null) {
 
         if (data.success) {
             if (Array.isArray(data.logs)) {
-                data.logs.forEach(log => addMessageToChat(windowId, 'log', log));
+                data.logs.forEach(log => addLogMessage(windowId, log));
             }
             const content = data.content || data.message;
             addMessageToChat(windowId, 'assistant', content);
@@ -662,8 +702,6 @@ function addMessageToChat(windowId, role, content) {
         iconSpan.innerHTML = '<i class="fas fa-user me-1"></i> Jij';
     } else if (role === 'assistant') {
         iconSpan.innerHTML = '<i class="fas fa-robot me-1"></i> Claude';
-    } else if (role === 'log') {
-        iconSpan.innerHTML = '<i class="fas fa-info-circle me-1"></i> Log';
     } else {
         iconSpan.innerHTML = '<i class="fas fa-info-circle me-1"></i> Systeem';
     }
@@ -685,6 +723,30 @@ function addMessageToChat(windowId, role, content) {
     
     // Scroll to bottom
     chatMessages.scrollTop = chatMessages.scrollHeight;
+}
+
+function addLogMessage(windowId, content) {
+    const windowElement = document.querySelector(`[data-window-id="${windowId}"]`);
+    const logMessages = windowElement.querySelector('.log-messages');
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'log-message';
+    
+    const timestamp = new Date().toLocaleTimeString();
+    const timeSpan = document.createElement('span');
+    timeSpan.className = 'log-timestamp';
+    timeSpan.textContent = timestamp;
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'log-content';
+    contentDiv.textContent = content;
+    
+    messageDiv.appendChild(timeSpan);
+    messageDiv.appendChild(contentDiv);
+    logMessages.appendChild(messageDiv);
+    
+    // Scroll to bottom
+    logMessages.scrollTop = logMessages.scrollHeight;
 }
 
 function addLoadingMessage(windowId, loadingId) {
@@ -892,10 +954,53 @@ function escapeHtml(unsafe) {
     padding: 16px;
 }
 
+/* Split column layout */
+.chat-window-content {
+    display: flex;
+    gap: 16px;
+    height: 500px; /* Fixed height for scrolling */
+}
+
+.chat-column {
+    flex: 1 1 70%;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.log-column {
+    flex: 1 1 30%;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.column-header {
+    background-color: var(--secondary-bg);
+    border-bottom: 1px solid var(--border-color);
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--muted-text);
+}
+
+.chat-messages,
+.log-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+}
+
 /* GitHub-style message bubbles */
 .message {
     border: 1px solid var(--border-color);
     margin-bottom: 12px;
+    border-radius: 6px;
+    overflow: hidden;
 }
 
 .message-icon {
@@ -905,6 +1010,43 @@ function escapeHtml(unsafe) {
     font-size: 12px;
     color: var(--muted-text);
     font-weight: 500;
+}
+
+.message-content {
+    padding: 12px;
+}
+
+/* Log message styles */
+.log-message {
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    background-color: var(--secondary-bg);
+    border-radius: 6px;
+    font-size: 13px;
+}
+
+.log-timestamp {
+    color: var(--muted-text);
+    font-size: 12px;
+    margin-right: 8px;
+}
+
+.log-content {
+    color: var(--foreground-color);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .chat-window-content {
+        flex-direction: column;
+        height: auto;
+    }
+    
+    .chat-column,
+    .log-column {
+        flex: 1 1 auto;
+        height: 300px;
+    }
 }
 
 /* Welcome screen adjustments */
