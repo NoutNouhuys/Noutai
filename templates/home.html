@@ -123,6 +123,9 @@
 {% endblock %}
 
 {% block scripts %}
+<!-- Include the log formatter script -->
+<script src="{{ url_for('static', filename='js/log-formatter.js') }}"></script>
+
 <script>
 // Global state for all windows
 const chatWindows = new Map();
@@ -729,6 +732,9 @@ function addLogMessage(windowId, content) {
     const windowElement = document.querySelector(`[data-window-id="${windowId}"]`);
     const logMessages = windowElement.querySelector('.log-messages');
     
+    // Format the log message using LogFormatter
+    const formattedLog = LogFormatter.formatLogMessage(content);
+    
     const messageDiv = document.createElement('div');
     messageDiv.className = 'log-message';
     
@@ -739,7 +745,13 @@ function addLogMessage(windowId, content) {
     
     const contentDiv = document.createElement('div');
     contentDiv.className = 'log-content';
-    contentDiv.textContent = content;
+    
+    // Use formatted content instead of plain text
+    if (formattedLog.collapsible) {
+        contentDiv.innerHTML = LogFormatter.createCollapsibleLog(formattedLog.formatted, true);
+    } else {
+        contentDiv.innerHTML = formattedLog.formatted;
+    }
     
     messageDiv.appendChild(timeSpan);
     messageDiv.appendChild(contentDiv);
@@ -933,6 +945,9 @@ function escapeHtml(unsafe) {
 {% endblock %}
 
 {% block styles %}
+<!-- Include the log formatter styles -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/log-formatter.css') }}">
+
 <style>
 /* GitHub-style chat window styles - these override or supplement the main style.css */
 .chat-container {
@@ -1014,25 +1029,6 @@ function escapeHtml(unsafe) {
 
 .message-content {
     padding: 12px;
-}
-
-/* Log message styles */
-.log-message {
-    padding: 8px 12px;
-    margin-bottom: 8px;
-    background-color: var(--secondary-bg);
-    border-radius: 6px;
-    font-size: 13px;
-}
-
-.log-timestamp {
-    color: var(--muted-text);
-    font-size: 12px;
-    margin-right: 8px;
-}
-
-.log-content {
-    color: var(--foreground-color);
 }
 
 /* Responsive adjustments */
