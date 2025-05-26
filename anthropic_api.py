@@ -46,6 +46,7 @@ class AnthropicAPI:
         self.cache_ttl = self.anthropic_config.cache_ttl
         self.system_prompt = self.anthropic_config.system_prompt
         self.werkwijze = self.anthropic_config.werkwijze
+        self.project_info = self.anthropic_config.project_info
         
         logger.debug(f"AnthropicAPI initialized with model: {self.default_model}")
     
@@ -116,6 +117,7 @@ class AnthropicAPI:
         model_id: str,
         max_tokens: int,
         system_prompt: Optional[str],
+        project_info: Optional[str],
         emit_log: callable,
         include_logs: bool
     ) -> str:
@@ -127,6 +129,7 @@ class AnthropicAPI:
             model_id: Model to use
             max_tokens: Maximum output tokens
             system_prompt: System prompt
+            project_info: Project information to include in cache
             emit_log: Logging callback
             include_logs: Whether to emit logs
             
@@ -149,6 +152,7 @@ class AnthropicAPI:
                 model=model_id,
                 max_tokens=max_tokens,
                 system=system_prompt,
+                project_info=project_info,
                 tools=tools
             )
             
@@ -166,6 +170,7 @@ class AnthropicAPI:
                         "messages": messages,
                         "max_tokens": max_tokens,
                         "system": system_prompt,
+                        "project_info": project_info,
                         "tools": tools
                     },
                     log_callback=emit_log if include_logs else None
@@ -182,6 +187,27 @@ class AnthropicAPI:
             if self.mcp_integration.is_connected:
                 await self.mcp_integration.disconnect()
     
+    def _should_include_project_info(self, prompt: str) -> bool:
+        """
+        Determine if project info should be included based on the prompt.
+        
+        Args:
+            prompt: The user's prompt
+            
+        Returns:
+            True if project info should be included
+        """
+        # Keywords that suggest development/project-related questions
+        dev_keywords = [
+            'ga', 'ontwikkel', 'implement', 'module', 'bestand', 'file',
+            'code', 'functie', 'function', 'class', 'test', 'bug', 'issue',
+            'feature', 'refactor', 'architecture', 'design', 'repository',
+            'project', 'status', 'voortgang', 'progress', 'plan'
+        ]
+        
+        prompt_lower = prompt.lower()
+        return any(keyword in prompt_lower for keyword in dev_keywords)
+    
     def send_prompt(
         self,
         prompt: str,
@@ -192,6 +218,7 @@ class AnthropicAPI:
         include_logs: bool = True,
         log_callback: Optional[callable] = None,
         repo_path: Optional[str] = None,  # Kept for backwards compatibility
+        include_project_info: Optional[bool] = None,  # New parameter
     ) -> Dict[str, Any]:
         """
         Send a prompt to Claude and return the response.
@@ -205,6 +232,7 @@ class AnthropicAPI:
             include_logs: Whether to capture log messages
             log_callback: Optional callback for log messages
             repo_path: Path to repository (kept for backwards compatibility)
+            include_project_info: Whether to include project info (auto-detected if None)
             
         Returns:
             Dictionary with response data and metadata
@@ -216,6 +244,12 @@ class AnthropicAPI:
         if max_tokens is None:
             max_tokens = self.get_model_max_tokens(model_id)
             logger.debug(f"Using model-specific max_tokens: {max_tokens} for model: {model_id}")
+        
+        # Determine whether to include project info
+        if include_project_info is None:
+            include_project_info = self._should_include_project_info(prompt)
+        
+        project_info = self.project_info if include_project_info else None
         
         # Setup logging
         logs: List[str] = []
@@ -279,6 +313,7 @@ class AnthropicAPI:
                     model_id=model_id,
                     max_tokens=max_tokens,
                     system_prompt=system_prompt,
+                    project_info=project_info,
                     emit_log=emit_log,
                     include_logs=include_logs
                 )
@@ -288,6 +323,8 @@ class AnthropicAPI:
             self.add_to_conversation(conversation_id, prompt, response_text)
             
             logger.info(f"Successfully received response from Anthropic API, conversation: {conversation_id}")
+            if project_info:
+                logger.debug("Included project_info in the request")
             
             return {
                 "conversation_id": conversation_id,
