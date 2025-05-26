@@ -22,9 +22,9 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 ## Modules
 
 ### anthropic_api.py
-- **Status**: Gerefactored
+- **Status**: Gerefactored met repository context caching
 - **Pad**: /anthropic_api.py
-- **Functionaliteit**: High-level API voor interactie met Anthropic Claude modellen. Coördineert tussen client, conversation management, en MCP integratie.
+- **Functionaliteit**: High-level API voor interactie met Anthropic Claude modellen. Coördineert tussen client, conversation management, en MCP integratie. Voegt automatisch repository context toe aan system prompts.
 - **Afhankelijkheden**: anthropic_config.py, anthropic_client.py, conversation_manager.py, mcp_integration.py, repositories
 
 ### anthropic_config.py
@@ -40,16 +40,16 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: anthropic_config.py
 
 ### conversation_manager.py
-- **Status**: Nieuw toegevoegd
+- **Status**: Uitgebreid met repository context caching
 - **Pad**: /conversation_manager.py
-- **Functionaliteit**: Beheert conversatie staat en geschiedenis, ondersteunt storage backends.
+- **Functionaliteit**: Beheert conversatie staat en geschiedenis, ondersteunt storage backends. Nieuwe functionaliteit voor het cachen van repository contexts per conversatie.
 - **Afhankelijkheden**: repositories (optioneel voor database storage)
 
 ### mcp_integration.py
-- **Status**: Nieuw toegevoegd
+- **Status**: Uitgebreid met repository context ophalen
 - **Pad**: /mcp_integration.py
-- **Functionaliteit**: Beheert MCP server connecties en tool gebruik.
-- **Afhankelijkheden**: mcp_connector.py, anthropic_config.py
+- **Functionaliteit**: Beheert MCP server connecties en tool gebruik. Haalt automatisch project_structure.md op uit repositories en cachet deze per conversatie.
+- **Afhankelijkheden**: mcp_connector.py, anthropic_config.py, conversation_manager.py (optioneel)
 
 ### config.py
 - **Status**: Gerefactored
@@ -94,6 +94,13 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: conversation_manager.py
 
 ## Recente Wijzigingen
+
+### Repository Context Caching (Issue #33)
+- **Automatische detectie**: Wanneer een GitHub repository wordt genoemd, controleert het systeem automatisch of project_structure.md bestaat
+- **Eenmalig ophalen**: Het bestand wordt maximaal één keer per repository per conversatie opgehaald
+- **Context toevoeging**: De inhoud wordt automatisch toegevoegd aan het system prompt voor alle volgende berichten
+- **Logging**: Duidelijke log berichten wanneer een bestand wordt gevonden, gecached, of niet bestaat
+- **Performance**: Geen onnodige API calls naar GitHub dankzij conversatie-niveau caching
 
 ### Refactoring van config.py en anthropic_api.py (Issue #30)
 - **Configuratie Management**: Implementatie van lazy loading voor configuratiebestanden, centralisatie van Anthropic configuratie in aparte module
