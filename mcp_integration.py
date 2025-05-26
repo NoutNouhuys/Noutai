@@ -180,7 +180,7 @@ class MCPIntegration:
                 message_params["messages"].append(tool_result_message)
                 
                 # Get next response
-                response = client.messages.create(**message_params)
+                response = response = client.create_message(**message_params)
                 logger.info(f"Received follow-up response after tool use")
                 
                 if log_callback:
