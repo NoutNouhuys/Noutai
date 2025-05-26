@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, Response
+from flask import Blueprint, jsonify, request, Response, current_app
 import json
 import queue
 import threading
@@ -569,6 +569,10 @@ def send_prompt_stream():
     model_id = request.args.get('model_id', 'claude-3-haiku-20240307')
     conversation_id = request.args.get('conversation_id')
     system_prompt = request.args.get('system_prompt')
+    
+    # Capture user_id before starting the thread
+    user_id = current_user.id if current_user.is_authenticated else None
+    app = current_app._get_current_object()  # Get the actual app, not the proxy
 
     def event_stream():
         q = queue.Queue()
@@ -576,29 +580,30 @@ def send_prompt_stream():
         def callback(msg: str) -> None:
             q.put({'type': 'log', 'data': msg})
 
-        def worker():
-            # Initialize ConversationManager with database backend
-            conv_manager = ConversationManager(storage_backend=True, user_id=current_user.id)
-            
-            # Update anthropic_api to use the new conversation manager
-            original_conv_manager = anthropic_api.conversation_manager
-            anthropic_api.conversation_manager = conv_manager
-            
-            try:
-                result = anthropic_api.send_prompt(
-                    prompt=prompt,
-                    model_id=model_id,
-                    conversation_id=conversation_id,
-                    system_prompt=system_prompt,
-                    log_callback=callback,
-                )
-            finally:
-                # Restore original conversation manager
-                anthropic_api.conversation_manager = original_conv_manager
+        def worker(app, user_id):
+            with app.app_context():
+                # Initialize ConversationManager with database backend
+                conv_manager = ConversationManager(storage_backend=True, user_id=user_id)
                 
-            q.put({'type': 'final', 'data': result})
+                # Update anthropic_api to use the new conversation manager
+                original_conv_manager = anthropic_api.conversation_manager
+                anthropic_api.conversation_manager = conv_manager
+                
+                try:
+                    result = anthropic_api.send_prompt(
+                        prompt=prompt,
+                        model_id=model_id,
+                        conversation_id=conversation_id,
+                        system_prompt=system_prompt,
+                        log_callback=callback,
+                    )
+                finally:
+                    # Restore original conversation manager
+                    anthropic_api.conversation_manager = original_conv_manager
+                    
+                q.put({'type': 'final', 'data': result})
 
-        threading.Thread(target=worker).start()
+        threading.Thread(target=worker, args=(app, user_id)).start()
 
         while True:
             item = q.get()
