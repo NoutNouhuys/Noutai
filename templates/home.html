@@ -64,11 +64,23 @@
             <div class="chat-window active" data-window-id="window-1">
                 <div class="card h-100">
                     <div class="card-header d-flex justify-content-between align-items-center">
-                        <div>
-                            <label for="model-select-window-1" class="form-label mb-0">Model:</label>
-                            <select id="model-select-window-1" class="model-select form-select form-select-sm d-inline-block" style="width: auto;">
-                                <option selected disabled>Modellen laden...</option>
-                            </select>
+                        <div class="d-flex align-items-center gap-3">
+                            <div>
+                                <label for="model-select-window-1" class="form-label mb-0">Model:</label>
+                                <select id="model-select-window-1" class="model-select form-select form-select-sm d-inline-block" style="width: auto;">
+                                    <option selected disabled>Modellen laden...</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="preset-select-window-1" class="form-label mb-0">Preset:</label>
+                                <select id="preset-select-window-1" 
+                                        class="preset-select form-select form-select-sm d-inline-block"
+                                        style="width: auto;"
+                                        title="Selecteer een LLM preset voor specifieke use cases">
+                                    <option value="">Standaard</option>
+                                    <!-- Presets worden dynamisch geladen -->
+                                </select>
+                            </div>
                         </div>
                         <div>
                             <button class="new-chat-btn btn btn-sm btn-outline-secondary">
@@ -134,6 +146,9 @@ const chatWindows = new Map();
 let chatAwayActive = false;
 let chatAwayInProgress = false;
 let lastConversationId = null;
+
+// Global presets cache
+let availablePresets = {};
 
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize the first window
@@ -222,6 +237,36 @@ function populateModelSelect(selectEl) {
         });
 }
 
+function populatePresetSelect(selectEl) {
+    if (!selectEl) return;
+
+    fetch('/api/llm-settings/presets')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.presets) {
+                // Cache presets for later use
+                availablePresets = data.presets;
+                
+                // Clear existing options except the default one
+                selectEl.innerHTML = '<option value="">Standaard</option>';
+                
+                // Add preset options
+                Object.keys(data.presets).forEach(presetName => {
+                    const preset = data.presets[presetName];
+                    const option = document.createElement('option');
+                    option.value = presetName;
+                    option.textContent = preset.name || presetName;
+                    option.title = preset.description || `Temperature: ${preset.temperature}`;
+                    selectEl.appendChild(option);
+                });
+            } else {
+                console.error('Kon presets niet laden:', data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error bij het laden van presets:', error);
+        });
+}
 
 // Function to update MCP server status in the UI
 function updateMcpStatus(activeServers) {
@@ -341,8 +386,12 @@ function initializeChatWindow(windowElement) {
     });
     
     // Load available models for this window
-    const selectEl = windowElement.querySelector('.model-select');
-    populateModelSelect(selectEl);
+    const modelSelectEl = windowElement.querySelector('.model-select');
+    populateModelSelect(modelSelectEl);
+
+    // Load available presets for this window
+    const presetSelectEl = windowElement.querySelector('.preset-select');
+    populatePresetSelect(presetSelectEl);
 
     // Make this window active
     setActiveWindow(windowId);
@@ -380,11 +429,23 @@ function addChatWindow(initialInput) {
     newWindow.innerHTML = `
         <div class="card h-100">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <div>
-                    <label for="model-select-${newWindowId}" class="form-label mb-0">Model:</label>
-                    <select id="model-select-${newWindowId}" class="model-select form-select form-select-sm d-inline-block">
-                        <option selected disabled>Modellen laden...</option>
-                    </select>
+                <div class="d-flex align-items-center gap-3">
+                    <div>
+                        <label for="model-select-${newWindowId}" class="form-label mb-0">Model:</label>
+                        <select id="model-select-${newWindowId}" class="model-select form-select form-select-sm d-inline-block">
+                            <option selected disabled>Modellen laden...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="preset-select-${newWindowId}" class="form-label mb-0">Preset:</label>
+                        <select id="preset-select-${newWindowId}" 
+                                class="preset-select form-select form-select-sm d-inline-block"
+                                style="width: auto;"
+                                title="Selecteer een LLM preset voor specifieke use cases">
+                            <option value="">Standaard</option>
+                            <!-- Presets worden dynamisch geladen -->
+                        </select>
+                    </div>
                 </div>
                 <div>
                     <button class="new-chat-btn btn btn-sm btn-outline-secondary">
@@ -430,8 +491,10 @@ function addChatWindow(initialInput) {
     setTimeout(() => {
         console.log(`Initializing new chat window: ${newWindowId}`); // Debugging
         initializeChatWindow(newWindow);
-        const selectEl = newWindow.querySelector('.model-select');
-        populateModelSelect(selectEl);
+        const modelSelectEl = newWindow.querySelector('.model-select');
+        const presetSelectEl = newWindow.querySelector('.preset-select');
+        populateModelSelect(modelSelectEl);
+        populatePresetSelect(presetSelectEl);
         setActiveWindow(newWindowId);
     }, 100);
 
@@ -627,8 +690,9 @@ function sendPrompt(windowId, customInput = null) {
     const loadingId = 'loading-' + Date.now();
     addLoadingMessage(windowId, loadingId);
     
-    // Get selected model
+    // Get selected model and preset
     const modelId = windowElement.querySelector('.model-select').value;
+    const presetName = windowElement.querySelector('.preset-select').value;
     
     // Set waiting flag
     windowData.isWaitingForResponse = true;
@@ -638,6 +702,11 @@ function sendPrompt(windowId, customInput = null) {
         prompt: prompt,
         model_id: modelId
     };
+    
+    // Add preset if selected
+    if (presetName) {
+        requestData.preset_name = presetName;
+    }
     
     // Add conversation_id if continuing a conversation
     if (windowData.conversationId) {
@@ -737,7 +806,7 @@ function addLogMessage(windowId, content) {
     
     const messageDiv = document.createElement('div');
     messageDiv.className = 'log-message';
-    
+
     const timestamp = new Date().toLocaleTimeString();
     const timeSpan = document.createElement('span');
     timeSpan.className = 'log-timestamp';
