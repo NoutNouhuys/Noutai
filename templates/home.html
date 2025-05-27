@@ -254,7 +254,7 @@ function populatePresetSelect(selectEl) {
                 Object.keys(data.presets).forEach(presetName => {
                     const preset = data.presets[presetName];
                     const option = document.createElement('option');
-                    option.value = presetName;
+                    option.value = preset.id;
                     option.textContent = preset.name || presetName;
                     option.title = preset.description || `Temperature: ${preset.temperature}`;
                     selectEl.appendChild(option);
