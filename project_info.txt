@@ -1,7 +1,7 @@
 # Project Informatie: aiontwikkelhulp
 
 ## Projectoverzicht
-De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt nu configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases.
+De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt nu configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie.
 
 ## Architectuur
 De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruikers te helpen bij het ontwikkelen van software met behulp van AI:
@@ -20,7 +20,7 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - MCP integratie (mcp_integration.py)
 
 ### Frontend Modules:
-- templates/home.html - Hoofdtemplate met chat interface
+- templates/home.html - Hoofdtemplate met chat interface en preset selector
 - static/css/style.css - Styling voor de applicatie
 - static/js/log-formatter.js - Log formatting functionaliteit
 - static/css/log-formatter.css - Styling voor geformatteerde logs
@@ -82,9 +82,9 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: anthropic_api.py, ConversationManager, ConversationRepository, Flask app context
 
 ### templates/home.html
-- **Status**: Actief (bijgewerkt met log formatter)
+- **Status**: Actief (bijgewerkt met preset selector)
 - **Pad**: /templates/home.html
-- **Functionaliteit**: Hoofdtemplate voor de chat interface. Ondersteunt nu gesplitste weergave van chat en log berichten in aparte kolommen. Geïntegreerd met conversation persistence en enhanced log formatting.
+- **Functionaliteit**: Hoofdtemplate voor de chat interface. Ondersteunt nu gesplitste weergave van chat en log berichten in aparte kolommen. Geïntegreerd met conversation persistence en enhanced log formatting. Nieuw: Preset selector naast model selector voor LLM configuratie, dynamisch laden van presets via API, preset parameter doorgeven aan prompt requests.
 - **Afhankelijkheden**: base.html, static/css/style.css, static/js/log-formatter.js, static/css/log-formatter.css
 
 ### templates/conversations.html
@@ -184,6 +184,29 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: routes/api.py, anthropic_api
 
 ## Recente Wijzigingen
+
+### Implementatie van Preset Selector UI (Issue #48)
+- **Frontend Uitbreiding**:
+  - Preset selector toegevoegd naast model selector in chat interface
+  - Dynamisch laden van presets via `/api/llm-settings/presets` endpoint
+  - Preset beschrijvingen getoond als tooltips voor gebruikersgeleiding
+  - Responsive design voor extra selector element
+- **JavaScript Functionaliteit**:
+  - `populatePresetSelect()` functie voor het vullen van preset dropdown
+  - Global presets cache voor performance optimalisatie
+  - Preset parameter wordt meegestuurd in prompt requests
+  - Ondersteuning voor preset selectie in nieuwe chat vensters
+- **UI/UX Verbeteringen**:
+  - Consistent styling met bestaande UI elementen
+  - Optionele preset selectie (standaard = geen preset)
+  - Visuele indicatie van geselecteerde preset
+  - Behoud van bestaande functionaliteit
+- **Integratie**:
+  - Preset selector werkt voor zowel nieuwe als bestaande conversations
+  - Chat away functionaliteit behoudt preset instellingen
+  - Error handling voor preset-gerelateerde fouten
+- **Bestanden gewijzigd**:
+  - templates/home.html - Preset selector UI en JavaScript functionaliteit
 
 ### Implementatie van LLM Settings (Issue #46)
 - **Backend Configuratie**: 

@@ -95,10 +95,32 @@
      - Creative Writing: temperature 0.8, hogere creativiteit
      - Analysis: temperature 0.1, deterministische analyse
      - Balanced: temperature 0.5, algemeen gebruik
+12. [✓] Implementatie van preset selector UI (Issue #48)
+   - Frontend uitbreiding:
+     - Preset selector toegevoegd naast model selector in chat interface
+     - Dynamisch laden van presets via `/api/llm-settings/presets` endpoint
+     - Preset beschrijvingen getoond als tooltips voor gebruikersgeleiding
+     - Responsive design voor extra selector element
+   - JavaScript functionaliteit:
+     - `populatePresetSelect()` functie voor het vullen van preset dropdown
+     - Global presets cache voor performance optimalisatie
+     - Preset parameter wordt meegestuurd in prompt requests
+     - Ondersteuning voor preset selectie in nieuwe chat vensters
+   - UI/UX verbeteringen:
+     - Consistent styling met bestaande UI elementen
+     - Optionele preset selectie (standaard = geen preset)
+     - Visuele indicatie van geselecteerde preset
+     - Behoud van bestaande functionaliteit
+   - Integratie:
+     - Preset selector werkt voor zowel nieuwe als bestaande conversations
+     - Chat away functionaliteit behoudt preset instellingen
+     - Error handling voor preset-gerelateerde fouten
+   - Bestanden gewijzigd:
+     - templates/home.html - Preset selector UI en JavaScript functionaliteit
 
 ## Huidige stap
 
-- Pull request aanmaken voor LLM settings implementatie
+- Pull request aanmaken voor preset selector UI implementatie
 
 ## Toekomstige stappen (Must-have)
 
@@ -113,12 +135,12 @@
    - Advanced search filters (datum range, model type, etc.)
    - Conversation templates en favorites
 
-3. LLM Settings UI implementatie
-   - Settings modal/page voor LLM configuratie
+3. LLM Settings UI uitbreiding
+   - Settings modal/page voor geavanceerde LLM configuratie
    - Temperature slider en max tokens input
-   - Preset buttons voor quick selection
    - Real-time settings preview
    - Per-user settings persistentie in database
+   - Custom preset creation en management
 
 4. Veiligheid en compliance
    - Audit logging voor conversation operations
