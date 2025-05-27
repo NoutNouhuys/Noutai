@@ -1,166 +1,339 @@
-# AI Ontwikkelhulp
+# AI Ontwikkelhulp (aiontwikkelhulp)
 
-Een AI-gestuurde ontwikkelingsassistent die helpt bij het beheren en doorontwikkelen van GitHub repositories. Deze applicatie gebruikt de Anthropic Claude API en Model Context Protocol (MCP) om intelligente ondersteuning te bieden voor softwareontwikkeling.
+Een gespecialiseerde tool die communicatie tussen gebruikers en AI-modellen (Claude) faciliteert voor code-ontwikkeling en repository-beheer. De applicatie biedt een gestructureerde werkwijze voor AI-gestuurde softwareontwikkeling met integratie van externe tools via het Model Context Protocol (MCP).
 
-## 🚀 Hoofdfunctionaliteiten
+## ✨ Kernfunctionaliteiten
 
-- **AI-gestuurde Repository Ontwikkeling**: Automatische analyse en doorontwikkeling van GitHub repositories
-- **MCP Tool Integratie**: Gebruik van Model Context Protocol voor GitHub operaties
-- **Conversation Management**: Persistente chat geschiedenis met database opslag
-- **Log Formatting**: Gestructureerde logging voor ontwikkelingsprocessen
-- **Project Info Caching**: Intelligente caching van project informatie
-- **Werkwijze-gebaseerd**: Volgt gedefinieerde ontwikkelingsworkflows
+### 🤖 AI-Gestuurde Repository Ontwikkeling
+- **`ga` commando**: Start automatische repository ontwikkeling volgens voorgedefinieerde werkwijze
+- **Project management**: Automatische creatie en beheer van `project_info.txt` en `project_stappen.txt`
+- **Issue-driven development**: Automatische GitHub issue creatie en afhandeling
+- **Branch management**: Automatische branch creatie en pull request workflow
 
-## 📋 Vereisten
+### 🔧 Model Context Protocol (MCP) Integratie
+- **GitHub Tools**: Directe integratie met GitHub API voor repository beheer
+- **External Tools**: Ondersteuning voor custom MCP servers en tools
+- **Real-time Tool Use**: Live feedback over tool gebruik en resultaten
 
+### 💬 Conversation Management
+- **Persistent Storage**: Gesprekken worden opgeslagen in database
+- **Search & Filter**: Zoek door gesprekgeschiedenis
+- **Bulk Operations**: Beheer meerdere gesprekken tegelijk
+- **Metadata**: Automatische tracking van model, timestamps, en status
+
+### 🎨 Enhanced User Interface
+- **Split View**: Gescheiden weergave van chat en log berichten
+- **Log Formatting**: Automatische formattering van JSON, tool gebruik, en errors
+- **Dark/Light Theme**: Volledig themable interface
+- **Real-time Updates**: Live updates van gespreksstatus
+
+### 🔐 Lynxx Google Authentication
+- **Domain Restriction**: Alleen @lynxx.com e-mailadressen toegestaan
+- **OAuth 2.0**: Veilige Google OAuth integratie
+- **Session Management**: Persistent login sessies
+- **User Profiles**: Automatische gebruikersinformatie van Google
+
+## 🚀 Installatie
+
+### Vereisten
 - Python 3.8+
+- Google Cloud Platform project met OAuth configuratie
 - Anthropic API key
-- GitHub Personal Access Token
-- SQLite (voor conversation storage)
+- GitHub Personal Access Token (voor MCP integratie)
 
-## 🛠️ Installatie
+### Stap 1: Repository Clonen
+```bash
+git clone https://github.com/Fbeunder/aiontwikkelhulp.git
+cd aiontwikkelhulp
+```
 
-1. **Clone de repository**
-   ```bash
-   git clone https://github.com/Fbeunder/aiontwikkelhulp.git
-   cd aiontwikkelhulp
-   ```
+### Stap 2: Virtual Environment
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/macOS
+# OF
+venv\Scripts\activate     # Windows
+```
 
-2. **Installeer dependencies**
-   ```bash
-   pip install -r requirements.txt
-   ```
+### Stap 3: Dependencies Installeren
+```bash
+pip install -r requirements.txt
+```
 
-3. **Configureer environment variabelen**
-   
-   Maak een `.env` bestand aan in de root directory:
-   ```env
-   ANTHROPIC_API_KEY=jouw_anthropic_api_key
-   GITHUB_TOKEN=jouw_github_personal_access_token
-   ```
+### Stap 4: Google OAuth Configuratie
 
-4. **Start de applicatie**
-   ```bash
-   python main.py
-   ```
+#### Google Cloud Console Setup:
+1. Ga naar [Google Cloud Console](https://console.cloud.google.com/)
+2. Maak een nieuw project aan of selecteer bestaand project
+3. Activeer de "Google+ API" en "Google OAuth2 API"
+4. Ga naar "Credentials" → "Create Credentials" → "OAuth 2.0 Client ID"
+5. Configureer OAuth consent screen:
+   - Application type: Web application
+   - Authorized redirect URIs: `http://localhost:5000/auth/login/callback`
+   - Voor productie: `https://yourdomain.com/auth/login/callback`
 
-## 🏗️ Projectstructuur
+#### OAuth Client Configuratie:
+- **Application type**: Web application
+- **Name**: AI Ontwikkelhulp (of eigen naam)
+- **Authorized JavaScript origins**: 
+  - `http://localhost:5000` (development)
+  - `https://yourdomain.com` (production)
+- **Authorized redirect URIs**:
+  - `http://localhost:5000/auth/login/callback` (development)
+  - `https://yourdomain.com/auth/login/callback` (production)
+
+### Stap 5: Environment Configuratie
+Maak een `.env` bestand aan in de root directory:
+
+```env
+# Flask Configuration
+FLASK_ENV=development
+SECRET_KEY=your-super-secret-key-here
+DEBUG=True
+
+# Google OAuth Configuration
+GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+GOOGLE_DISCOVERY_URL=https://accounts.google.com/.well-known/openid_configuration
+
+# Lynxx Domain Restriction
+ALLOWED_DOMAINS=lynxx.com
+
+# Anthropic API Configuration
+ANTHROPIC_API_KEY=your-anthropic-api-key
+ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
+
+# GitHub Integration (voor MCP tools)
+GITHUB_TOKEN=your-github-personal-access-token
+
+# MCP Server Configuration
+MCP_SERVER_PATH=npx
+MCP_SERVER_ARGS=-y @modelcontextprotocol/server-github
+
+# Database Configuration
+DATABASE_URL=sqlite:///instance/aiontwikkelhulp.db
+
+# Application Settings
+APP_NAME=AI Ontwikkelhulp
+LOG_LEVEL=INFO
+```
+
+### Stap 6: Database Initialisatie
+```bash
+flask db upgrade
+```
+
+### Stap 7: Applicatie Starten
+```bash
+python app.py
+```
+
+De applicatie is nu beschikbaar op: `http://localhost:5000`
+
+## 📁 Projectstructuur
 
 ```
 aiontwikkelhulp/
-├── main.py                    # Hoofdapplicatie entry point
-├── anthropic_client.py        # Anthropic API client configuratie
-├── anthropic_config.py        # Configuratie voor Anthropic integratie
-├── conversation_manager.py    # Chat geschiedenis beheer
-├── mcp_integration.py         # Model Context Protocol integratie
-├── ui.py                     # Streamlit gebruikersinterface
-├── ui_sidebar.py             # Sidebar componenten
-├── conversations.db          # SQLite database (automatisch aangemaakt)
-├── requirements.txt          # Python dependencies
-├── .env                      # Environment variabelen (maak zelf aan)
-└── README.md                 # Dit bestand
+├── 📄 app.py                          # Flask applicatie entry point
+├── 📄 auth.py                         # Google OAuth authenticatie
+├── 📄 user.py                         # User model en sessie beheer
+├── 📄 config.py                       # Algemene applicatie configuratie
+├── 📄 database.py                     # Database configuratie en setup
+├── 📄 requirements.txt                # Python dependencies
+├── 📄 .env.example                    # Environment variabelen template
+├── 📄 README.md                       # Project documentatie
+├── 📄 project_info.txt                # AI project informatie cache
+├── 📄 project_stappen.txt             # Ontwikkelstappen voor AI
+├── 📄 system_prompt.txt               # AI system prompt
+│
+├── 🔧 Anthropic API Modules
+│   ├── 📄 anthropic_api.py            # High-level Anthropic API interface
+│   ├── 📄 anthropic_config.py         # Anthropic configuratie beheer
+│   ├── 📄 anthropic_client.py         # Pure API communicatie client
+│   ├── 📄 conversation_manager.py     # Gesprek state management
+│   └── 📄 mcp_integration.py          # MCP server integratie
+│
+├── 🔌 MCP & External Tools
+│   └── 📄 mcp_connector.py            # MCP protocol connector
+│
+├── 🛣️ routes/
+│   └── 📄 api.py                      # REST API endpoints
+│
+├── 🗄️ repositories/
+│   └── 📄 conversation_repository.py   # Database CRUD operaties
+│
+├── 📊 models/
+│   └── 📄 conversation.py             # SQLAlchemy database modellen
+│
+├── 🎨 templates/
+│   ├── 📄 base.html                   # Base template met navigatie
+│   ├── 📄 home.html                   # Hoofd chat interface
+│   └── 📄 conversations.html          # Gesprekken overzicht
+│
+├── 🎨 static/
+│   ├── css/
+│   │   ├── 📄 style.css               # Hoofd styling en thema's
+│   │   └── 📄 log-formatter.css       # Log formattering styles
+│   └── js/
+│       ├── 📄 main.js                 # Hoofd JavaScript functionaliteit
+│       └── 📄 log-formatter.js        # Log formattering module
+│
+├── 🗂️ werkwijze/
+│   └── 📄 werkwijze.txt               # AI ontwikkeling instructies
+│
+├── 🧪 tests/
+│   ├── 📄 test_anthropic_config.py    # Anthropic config unit tests
+│   ├── 📄 test_anthropic_client.py    # Anthropic client unit tests
+│   ├── 📄 test_conversation_manager.py # Conversation manager tests
+│   └── 📄 test_api_conversation_persistence.py # API tests
+│
+├── 🗃️ instance/                       # Flask instance folder (auto-created)
+│   ├── 🗄️ aiontwikkelhulp.db          # SQLite database
+│   └── 👥 users/                      # User session storage
+│
+└── 📁 migrations/                     # Database migration bestanden
+    └── versions/                      # Alembic version bestanden
 ```
 
-## 💡 Gebruik
+## 🔧 Configuratie Details
 
-### Basis Chat Functionaliteit
-- Start een conversatie met de AI assistent
-- Stel vragen over software ontwikkeling
-- Krijg hulp bij code review en debugging
+### Google OAuth Setup voor Lynxx
+De applicatie is geconfigureerd voor Lynxx medewerkers:
 
-### Repository Ontwikkeling
-- Gebruik het `ga` commando gevolgd door een repository naam
-- De AI analyseert de repository structuur
-- Volgt automatisch de werkwijze gedefinieerd in `werkwijze.txt`
-- Maakt issues, branches en pull requests aan
-- Implementeert nieuwe functionaliteiten
+1. **Domain Restrictie**: Alleen `@lynxx.com` e-mailadressen worden geaccepteerd
+2. **OAuth Scopes**: `openid`, `email`, `profile`
+3. **Redirect Flow**: Automatische redirect naar dashboard na succesvolle login
+4. **Session Persistence**: Login sessies blijven actief tussen browser sessies
 
-### Voorbeeld Commando's
+### Anthropic API Configuratie
+- **Model**: Claude 3.5 Sonnet (configureerbaar)
+- **Caching**: Ephemeral caching voor system prompt en project info
+- **Streaming**: Real-time response streaming voor betere UX
+
+### MCP Tools Configuratie
+- **GitHub Integration**: Volledige GitHub API toegang via MCP
+- **Custom Tools**: Ondersteuning voor additional MCP servers
+- **Tool Results**: Real-time feedback over tool execution
+
+## 🎯 Gebruik
+
+### Voor Gebruikers
+1. **Login**: Gebruik je @lynxx.com Google account
+2. **Chat Interface**: Stel vragen of geef opdrachten aan Claude
+3. **Repository Ontwikkeling**: Gebruik `ga [repository-naam]` voor automatische ontwikkeling
+4. **Gesprekken Beheren**: Bekijk, zoek, en beheer je gesprekgeschiedenis
+
+### Voor Ontwikkelaars
+1. **Code Development**: Gebruik `ga` commando met repository naam
+2. **Issue Tracking**: Automatische GitHub issue creatie en management
+3. **Branch Workflow**: Automatische branch creatie en PR workflow
+4. **Testing**: Gebruik MCP tools voor code testing en validation
+
+## 🚀 Productie Deployment
+
+### Environment Variables voor Productie
+```env
+FLASK_ENV=production
+DEBUG=False
+SECRET_KEY=strong-production-secret-key
+GOOGLE_CLIENT_ID=production-client-id
+GOOGLE_CLIENT_SECRET=production-client-secret
+DATABASE_URL=postgresql://user:pass@localhost/aiontwikkelhulp
+SSL_REDIRECT=True
+PROXY_COUNT=1
 ```
-ga Fbeunder/mijn-project
+
+### Gunicorn Deployment
+```bash
+gunicorn -w 4 -b 0.0.0.0:8000 app:app
 ```
 
-Dit commando:
-1. Analyseert de repository structuur
-2. Leest `werkwijze.txt` voor specifieke instructies
-3. Creëert of update `project_info.txt`
-4. Maakt ontwikkelingsplan in `project_stappen.txt`
-5. Implementeert volgende stappen automatisch
+### Docker Deployment
+```dockerfile
+FROM python:3.9-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . .
+EXPOSE 5000
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "app:app"]
+```
 
-## 🔧 Configuratie
+## 🧪 Testing
 
-### Anthropic API
-- Verkrijg een API key van [Anthropic Console](https://console.anthropic.com/)
-- Voeg toe aan `.env` bestand als `ANTHROPIC_API_KEY`
+### Unit Tests Uitvoeren
+```bash
+# Alle tests
+pytest
 
-### GitHub Integration
-- Maak een Personal Access Token in GitHub Settings
-- Geef permissies voor repo access, issues, en pull requests
-- Voeg toe aan `.env` bestand als `GITHUB_TOKEN`
+# Specifieke test suite
+pytest tests/test_anthropic_config.py
 
-### MCP Configuration
-De applicatie gebruikt MCP (Model Context Protocol) voor GitHub operaties. Dit wordt automatisch geconfigureerd bij opstarten.
+# Met coverage
+pytest --cov=. --cov-report=html
+```
 
-## 🔄 Workflow
+### API Tests
+```bash
+# API endpoints testen
+pytest tests/test_api_conversation_persistence.py -v
+```
 
-### Automatische Repository Ontwikkeling
-1. **Analyse**: Leest bestaande code en documentatie
-2. **Planning**: Maakt ontwikkelingsplan gebaseerd op `werkwijze.txt`
-3. **Implementatie**: Voert stappen uit volgens gedefinieerde workflow
-4. **Review**: Maakt pull requests voor code review
-5. **Iteratie**: Herhaalt proces voor volgende functionaliteiten
+## 🔍 Troubleshooting
 
-### Project Info Management
-- `project_info.txt`: Bevat overzicht van modules en architectuur
-- `project_stappen.txt`: Definieert volgende ontwikkelstappen
-- `werkwijze.txt`: Bevat specifieke ontwikkelingsinstructies
+### Veel Voorkomende Problemen
 
-## 🐛 Troubleshooting
+#### Google OAuth Errors
+- **Error**: `redirect_uri_mismatch`
+  - **Oplossing**: Controleer of redirect URI in Google Console overeenkomt met applicatie URL
 
-### Veelvoorkomende Problemen
+#### Anthropic API Issues
+- **Error**: `AuthenticationError`
+  - **Oplossing**: Verifieer ANTHROPIC_API_KEY in .env bestand
 
-**API Errors**
-- Controleer of `ANTHROPIC_API_KEY` correct is ingesteld
-- Verificeer of je Anthropic account actief is
+#### MCP Connection Problems
+- **Error**: MCP server connection failed
+  - **Oplossing**: Controleer of GitHub token juiste permissions heeft
 
-**GitHub Permissions**
-- Zorg dat `GITHUB_TOKEN` alle benodigde permissies heeft
-- Test verbinding met een eenvoudige repository operatie
+#### Database Errors
+- **Error**: `sqlite3.OperationalError`
+  - **Oplossing**: Run `flask db upgrade` om database schema bij te werken
 
-**Database Issues**
-- `conversations.db` wordt automatisch aangemaakt
-- Bij problemen: verwijder bestand en herstart applicatie
+### Logging & Debugging
+```bash
+# Verhoog log level voor debugging
+export LOG_LEVEL=DEBUG
 
-## 📚 Ontwikkeling
-
-### Nieuwe Features Toevoegen
-1. Fork de repository
-2. Maak een feature branch
-3. Implementeer wijzigingen
-4. Schrijf tests
-5. Maak een pull request
-
-### Code Structuur
-- `main.py`: Entry point en applicatie setup
-- `anthropic_client.py`: AI model integratie
-- `mcp_integration.py`: GitHub API operaties via MCP
-- `conversation_manager.py`: Chat persistentie
-- `ui.py`: Frontend interface
+# Check logs voor specifieke modules
+tail -f logs/app.log | grep "anthropic_api"
+```
 
 ## 🤝 Contributing
 
-Bijdragen zijn welkom! Zie de development sectie voor instructies over het toevoegen van nieuwe features.
+1. Fork de repository
+2. Maak een feature branch (`git checkout -b feature/nieuwe-functie`)
+3. Commit je wijzigingen (`git commit -am 'Voeg nieuwe functie toe'`)
+4. Push naar branch (`git push origin feature/nieuwe-functie`)
+5. Maak een Pull Request
+
+## 📝 Changelog
+
+### Recent Updates
+- **v2.1.0**: Log formatting en UI verbeteringen
+- **v2.0.0**: Database persistence voor conversations
+- **v1.5.0**: MCP integration en GitHub tools
+- **v1.0.0**: Basis applicatie met Google OAuth
 
 ## 📄 Licentie
 
-Dit project is beschikbaar onder MIT licentie.
+Dit project is eigendom van Lynxx en bedoeld voor intern gebruik.
 
-## 🔗 Links
+## 📞 Support
 
-- [Anthropic API Documentation](https://docs.anthropic.com/)
-- [Model Context Protocol](https://modelcontextprotocol.io/)
-- [GitHub API](https://docs.github.com/en/rest)
+Voor vragen of problemen:
+- **Internal Slack**: #ai-ontwikkelhulp
+- **Email**: development@lynxx.com
+- **GitHub Issues**: [Issue Tracker](https://github.com/Fbeunder/aiontwikkelhulp/issues)
 
 ---
-
-Voor vragen of ondersteuning, maak een issue aan in deze repository.
+*Gebouwd met ❤️ door het Lynxx development team*
