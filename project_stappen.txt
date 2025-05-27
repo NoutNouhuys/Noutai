@@ -63,10 +63,42 @@
      - Error berichten met rode accenten
    - Dark mode support volledig geïntegreerd
    - Responsive design voor mobile devices
+11. [✓] Implementatie van LLM Settings (Issue #46)
+   - Backend configuratie uitbreiding:
+     - AnthropicConfig uitgebreid met temperature property (default 0.2)
+     - LLM presets toegevoegd (developer_agent, creative_writing, analysis, balanced)
+     - Settings validatie (temperature 0.0-1.0, max_tokens > 0)
+     - Environment variable ondersteuning (ANTHROPIC_TEMPERATURE, ANTHROPIC_MAX_TOKENS)
+     - Model-specifieke settings met token limits
+   - API integratie:
+     - AnthropicClient ondersteunt temperature en preset parameters
+     - Parameter override functionaliteit voor runtime aanpassingen
+     - AnthropicAPI uitgebreid met settings management methodes
+     - Runtime settings update zonder applicatie restart
+   - API endpoints:
+     - GET /api/llm-settings - Ophalen huidige instellingen
+     - PUT /api/llm-settings - Runtime settings update met validatie
+     - GET /api/llm-settings/defaults - Standaard instellingen
+     - GET /api/llm-settings/presets - Beschikbare presets
+     - Prompt endpoints uitgebreid met temperature/preset/max_tokens parameters
+   - Validatie & error handling:
+     - Client-side en server-side validatie van parameters
+     - Comprehensive error handling en logging
+     - Model limits enforcement
+   - Testing:
+     - Unit tests voor AnthropicConfig LLM settings (test_anthropic_config_llm_settings.py)
+     - Uitgebreide AnthropicClient tests met LLM parameters
+     - API tests voor alle nieuwe endpoints (test_api_llm_settings.py)
+     - Validatie en error handling tests
+   - Presets configuratie:
+     - Developer Agent: temperature 0.2, optimaal voor Python development
+     - Creative Writing: temperature 0.8, hogere creativiteit
+     - Analysis: temperature 0.1, deterministische analyse
+     - Balanced: temperature 0.5, algemeen gebruik
 
 ## Huidige stap
 
-- Pull request aanmaken voor log formatting implementatie
+- Pull request aanmaken voor LLM settings implementatie
 
 ## Toekomstige stappen (Must-have)
 
@@ -81,19 +113,26 @@
    - Advanced search filters (datum range, model type, etc.)
    - Conversation templates en favorites
 
-3. Veiligheid en compliance
+3. LLM Settings UI implementatie
+   - Settings modal/page voor LLM configuratie
+   - Temperature slider en max tokens input
+   - Preset buttons voor quick selection
+   - Real-time settings preview
+   - Per-user settings persistentie in database
+
+4. Veiligheid en compliance
    - Audit logging voor conversation operations
    - Data retention policies implementatie
    - Encryption voor sensitive conversation data
    - GDPR compliance features (data export/deletion)
 
-4. Error handling en monitoring uitbreiding
+5. Error handling en monitoring uitbreiding
    - Comprehensive error tracking en reporting
    - Health checks voor database connectiviteit
    - Automatic recovery mechanisms
    - User-friendly error messages en guidance
 
-5. API rate limiting en quotas
+6. API rate limiting en quotas
    - Per-user rate limiting implementation
    - Conversation count quotas
    - Usage analytics en reporting
@@ -136,3 +175,9 @@
    - Role-based access control
    - Resource isolation en billing
    - Admin dashboard voor organization management
+
+7. Advanced LLM features
+   - Custom model fine-tuning support
+   - A/B testing voor verschillende settings
+   - LLM performance analytics
+   - Context window management optimalisatie
