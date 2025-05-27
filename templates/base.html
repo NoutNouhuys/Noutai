@@ -12,6 +12,7 @@
     <!-- GitHub Octicons for GitHub style icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/octicons/8.5.0/build.css">
     {% block styles %}{% endblock %}
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
@@ -33,6 +34,11 @@
                     <li class="nav-item">
                         <a class="nav-link" href="/conversations">
                             <i class="far fa-comment-dots me-1"></i> Gesprekken
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/agents">
+                            <i class="fas fa-robot me-1"></i> Multi-Agent
                         </a>
                     </li>
                 </ul>
@@ -142,5 +148,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% block scripts %}{% endblock %}
+    {% block extra_js %}{% endblock %}
 </body>
 </html>
