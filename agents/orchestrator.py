@@ -116,19 +116,26 @@ class AgentOrchestrator:
         Returns:
             De geïmporteerde class
         """
-        # Voor nu gebruiken we de BaseAgent als fallback
-        # Later kunnen we specifieke agent classes implementeren
-        from .base_agent import BaseAgent
-        
         # Mapping van class namen naar werkelijke classes
         class_mapping = {
-            'IssueManagerAgent': BaseAgent,
-            'CodeDeveloperAgent': BaseAgent,
-            'PRManagerAgent': BaseAgent,
-            'DocumentationAgent': BaseAgent
+            'IssueManagerAgent': self._get_issue_manager_class,
+            'CodeDeveloperAgent': self._get_base_agent_class,
+            'PRManagerAgent': self._get_base_agent_class,
+            'DocumentationAgent': self._get_base_agent_class
         }
         
-        return class_mapping.get(class_name, BaseAgent)
+        class_getter = class_mapping.get(class_name, self._get_base_agent_class)
+        return class_getter()
+    
+    def _get_base_agent_class(self):
+        """Krijg BaseAgent class."""
+        from .base_agent import BaseAgent
+        return BaseAgent
+    
+    def _get_issue_manager_class(self):
+        """Krijg IssueManagerAgent class."""
+        from .issue_manager_agent import IssueManagerAgent
+        return IssueManagerAgent
     
     def execute_workflow(self, workflow_name: str, initial_input: Dict[str, Any] = None) -> str:
         """
@@ -185,6 +192,9 @@ class AgentOrchestrator:
             workflow_config = get_workflow_config(execution.workflow_name)
             
             current_data = input_data.copy()
+            
+            # Voeg project informatie toe aan input data
+            current_data.update(self._get_project_context())
             
             for step_index, step in enumerate(workflow_config['steps']):
                 execution.current_step = step_index + 1
@@ -244,6 +254,30 @@ class AgentOrchestrator:
             
             # Trigger callbacks
             self._trigger_callbacks(execution_id, 'failed', {'error': str(e)})
+    
+    def _get_project_context(self) -> Dict[str, Any]:
+        """
+        Krijg project context informatie.
+        
+        Returns:
+            Dictionary met project context
+        """
+        context = {}
+        
+        # Lees project bestanden
+        try:
+            with open('project_info.txt', 'r', encoding='utf-8') as f:
+                context['project_info'] = f.read()
+        except FileNotFoundError:
+            context['project_info'] = ""
+        
+        try:
+            with open('project_stappen.txt', 'r', encoding='utf-8') as f:
+                context['project_stappen'] = f.read()
+        except FileNotFoundError:
+            context['project_stappen'] = ""
+        
+        return context
     
     def _prepare_step_input(self, step: Dict[str, Any], current_data: Dict[str, Any]) -> Dict[str, Any]:
         """
