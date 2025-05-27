@@ -1,231 +1,166 @@
-# Lynxx Anthropic Console
+# AI Ontwikkelhulp
 
-Een custom webapplicatie die Lynxx medewerkers toegang geeft tot Anthropic's Claude AI-modellen via een gebruiksvriendelijke interface, met organisatie-specifieke authenticatie en functionaliteit.
+Een AI-gestuurde ontwikkelingsassistent die helpt bij het beheren en doorontwikkelen van GitHub repositories. Deze applicatie gebruikt de Anthropic Claude API en Model Context Protocol (MCP) om intelligente ondersteuning te bieden voor softwareontwikkeling.
 
-## Overzicht
+## 🚀 Hoofdfunctionaliteiten
 
-De Lynxx Anthropic Console stelt medewerkers in staat om:
+- **AI-gestuurde Repository Ontwikkeling**: Automatische analyse en doorontwikkeling van GitHub repositories
+- **MCP Tool Integratie**: Gebruik van Model Context Protocol voor GitHub operaties
+- **Conversation Management**: Persistente chat geschiedenis met database opslag
+- **Log Formatting**: Gestructureerde logging voor ontwikkelingsprocessen
+- **Project Info Caching**: Intelligente caching van project informatie
+- **Werkwijze-gebaseerd**: Volgt gedefinieerde ontwikkelingsworkflows
 
-- Vragen te stellen aan Claude AI via een gebruiksvriendelijke webinterface
-- Te kiezen uit verschillende Claude modellen (Haiku, Sonnet, Opus)
-- Conversatiegeschiedenis op te slaan en te beheren
-- Veilig in te loggen via Google OAuth met @lynxx.com domeinverificatie
+## 📋 Vereisten
 
-## Systeemvereisten
+- Python 3.8+
+- Anthropic API key
+- GitHub Personal Access Token
+- SQLite (voor conversation storage)
 
-- Python 3.9 of hoger
-- Pip (Python pakketbeheerder)
-- Een Google OAuth configuratie voor authenticatie
-- Een Anthropic API sleutel
+## 🛠️ Installatie
 
-## Installatie
+1. **Clone de repository**
+   ```bash
+   git clone https://github.com/Fbeunder/aiontwikkelhulp.git
+   cd aiontwikkelhulp
+   ```
 
-### 1. Clone de repository
+2. **Installeer dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-```bash
-git clone https://github.com/AliceLynxx/AnthropicMCP.git
-cd AnthropicMCP
-```
+3. **Configureer environment variabelen**
+   
+   Maak een `.env` bestand aan in de root directory:
+   ```env
+   ANTHROPIC_API_KEY=jouw_anthropic_api_key
+   GITHUB_TOKEN=jouw_github_personal_access_token
+   ```
 
-### 2. Maak een virtuele omgeving aan
+4. **Start de applicatie**
+   ```bash
+   python main.py
+   ```
 
-```bash
-python -m venv venv
-```
-
-Activeer de virtuele omgeving:
-
-- Op Windows:
-  ```bash
-  venv\Scripts\activate
-  ```
-
-- Op macOS/Linux:
-  ```bash
-  source venv/bin/activate
-  ```
-
-### 3. Installeer de vereiste pakketten
-
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Configureer de omgevingsvariabelen
-
-Maak een `.env` bestand aan in de hoofdmap van het project op basis van het `.env.example` bestand:
-
-```bash
-cp .env.example .env
-```
-
-Open het `.env` bestand en vul de vereiste variabelen in:
+## 🏗️ Projectstructuur
 
 ```
-# Google OAuth Configuration
-GOOGLE_CLIENT_ID=ABC
-GOOGLE_CLIENT_SECRET=ABC
-
-# Anthropic API Configuration
-ANTHROPIC_API_KEY=ABC
-ANTHROPIC_CACHE_TTL=5m
-
-MCP_SERVER_SCRIPT = ABC
-MCP_SERVER_VENV_PATH = ABC
+aiontwikkelhulp/
+├── main.py                    # Hoofdapplicatie entry point
+├── anthropic_client.py        # Anthropic API client configuratie
+├── anthropic_config.py        # Configuratie voor Anthropic integratie
+├── conversation_manager.py    # Chat geschiedenis beheer
+├── mcp_integration.py         # Model Context Protocol integratie
+├── ui.py                     # Streamlit gebruikersinterface
+├── ui_sidebar.py             # Sidebar componenten
+├── conversations.db          # SQLite database (automatisch aangemaakt)
+├── requirements.txt          # Python dependencies
+├── .env                      # Environment variabelen (maak zelf aan)
+└── README.md                 # Dit bestand
 ```
 
-De Google Client ID en secret kan je maken op https://console.cloud.google.com/apis/credentials . Vraag hier een project aan en daarbinnen een OAuth 2.0 Client IDs. 
+## 💡 Gebruik
 
-Maak of vraag een key voor de Anthropic API.
+### Basis Chat Functionaliteit
+- Start een conversatie met de AI assistent
+- Stel vragen over software ontwikkeling
+- Krijg hulp bij code review en debugging
 
-MCP_SERVER_SCRIPT en MCP_SERVER_VENV_PATH zijn nodig om een de code een MCP server op te laten starten. Dit hangt dus af welke MCP server je wil gebruiken. Bijvoorbeeld:
-MCP_SERVER_SCRIPT = "C:/Users/user/Github-MCP-server/app.py"
-MCP_SERVER_VENV_PATH = "C:/Users/annel/Github-MCP-server/venv"
+### Repository Ontwikkeling
+- Gebruik het `ga` commando gevolgd door een repository naam
+- De AI analyseert de repository structuur
+- Volgt automatisch de werkwijze gedefinieerd in `werkwijze.txt`
+- Maakt issues, branches en pull requests aan
+- Implementeert nieuwe functionaliteiten
 
-Je kunt toegang vragen tot de Github-MCP-server repo.
-
-## Starten van de applicatie
-
-### Lokale ontwikkelomgeving
-
-```bash
-python app.py
+### Voorbeeld Commando's
+```
+ga Fbeunder/mijn-project
 ```
 
-Doe dit met je venv. De applicatie zal standaard starten op `http://127.0.0.1:5000`.
+Dit commando:
+1. Analyseert de repository structuur
+2. Leest `werkwijze.txt` voor specifieke instructies
+3. Creëert of update `project_info.txt`
+4. Maakt ontwikkelingsplan in `project_stappen.txt`
+5. Implementeert volgende stappen automatisch
 
-### Belangrijk voor gebruik
+## 🔧 Configuratie
 
-Voor goede resultaten, kies een groter model. Kleinere modellen hebben soms moeite met tools op een MCP server goed te gebruiken.
+### Anthropic API
+- Verkrijg een API key van [Anthropic Console](https://console.anthropic.com/)
+- Voeg toe aan `.env` bestand als `ANTHROPIC_API_KEY`
 
-#### OAuth in ontwikkelomgeving
+### GitHub Integration
+- Maak een Personal Access Token in GitHub Settings
+- Geef permissies voor repo access, issues, en pull requests
+- Voeg toe aan `.env` bestand als `GITHUB_TOKEN`
 
-Wanneer je de applicatie in een ontwikkelomgeving draait (met `FLASK_ENV=development`), zal de applicatie automatisch OAuth over HTTP toestaan, wat nodig is voor lokale ontwikkeling. In een productieomgeving wordt altijd HTTPS vereist voor OAuth.
+### MCP Configuration
+De applicatie gebruikt MCP (Model Context Protocol) voor GitHub operaties. Dit wordt automatisch geconfigureerd bij opstarten.
 
-Als je toch problemen ondervindt met OAuth-authenticatie, kun je handmatig de volgende omgevingsvariabele instellen:
+## 🔄 Workflow
 
-```bash
-# Voor Windows (PowerShell)
-$env:OAUTHLIB_INSECURE_TRANSPORT=1
+### Automatische Repository Ontwikkeling
+1. **Analyse**: Leest bestaande code en documentatie
+2. **Planning**: Maakt ontwikkelingsplan gebaseerd op `werkwijze.txt`
+3. **Implementatie**: Voert stappen uit volgens gedefinieerde workflow
+4. **Review**: Maakt pull requests voor code review
+5. **Iteratie**: Herhaalt proces voor volgende functionaliteiten
 
-# Voor Windows (Command Prompt)
-set OAUTHLIB_INSECURE_TRANSPORT=1
+### Project Info Management
+- `project_info.txt`: Bevat overzicht van modules en architectuur
+- `project_stappen.txt`: Definieert volgende ontwikkelstappen
+- `werkwijze.txt`: Bevat specifieke ontwikkelingsinstructies
 
-# Voor macOS/Linux
-export OAUTHLIB_INSECURE_TRANSPORT=1
-```
+## 🐛 Troubleshooting
 
-Voeg deze variabele toe voordat je de applicatie start. Dit staat OAuth-authenticatie toe over HTTP, wat nodig is voor lokale ontwikkeling.
+### Veelvoorkomende Problemen
 
-**Opmerking**: Gebruik deze instelling nooit in een productieomgeving, waar altijd HTTPS moet worden gebruikt voor veilige authenticatie.
+**API Errors**
+- Controleer of `ANTHROPIC_API_KEY` correct is ingesteld
+- Verificeer of je Anthropic account actief is
 
-### Productieomgeving
+**GitHub Permissions**
+- Zorg dat `GITHUB_TOKEN` alle benodigde permissies heeft
+- Test verbinding met een eenvoudige repository operatie
 
-Voor productie gebruik je best een WSGI server zoals Gunicorn:
+**Database Issues**
+- `conversations.db` wordt automatisch aangemaakt
+- Bij problemen: verwijder bestand en herstart applicatie
 
-```bash
-pip install gunicorn
-gunicorn --bind 0.0.0.0:5000 app:app
-```
+## 📚 Ontwikkeling
 
-## Gebruik
+### Nieuwe Features Toevoegen
+1. Fork de repository
+2. Maak een feature branch
+3. Implementeer wijzigingen
+4. Schrijf tests
+5. Maak een pull request
 
-### Authenticatie
+### Code Structuur
+- `main.py`: Entry point en applicatie setup
+- `anthropic_client.py`: AI model integratie
+- `mcp_integration.py`: GitHub API operaties via MCP
+- `conversation_manager.py`: Chat persistentie
+- `ui.py`: Frontend interface
 
-1. Navigeer naar de applicatie in je browser
-2. Klik op de "Inloggen met Google" knop
-3. Meld je aan met je @lynxx.com Google account
+## 🤝 Contributing
 
-### Een vraag stellen aan Claude
+Bijdragen zijn welkom! Zie de development sectie voor instructies over het toevoegen van nieuwe features.
 
-1. Na het inloggen kom je op de hoofdpagina
-2. Selecteer het gewenste Claude model uit het dropdown menu
-3. Typ je vraag in het tekstveld
-4. Klik op "Versturen" om de vraag naar Claude te sturen
-5. Het antwoord verschijnt in het gesprekvenster
+## 📄 Licentie
 
-### Conversaties beheren
+Dit project is beschikbaar onder MIT licentie.
 
-1. Ga naar de "Gesprekken" pagina
-2. Hier kun je eerdere conversaties bekijken, hernoemen of verwijderen
-3. Klik op een conversatie om deze te openen en voort te zetten
+## 🔗 Links
 
-## Projectstructuur
+- [Anthropic API Documentation](https://docs.anthropic.com/)
+- [Model Context Protocol](https://modelcontextprotocol.io/)
+- [GitHub API](https://docs.github.com/en/rest)
 
-```
-AnthropicConsole/
-├── app.py                  # Hoofdapplicatie bestand
-├── config.py               # Configuratie instellingen
-├── auth.py                 # Authenticatie module
-├── anthropic_api.py        # Anthropic API integratie
-├── database.py             # Database module
-├── models/                 # Database modellen
-│   ├── __init__.py
-│   └── conversation.py     # Conversatiemodel
-├── repositories/           # Data repository laag
-│   ├── __init__.py
-│   └── conversation_repository.py
-├── routes/                 # API routes
-│   ├── __init__.py
-│   └── api.py              # API endpoints
-├── templates/              # HTML templates
-│   ├── base.html
-│   ├── home.html
-│   ├── login.html
-│   └── conversations.html
-├── static/                 # Statische bestanden (CSS, JS, afbeeldingen)
-│   ├── css/
-│   ├── js/
-│   └── img/
-├── tests/                  # Unit tests
-├── requirements.txt        # Projectafhankelijkheden
-├── .env.example            # Voorbeeld omgevingsvariabelen
-└── README.md               # Projectdocumentatie
-```
+---
 
-## Configuratie
-
-De applicatie ondersteunt verschillende omgevingsconfiguraties:
-
-- **Development**: Voor lokale ontwikkeling met debug modus aan
-- **Testing**: Voor het uitvoeren van tests, gebruikt in-memory database
-- **Production**: Voor productieomgeving met strikte beveiligingsinstellingen
-- **Docker**: Voor containerized deployment
-
-Je kunt de omgeving instellen met de `FLASK_ENV` omgevingsvariabele.
-
-## Modellen
-
-De volgende Claude modellen zijn beschikbaar:
-
-- **Claude 3 Haiku**: Snel model voor eenvoudige taken
-- **Claude 3 Sonnet**: Gebalanceerd model (snelheid/kwaliteit)
-- **Claude 3 Opus**: Hoogste kwaliteit voor complexe taken
-
-## Tests uitvoeren
-
-```bash
-pytest
-```
-
-Voor specifieke testmodules:
-
-```bash
-pytest tests/test_auth.py
-pytest tests/test_config.py
-pytest tests/test_anthropic_api.py
-```
-
-## Werkwijze integratie
-
-Bij het versturen van een prompt wordt de inhoud van `werkwijze/werkwijze.txt`
-automatisch toegevoegd aan de systeem prompt. Deze tekst wordt via het
-`system`‑veld van de Anthropic Messages API meegegeven.
-
-## Bijdragen aan het project
-
-Zie [CONTRIBUTING.md](CONTRIBUTING.md) voor richtlijnen over het bijdragen aan dit project.
-
-## Licentie
-
-Dit project is eigendom van Lynxx en uitsluitend bedoeld voor intern gebruik.
+Voor vragen of ondersteuning, maak een issue aan in deze repository.
