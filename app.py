@@ -7,6 +7,7 @@ from config import get_config
 from auth import auth_bp, init_oauth, login_required, check_lynxx_domain
 from flask_login import current_user
 from routes.api import api_bp
+from routes.agents import agents_bp
 from database import init_db
 
 def create_app(config_class=None):
@@ -48,6 +49,7 @@ def create_app(config_class=None):
     
     # Register API routes
     app.register_blueprint(api_bp, url_prefix='/api')
+    app.register_blueprint(agents_bp)  # Agents API routes (already has /api/agents prefix)
     
     # Register main routes
     register_routes(app)
@@ -66,7 +68,11 @@ def configure_logging(app):
         'app',
         'anthropic_api',
         'api',  # afhankelijk van hoe je het importeert
-        'routes.api'
+        'routes.api',
+        'routes.agents',
+        'agents.orchestrator',
+        'agents.base_agent',
+        'agents.issue_manager_agent'
     ]:
         logging.getLogger(module).setLevel(log_level)
 
@@ -129,6 +135,16 @@ def register_routes(app):
         return render_template(
             'conversations.html',
             title=f"{app.config.get('APP_NAME', 'Lynxx Anthropic Console')} - Uw Gesprekken"
+        )
+    
+    @app.route('/agents')
+    @login_required
+    @check_lynxx_domain
+    def agents():
+        """Show multi-agent interface"""
+        return render_template(
+            'agents.html',
+            title=f"{app.config.get('APP_NAME', 'Lynxx Anthropic Console')} - Multi-Agent System"
         )
     
     @app.errorhandler(404)
