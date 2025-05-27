@@ -43,12 +43,13 @@ class AnthropicAPI:
         self.api_key = self.anthropic_config.api_key
         self.default_model = self.anthropic_config.default_model
         self.max_tokens = self.anthropic_config.max_tokens
+        self.temperature = self.anthropic_config.temperature
         self.cache_ttl = self.anthropic_config.cache_ttl
         self.system_prompt = self.anthropic_config.system_prompt
         self.werkwijze = self.anthropic_config.werkwijze
         self.project_info = self.anthropic_config.project_info
         
-        logger.debug(f"AnthropicAPI initialized with model: {self.default_model}")
+        logger.debug(f"AnthropicAPI initialized with model: {self.default_model}, temperature: {self.temperature}")
     
     def get_available_models(self) -> List[Dict[str, Any]]:
         """
@@ -70,6 +71,83 @@ class AnthropicAPI:
             Maximum output tokens for the model
         """
         return self.client.get_model_max_tokens(model_id)
+    
+    def get_llm_settings(self, model_id: Optional[str] = None, preset_name: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Get current LLM settings.
+        
+        Args:
+            model_id: Optional model identifier for model-specific settings
+            preset_name: Optional preset name to load settings from
+            
+        Returns:
+            Dict with current LLM settings
+        """
+        return self.client.get_llm_settings(model_id=model_id, preset_name=preset_name)
+    
+    def get_available_presets(self) -> List[Dict[str, Any]]:
+        """
+        Get available LLM presets.
+        
+        Returns:
+            List of available presets with their configurations
+        """
+        return self.client.get_available_presets()
+    
+    def validate_llm_settings(self, temperature: float, max_tokens: int) -> bool:
+        """
+        Validate LLM settings.
+        
+        Args:
+            temperature: Temperature value to validate
+            max_tokens: Max tokens value to validate
+            
+        Returns:
+            True if settings are valid
+            
+        Raises:
+            ValueError: If settings are invalid
+        """
+        return self.client.validate_settings(temperature, max_tokens)
+    
+    def update_runtime_settings(self, temperature: Optional[float] = None, max_tokens: Optional[int] = None) -> Dict[str, Any]:
+        """
+        Update runtime LLM settings (doesn't persist).
+        
+        Args:
+            temperature: New temperature value
+            max_tokens: New max tokens value
+            
+        Returns:
+            Dict with updated settings
+            
+        Raises:
+            ValueError: If settings are invalid
+        """
+        current_settings = self.get_llm_settings()
+        
+        if temperature is not None:
+            current_settings['temperature'] = temperature
+        if max_tokens is not None:
+            current_settings['max_tokens'] = max_tokens
+        
+        # Validate the updated settings
+        self.validate_llm_settings(
+            current_settings['temperature'], 
+            current_settings['max_tokens']
+        )
+        
+        # Update the config dict for this session
+        if temperature is not None:
+            self.anthropic_config.config_dict['ANTHROPIC_TEMPERATURE'] = str(temperature)
+            self.temperature = temperature
+        if max_tokens is not None:
+            self.anthropic_config.config_dict['ANTHROPIC_MAX_TOKENS'] = str(max_tokens)
+            self.max_tokens = max_tokens
+        
+        logger.info(f"Runtime LLM settings updated: temperature={current_settings['temperature']}, max_tokens={current_settings['max_tokens']}")
+        
+        return current_settings
     
     def create_conversation(self) -> str:
         """
@@ -116,8 +194,10 @@ class AnthropicAPI:
         messages: List[Dict[str, Any]],
         model_id: str,
         max_tokens: int,
+        temperature: Optional[float],
         system_prompt: Optional[str],
         project_info: Optional[str],
+        preset_name: Optional[str],
         emit_log: callable,
         include_logs: bool
     ) -> str:
@@ -128,8 +208,10 @@ class AnthropicAPI:
             messages: Conversation messages
             model_id: Model to use
             max_tokens: Maximum output tokens
+            temperature: Temperature for response generation
             system_prompt: System prompt
             project_info: Project information to include in cache
+            preset_name: Optional LLM preset name
             emit_log: Logging callback
             include_logs: Whether to emit logs
             
@@ -151,13 +233,20 @@ class AnthropicAPI:
                 messages=messages,
                 model=model_id,
                 max_tokens=max_tokens,
+                temperature=temperature,
                 system=system_prompt,
                 project_info=project_info,
+                preset_name=preset_name,
                 tools=tools
             )
             
             if include_logs:
-                emit_log("Prompt verzonden naar Claude")
+                log_msg = "Prompt verzonden naar Claude"
+                if preset_name:
+                    log_msg += f" (preset: {preset_name})"
+                if temperature is not None:
+                    log_msg += f" (temperature: {temperature})"
+                emit_log(log_msg)
             
             # Handle tool usage if needed
             if tools and response.stop_reason == "tool_use":
@@ -169,8 +258,10 @@ class AnthropicAPI:
                         "model": model_id,
                         "messages": messages,
                         "max_tokens": max_tokens,
+                        "temperature": temperature,
                         "system": system_prompt,
                         "project_info": project_info,
+                        "preset_name": preset_name,
                         "tools": tools
                     },
                     log_callback=emit_log if include_logs else None
@@ -215,6 +306,8 @@ class AnthropicAPI:
         conversation_id: Optional[Union[str, int]] = None,
         system_prompt: Optional[str] = None,
         max_tokens: Optional[int] = None,
+        temperature: Optional[float] = None,
+        preset_name: Optional[str] = None,
         include_logs: bool = True,
         log_callback: Optional[callable] = None,
         repo_path: Optional[str] = None,  # Kept for backwards compatibility
@@ -229,6 +322,8 @@ class AnthropicAPI:
             conversation_id: Conversation ID to continue
             system_prompt: Optional system prompt override
             max_tokens: Maximum output tokens
+            temperature: Temperature for response generation (0.0-1.0)
+            preset_name: Optional LLM preset name to use
             include_logs: Whether to capture log messages
             log_callback: Optional callback for log messages
             repo_path: Path to repository (kept for backwards compatibility)
@@ -241,9 +336,24 @@ class AnthropicAPI:
         model_id = model_id or self.default_model
         system_prompt = system_prompt or self.system_prompt
         
+        # If preset is specified, get its settings but allow overrides
+        if preset_name:
+            preset_settings = self.get_llm_settings(preset_name=preset_name)
+            if max_tokens is None:
+                max_tokens = preset_settings.get('max_tokens')
+            if temperature is None:
+                temperature = preset_settings.get('temperature')
+        
+        # Apply defaults if still None
         if max_tokens is None:
             max_tokens = self.get_model_max_tokens(model_id)
             logger.debug(f"Using model-specific max_tokens: {max_tokens} for model: {model_id}")
+        
+        if temperature is None:
+            temperature = self.temperature
+        
+        # Validate settings
+        self.validate_llm_settings(temperature, max_tokens)
         
         # Determine whether to include project info
         if include_project_info is None:
@@ -312,8 +422,10 @@ class AnthropicAPI:
                     messages=messages,
                     model_id=model_id,
                     max_tokens=max_tokens,
+                    temperature=temperature,
                     system_prompt=system_prompt,
                     project_info=project_info,
+                    preset_name=preset_name,
                     emit_log=emit_log,
                     include_logs=include_logs
                 )
@@ -325,11 +437,16 @@ class AnthropicAPI:
             logger.info(f"Successfully received response from Anthropic API, conversation: {conversation_id}")
             if project_info:
                 logger.debug("Included project_info in the request")
+            if preset_name:
+                logger.debug(f"Used LLM preset: {preset_name}")
             
             return {
                 "conversation_id": conversation_id,
                 "message": response_text,
                 "model": model_id,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+                "preset_name": preset_name,
                 "success": True,
                 "logs": logs if include_logs else [],
             }

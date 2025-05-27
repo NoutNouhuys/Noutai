@@ -34,6 +34,161 @@ def get_models():
             "error": str(e)
         }), 500
 
+@api_bp.route('/llm-settings', methods=['GET'])
+@login_required
+@check_lynxx_domain
+def get_llm_settings():
+    """
+    API endpoint to retrieve current LLM settings.
+    
+    Query parameters:
+        model_id: Optional model identifier for model-specific settings
+        preset_name: Optional preset name to load settings from
+        
+    Returns:
+        JSON response with current LLM settings
+    """
+    try:
+        model_id = request.args.get('model_id')
+        preset_name = request.args.get('preset_name')
+        
+        settings = anthropic_api.get_llm_settings(model_id=model_id, preset_name=preset_name)
+        
+        return jsonify({
+            "success": True,
+            "settings": settings,
+            "model_id": model_id,
+            "preset_name": preset_name
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@api_bp.route('/llm-settings', methods=['PUT'])
+@login_required
+@check_lynxx_domain
+def update_llm_settings():
+    """
+    API endpoint to update LLM settings (runtime only).
+    
+    Request body:
+        temperature: Optional temperature value (0.0-1.0)
+        max_tokens: Optional maximum tokens value (> 0)
+        
+    Returns:
+        JSON response with updated settings
+    """
+    try:
+        data = request.get_json() or {}
+        
+        temperature = data.get('temperature')
+        max_tokens = data.get('max_tokens')
+        
+        # Validate input values
+        if temperature is not None:
+            try:
+                temperature = float(temperature)
+                if not 0.0 <= temperature <= 1.0:
+                    return jsonify({
+                        "success": False,
+                        "error": "Temperature must be between 0.0 and 1.0"
+                    }), 400
+            except (ValueError, TypeError):
+                return jsonify({
+                    "success": False,
+                    "error": "Temperature must be a valid number"
+                }), 400
+        
+        if max_tokens is not None:
+            try:
+                max_tokens = int(max_tokens)
+                if max_tokens <= 0:
+                    return jsonify({
+                        "success": False,
+                        "error": "Max tokens must be greater than 0"
+                    }), 400
+            except (ValueError, TypeError):
+                return jsonify({
+                    "success": False,
+                    "error": "Max tokens must be a valid integer"
+                }), 400
+        
+        # Update settings
+        updated_settings = anthropic_api.update_runtime_settings(
+            temperature=temperature,
+            max_tokens=max_tokens
+        )
+        
+        return jsonify({
+            "success": True,
+            "settings": updated_settings,
+            "message": "LLM settings updated successfully"
+        })
+        
+    except ValueError as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 400
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@api_bp.route('/llm-settings/defaults', methods=['GET'])
+@login_required
+@check_lynxx_domain
+def get_default_settings():
+    """
+    API endpoint to retrieve default LLM settings.
+    
+    Returns:
+        JSON response with default settings
+    """
+    try:
+        # Get default settings from config
+        default_settings = {
+            "temperature": anthropic_api.temperature,
+            "max_tokens": anthropic_api.max_tokens,
+            "default_model": anthropic_api.default_model
+        }
+        
+        return jsonify({
+            "success": True,
+            "defaults": default_settings
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@api_bp.route('/llm-settings/presets', methods=['GET'])
+@login_required
+@check_lynxx_domain
+def get_presets():
+    """
+    API endpoint to retrieve available LLM presets.
+    
+    Returns:
+        JSON response with available presets
+    """
+    try:
+        presets = anthropic_api.get_available_presets()
+        
+        return jsonify({
+            "success": True,
+            "presets": presets
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
 @api_bp.route('/conversations', methods=['GET'])
 @login_required
 @check_lynxx_domain
@@ -437,6 +592,9 @@ def send_prompt():
         model_id: (Optional) Claude model to use
         conversation_id: (Optional) ID of the conversation to continue
         system_prompt: (Optional) System prompt to control Claude's behavior
+        temperature: (Optional) Temperature for response generation (0.0-1.0)
+        max_tokens: (Optional) Maximum tokens for response
+        preset_name: (Optional) LLM preset name to use
         
     Returns:
         JSON response with Claude's reply and metadata
@@ -456,6 +614,39 @@ def send_prompt():
         model_id = data.get('model_id', 'claude-3-haiku-20240307')  # Default to Haiku
         conversation_id = data.get('conversation_id')
         system_prompt = data.get('system_prompt')
+        temperature = data.get('temperature')
+        max_tokens = data.get('max_tokens')
+        preset_name = data.get('preset_name')
+        
+        # Validate temperature if provided
+        if temperature is not None:
+            try:
+                temperature = float(temperature)
+                if not 0.0 <= temperature <= 1.0:
+                    return jsonify({
+                        "success": False,
+                        "error": "Temperature must be between 0.0 and 1.0"
+                    }), 400
+            except (ValueError, TypeError):
+                return jsonify({
+                    "success": False,
+                    "error": "Temperature must be a valid number"
+                }), 400
+        
+        # Validate max_tokens if provided
+        if max_tokens is not None:
+            try:
+                max_tokens = int(max_tokens)
+                if max_tokens <= 0:
+                    return jsonify({
+                        "success": False,
+                        "error": "Max tokens must be greater than 0"
+                    }), 400
+            except (ValueError, TypeError):
+                return jsonify({
+                    "success": False,
+                    "error": "Max tokens must be a valid integer"
+                }), 400
         
         # Initialize ConversationManager with database backend for persistence
         conv_manager = ConversationManager(storage_backend=True, user_id=current_user.id)
@@ -470,7 +661,10 @@ def send_prompt():
                 prompt=prompt,
                 model_id=model_id,
                 conversation_id=conversation_id,
-                system_prompt=system_prompt
+                system_prompt=system_prompt,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                preset_name=preset_name
             )
         finally:
             # Restore original conversation manager
@@ -502,6 +696,9 @@ def send_prompt():
                             'content': response_content,
                             'metadata': {
                                 'model': model_id,
+                                'temperature': response.get('temperature'),
+                                'max_tokens': response.get('max_tokens'),
+                                'preset_name': response.get('preset_name'),
                                 'token_count': response.get('token_count', 0)
                             }
                         }
@@ -537,6 +734,9 @@ def send_prompt():
                             'content': response_content,
                             'metadata': {
                                 'model': model_id,
+                                'temperature': response.get('temperature'),
+                                'max_tokens': response.get('max_tokens'),
+                                'preset_name': response.get('preset_name'),
                                 'token_count': response.get('token_count', 0)
                             }
                         }
@@ -569,6 +769,39 @@ def send_prompt_stream():
     model_id = request.args.get('model_id', 'claude-3-haiku-20240307')
     conversation_id = request.args.get('conversation_id')
     system_prompt = request.args.get('system_prompt')
+    temperature = request.args.get('temperature')
+    max_tokens = request.args.get('max_tokens')
+    preset_name = request.args.get('preset_name')
+    
+    # Validate temperature if provided
+    if temperature is not None:
+        try:
+            temperature = float(temperature)
+            if not 0.0 <= temperature <= 1.0:
+                return jsonify({
+                    "success": False,
+                    "error": "Temperature must be between 0.0 and 1.0"
+                }), 400
+        except (ValueError, TypeError):
+            return jsonify({
+                "success": False,
+                "error": "Temperature must be a valid number"
+            }), 400
+    
+    # Validate max_tokens if provided
+    if max_tokens is not None:
+        try:
+            max_tokens = int(max_tokens)
+            if max_tokens <= 0:
+                return jsonify({
+                    "success": False,
+                    "error": "Max tokens must be greater than 0"
+                }), 400
+        except (ValueError, TypeError):
+            return jsonify({
+                "success": False,
+                "error": "Max tokens must be a valid integer"
+            }), 400
     
     # Capture user_id before starting the thread
     user_id = current_user.id if current_user.is_authenticated else None
@@ -595,6 +828,9 @@ def send_prompt_stream():
                         model_id=model_id,
                         conversation_id=conversation_id,
                         system_prompt=system_prompt,
+                        temperature=temperature,
+                        max_tokens=max_tokens,
+                        preset_name=preset_name,
                         log_callback=callback,
                     )
                 finally:
