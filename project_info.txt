@@ -1,21 +1,21 @@
 # Project Informatie: aiontwikkelhulp
 
 ## Projectoverzicht
-De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze.
+De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt nu configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases.
 
 ## Architectuur
 De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruikers te helpen bij het ontwikkelen van software met behulp van AI:
 
 ### Core Modules:
 - Flask web-applicatie (app.py)
-- Anthropic API integratie (anthropic_api.py)
+- Anthropic API integratie (anthropic_api.py) - met LLM settings support
 - MCP Connector voor tools integratie (mcp_connector.py)
 - Configuratie (config.py)
 - Repository beheer
 
 ### Nieuwe Modules (Refactoring):
-- Anthropic configuratie (anthropic_config.py)
-- Anthropic client (anthropic_client.py)
+- Anthropic configuratie (anthropic_config.py) - met LLM settings en presets
+- Anthropic client (anthropic_client.py) - met temperature en preset ondersteuning
 - Conversation manager (conversation_manager.py)
 - MCP integratie (mcp_integration.py)
 
@@ -28,21 +28,21 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 ## Modules
 
 ### anthropic_api.py
-- **Status**: Gerefactored
+- **Status**: Uitgebreid met LLM settings management
 - **Pad**: /anthropic_api.py
-- **Functionaliteit**: High-level API voor interactie met Anthropic Claude modellen. Coördineert tussen client, conversation management, en MCP integratie. Ondersteunt conditionele inclusie van project_info in cache.
+- **Functionaliteit**: High-level API voor interactie met Anthropic Claude modellen. Coördineert tussen client, conversation management, en MCP integratie. Ondersteunt conditionele inclusie van project_info in cache. Nieuw: LLM settings management, temperature configuratie, runtime settings updates, en preset ondersteuning.
 - **Afhankelijkheden**: anthropic_config.py, anthropic_client.py, conversation_manager.py, mcp_integration.py, repositories
 
 ### anthropic_config.py
-- **Status**: Actief (bijgewerkt)
+- **Status**: Uitgebreid met LLM settings en presets
 - **Pad**: /anthropic_config.py
-- **Functionaliteit**: Centralized Anthropic-specifieke configuratie met lazy loading en validatie. Ondersteunt nu ook lazy loading van project_info.txt.
+- **Functionaliteit**: Centralized Anthropic-specifieke configuratie met lazy loading en validatie. Ondersteunt nu ook lazy loading van project_info.txt. Nieuw: Temperature property (default 0.2), LLM presets (developer_agent, creative_writing, analysis, balanced), settings validatie, model-specifieke instellingen, en environment variable ondersteuning.
 - **Afhankelijkheden**: Geen directe afhankelijkheden
 
 ### anthropic_client.py
-- **Status**: Actief (bijgewerkt)
+- **Status**: Uitgebreid met LLM settings ondersteuning
 - **Pad**: /anthropic_client.py
-- **Functionaliteit**: Pure API communicatie met Claude modellen. Ondersteunt ephemeral caching van zowel system prompt als project_info.
+- **Functionaliteit**: Pure API communicatie met Claude modellen. Ondersteunt ephemeral caching van zowel system prompt als project_info. Nieuw: Temperature parameter ondersteuning, preset functionaliteit, parameter override capability, model-specifieke settings toepassing, en LLM settings validatie.
 - **Afhankelijkheden**: anthropic_config.py
 
 ### conversation_manager.py
@@ -76,9 +76,9 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: anthropic_api.py, config.py
 
 ### routes/api.py
-- **Status**: Volledig uitgebreid met conversation persistence (bugfix toegepast)
+- **Status**: Uitgebreid met LLM settings API endpoints
 - **Pad**: /routes/api.py
-- **Functionaliteit**: API endpoints voor conversation management inclusief pagination, search, bulk operations, CRUD operaties met database persistence. Geïntegreerd met ConversationManager voor robuuste data handling. Bugfix toegepast voor thread context issue in send_prompt_stream functie.
+- **Functionaliteit**: API endpoints voor conversation management inclusief pagination, search, bulk operations, CRUD operaties met database persistence. Geïntegreerd met ConversationManager voor robuuste data handling. Bugfix toegepast voor thread context issue in send_prompt_stream functie. Nieuw: LLM settings API endpoints (GET/PUT /api/llm-settings, GET /api/llm-settings/defaults, GET /api/llm-settings/presets), temperature en preset ondersteuning in prompt endpoints.
 - **Afhankelijkheden**: anthropic_api.py, ConversationManager, ConversationRepository, Flask app context
 
 ### templates/home.html
@@ -153,10 +153,16 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Functionaliteit**: Unit tests voor AnthropicConfig module, inclusief tests voor project_info caching.
 - **Afhankelijkheden**: anthropic_config.py
 
-### tests/test_anthropic_client.py
+### tests/test_anthropic_config_llm_settings.py
 - **Status**: Nieuw toegevoegd
+- **Pad**: /tests/test_anthropic_config_llm_settings.py
+- **Functionaliteit**: Unit tests voor AnthropicConfig LLM settings functionaliteit, inclusief temperature validatie, presets, model-specifieke instellingen, en environment variable loading.
+- **Afhankelijkheden**: anthropic_config.py
+
+### tests/test_anthropic_client.py
+- **Status**: Uitgebreid met LLM settings tests
 - **Pad**: /tests/test_anthropic_client.py
-- **Functionaliteit**: Unit tests voor AnthropicClient module, inclusief tests voor project_info caching.
+- **Functionaliteit**: Unit tests voor AnthropicClient module, inclusief tests voor project_info caching. Nieuw: Tests voor temperature parameters, preset functionaliteit, parameter overrides, model-specifieke settings, en validatie.
 - **Afhankelijkheden**: anthropic_client.py, anthropic_config.py
 
 ### tests/test_conversation_manager.py
@@ -171,7 +177,44 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Functionaliteit**: API tests voor conversation persistence endpoints inclusief pagination, search, bulk operations, authentication, authorization.
 - **Afhankelijkheden**: routes/api.py, ConversationManager, ConversationRepository
 
+### tests/test_api_llm_settings.py
+- **Status**: Nieuw toegevoegd
+- **Pad**: /tests/test_api_llm_settings.py
+- **Functionaliteit**: API tests voor LLM settings endpoints inclusief GET/PUT settings, presets, defaults, validation, en prompt endpoint integratie met LLM parameters.
+- **Afhankelijkheden**: routes/api.py, anthropic_api
+
 ## Recente Wijzigingen
+
+### Implementatie van LLM Settings (Issue #46)
+- **Backend Configuratie**: 
+  - AnthropicConfig uitgebreid met temperature property (default 0.2)
+  - LLM presets toegevoegd (developer_agent, creative_writing, analysis, balanced)
+  - Settings validatie (temperature 0.0-1.0, max_tokens > 0)
+  - Environment variable ondersteuning (ANTHROPIC_TEMPERATURE, ANTHROPIC_MAX_TOKENS)
+- **API Integratie**:
+  - AnthropicClient ondersteunt temperature en preset parameters
+  - Parameter override functionaliteit voor runtime aanpassingen
+  - Model-specifieke settings toepassing met token limits
+  - Ephemeral caching voor project info en system prompts
+- **API Endpoints**:
+  - GET /api/llm-settings - Ophalen huidige instellingen
+  - PUT /api/llm-settings - Runtime settings update
+  - GET /api/llm-settings/defaults - Standaard instellingen
+  - GET /api/llm-settings/presets - Beschikbare presets
+  - Prompt endpoints uitgebreid met temperature/preset parameters
+- **Validatie & Error Handling**:
+  - Client-side en server-side validatie van temperature (0.0-1.0)
+  - Max tokens validatie met model limits
+  - Comprehensive error handling en logging
+- **Testing**:
+  - Unit tests voor AnthropicConfig LLM settings
+  - Uitgebreide AnthropicClient tests met LLM parameters
+  - API tests voor alle nieuwe endpoints en validatie
+- **Presets Configuratie**:
+  - Developer Agent: temperature 0.2, optimaal voor code generatie
+  - Creative Writing: temperature 0.8, hogere creativiteit
+  - Analysis: temperature 0.1, deterministische analyse
+  - Balanced: temperature 0.5, algemeen gebruik
 
 ### Implementatie van Log Formatting (Issue #41)
 - **UI Verbetering**: Log berichten worden nu automatisch geformatteerd voor betere leesbaarheid
