@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/analytics.css') }}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="analytics-container">
+    <div class="analytics-header">
+        <h1>Analytics Dashboard</h1>
+        <div class="period-selector">
+            <label for="period-select">Periode:</label>
+            <select id="period-select">
+                <option value="7">Laatste 7 dagen</option>
+                <option value="30" selected>Laatste 30 dagen</option>
+                <option value="90">Laatste 90 dagen</option>
+            </select>
+            <button id="refresh-btn" class="btn btn-primary">Vernieuwen</button>
+        </div>
+    </div>
+
+    <!-- Loading indicator -->
+    <div id="loading-indicator" class="loading-indicator">
+        <div class="spinner"></div>
+        <p>Analytics data laden...</p>
+    </div>
+
+    <!-- Error message -->
+    <div id="error-message" class="error-message" style="display: none;">
+        <p>Er is een fout opgetreden bij het laden van de analytics data.</p>
+        <button id="retry-btn" class="btn btn-secondary">Opnieuw proberen</button>
+    </div>
+
+    <!-- Analytics content -->
+    <div id="analytics-content" style="display: none;">
+        <!-- Summary cards -->
+        <div class="summary-cards">
+            <div class="summary-card">
+                <h3>Totaal Tokens</h3>
+                <div class="summary-value" id="total-tokens">-</div>
+                <div class="summary-label">tokens gebruikt</div>
+            </div>
+            <div class="summary-card">
+                <h3>Totale Kosten</h3>
+                <div class="summary-value" id="total-cost">-</div>
+                <div class="summary-label">USD uitgegeven</div>
+            </div>
+            <div class="summary-card">
+                <h3>Gesprekken</h3>
+                <div class="summary-value" id="total-conversations">-</div>
+                <div class="summary-label">gesprekken gevoerd</div>
+            </div>
+            <div class="summary-card">
+                <h3>Gemiddelde Kosten</h3>
+                <div class="summary-value" id="avg-cost-per-request">-</div>
+                <div class="summary-label">per verzoek</div>
+            </div>
+        </div>
+
+        <!-- Charts section -->
+        <div class="charts-section">
+            <div class="chart-container">
+                <h3>Token Gebruik Over Tijd</h3>
+                <canvas id="usage-chart"></canvas>
+            </div>
+            <div class="chart-container">
+                <h3>Kosten Over Tijd</h3>
+                <canvas id="cost-chart"></canvas>
+            </div>
+        </div>
+
+        <!-- Model breakdown -->
+        <div class="breakdown-section">
+            <div class="breakdown-container">
+                <h3>Model Gebruik</h3>
+                <div class="model-breakdown" id="model-breakdown">
+                    <!-- Model data will be populated here -->
+                </div>
+            </div>
+            <div class="breakdown-container">
+                <h3>Preset Gebruik</h3>
+                <div class="preset-breakdown" id="preset-breakdown">
+                    <!-- Preset data will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Top conversations -->
+        <div class="conversations-section">
+            <h3>Top Gesprekken (Token Gebruik)</h3>
+            <div class="conversations-table" id="top-conversations">
+                <!-- Top conversations will be populated here -->
+            </div>
+        </div>
+
+        <!-- Insights section -->
+        <div class="insights-section">
+            <h3>Inzichten</h3>
+            <div class="insights-container" id="insights-container">
+                <!-- Insights will be populated here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
+{% endblock %}
