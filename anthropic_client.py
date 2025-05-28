@@ -108,13 +108,13 @@ class AnthropicClient:
                 "cache_control": {"type": "ephemeral"},
             })
             
-        if project_info:
-            # Add project info to the cached system context
-            system_parts.append({
-                "type": "text",
-                "text": f"\n\n# Project Information\n{project_info}",
-                "cache_control": {"type": "ephemeral"},
-            })
+       # if project_info:
+        #     # Add project info to the cached system context
+        #     system_parts.append({
+        #         "type": "text",
+        #         "text": f"\n\n# Project Information\n{project_info}",
+        #         "cache_control": {"type": "ephemeral"},
+        #     })
             
         if system_parts:
             params["system"] = system_parts
