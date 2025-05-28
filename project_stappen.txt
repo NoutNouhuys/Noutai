@@ -124,41 +124,10 @@
 
 ## Toekomstige stappen (Must-have)
 
-1. Performance optimalisatie en monitoring
-   - Database query optimalisatie voor grote datasets
-   - Caching strategieën voor frequently accessed conversations
-   - Performance metrics en monitoring dashboard
-
-2. Gebruikerservaring verbeteringen
-   - Real-time updates voor conversation changes
-   - Export/import functionaliteit voor conversations
-   - Advanced search filters (datum range, model type, etc.)
-   - Conversation templates en favorites
-
-3. LLM Settings UI uitbreiding
-   - Settings modal/page voor geavanceerde LLM configuratie
-   - Temperature slider en max tokens input
-   - Real-time settings preview
-   - Per-user settings persistentie in database
-   - Custom preset creation en management
-
-4. Veiligheid en compliance
-   - Audit logging voor conversation operations
-   - Data retention policies implementatie
-   - Encryption voor sensitive conversation data
-   - GDPR compliance features (data export/deletion)
-
-5. Error handling en monitoring uitbreiding
-   - Comprehensive error tracking en reporting
-   - Health checks voor database connectiviteit
-   - Automatic recovery mechanisms
-   - User-friendly error messages en guidance
-
-6. API rate limiting en quotas
-   - Per-user rate limiting implementation
-   - Conversation count quotas
-   - Usage analytics en reporting
-   - Fair usage policies
+1. Analytics en insights
+   - Geef token gebruik per chat weer in de voorkant
+   - Leg token gerbuik per chat weer in de historie
+   - Indien dit ook omgezet kan worden in $, laat dit ook zien.
 
 ## Toekomstige stappen (Nice-to-have)
 
@@ -167,12 +136,6 @@
    - Shared conversations tussen users
    - Conversation branching voor different paths
    - Integration met external knowledge bases
-
-2. Analytics en insights
-   - User engagement analytics
-   - Conversation pattern analysis
-   - Model performance metrics
-   - Usage trends en reporting dashboard
 
 3. Integration uitbreidingen
    - Slack/Teams bot integration
