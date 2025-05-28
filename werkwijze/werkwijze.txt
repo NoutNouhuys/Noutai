@@ -35,7 +35,7 @@
     * Welke modules/bestanden aangemaakt of gewijzigd
     * Welke functies toegevoegd/aangepast
     * Acceptatiecriteria (bijvoorbeeld: functie X levert resultaat Y bij input Z)
-    * Geef expliciete branchnaam (`feature/...`)
+    * Maak een branche aan, geef expliciete branchnaam (`feature/...`)
   * Labels toevoegen: `"must-have"`, `"nice-to-have"` of `"bug"`
   * Als je klaar bent geef je geen samenvatting van je werkzaamheden maar vertelt alleen: 'Ik heb issue [nummer] aangemaakt voor Repo [owner]/[repo]', je doet verder niks en je wacht verdere instructies
 
