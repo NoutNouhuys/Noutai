@@ -36,6 +36,12 @@
                             <label class="form-check-label" for="chat-away-toggle">Chat away</label>
                         </div>
                     </div>
+                    <div id="workflow-container" class="d-inline-block ms-2">
+                        <div class="form-check form-switch d-inline-block">
+                            <input class="form-check-input" type="checkbox" id="workflow-toggle">
+                            <label class="form-check-label" for="workflow-toggle">Workflow</label>
+                        </div>
+                    </div>
                 </div>
                 <div class="col-md-6 text-md-end">
                     <div class="window-layout-controls d-inline-block">
@@ -147,8 +153,22 @@ let chatAwayActive = false;
 let chatAwayInProgress = false;
 let lastConversationId = null;
 
+// Workflow state
+let workflowActive = false;
+
 // Global presets cache
 let availablePresets = {};
+
+// Workflow patterns
+const workflowPatterns = {
+    issueCreation: /Ik heb issue (\d+) aangemaakt voor Repo ([^\/]+)\/([^\s]+)/i,
+    prCreation: /Ik heb Pull Request (\d+) aangemaakt voor Repo ([^\/]+)\/([^\s]+)/i,
+    prProcessed: /Ik heb Pull Request (\d+) verwerkt en bijbehorende branche ([^\s]+) verwijderd voor Repo ([^\/]+)\/([^\s]+)/i
+};
+
+// Workflow configuration
+const WORKFLOW_MODEL_ID = 'claude-sonnet-4-20250514'; // Claude 4 Sonnet
+const WORKFLOW_PRESET_ID = 'developer_agent'; // Developer Agent preset
 
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize the first window
@@ -162,6 +182,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Check URL parameters to load conversations
     checkUrlParams();
+    
+    // Load workflow state from localStorage
+    loadWorkflowState();
 
     // Voeg event listener toe voor de nieuwe knop
     const continueInNewWindowBtn = document.getElementById('continue-in-new-window-btn');
@@ -182,6 +205,185 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     });
 });
+
+function loadWorkflowState() {
+    const savedState = localStorage.getItem('workflowActive');
+    if (savedState !== null) {
+        workflowActive = savedState === 'true';
+        const workflowToggle = document.getElementById('workflow-toggle');
+        if (workflowToggle) {
+            workflowToggle.checked = workflowActive;
+        }
+    }
+}
+
+function saveWorkflowState() {
+    localStorage.setItem('workflowActive', workflowActive.toString());
+}
+
+function toggleWorkflow() {
+    const workflowToggle = document.getElementById('workflow-toggle');
+    workflowActive = workflowToggle.checked;
+    saveWorkflowState();
+    
+    if (workflowActive) {
+        console.log('Workflow mode activated');
+    } else {
+        console.log('Workflow mode deactivated');
+    }
+}
+
+function monitorResponse(windowId, content) {
+    // Only monitor if workflow is active
+    if (!workflowActive) return;
+    
+    console.log('Monitoring response for workflow patterns:', content);
+    
+    // Check for issue creation pattern
+    const issueMatch = content.match(workflowPatterns.issueCreation);
+    if (issueMatch) {
+        const [, issueNumber, owner, repo] = issueMatch;
+        console.log(`Issue creation detected: #${issueNumber} for ${owner}/${repo}`);
+        
+        const prompt = `Ga naar Repo ${owner}/${repo} en pak issue ${issueNumber} op`;
+        autoCreateChatWindow(prompt, windowId);
+        return;
+    }
+    
+    // Check for PR creation pattern
+    const prCreationMatch = content.match(workflowPatterns.prCreation);
+    if (prCreationMatch) {
+        const [, prNumber, owner, repo] = prCreationMatch;
+        console.log(`PR creation detected: #${prNumber} for ${owner}/${repo}`);
+        
+        const prompt = `Ga naar Repo ${owner}/${repo} en merge Pull Request ${prNumber} en delete de bijbehorende branche`;
+        autoCreateChatWindow(prompt, windowId);
+        return;
+    }
+    
+    // Check for PR processed pattern
+    const prProcessedMatch = content.match(workflowPatterns.prProcessed);
+    if (prProcessedMatch) {
+        const [, prNumber, branch, owner, repo] = prProcessedMatch;
+        console.log(`PR processed detected: #${prNumber} (branch: ${branch}) for ${owner}/${repo}`);
+        
+        const prompt = `Ga Repo ${owner}/${repo}`;
+        autoCreateChatWindow(prompt, windowId);
+        return;
+    }
+}
+
+function autoCreateChatWindow(prompt, currentWindowId) {
+    console.log('Auto-creating new chat window with prompt:', prompt);
+    
+    // Add a small delay to ensure the current response is fully processed
+    setTimeout(() => {
+        // Create new window with the prompt and workflow settings
+        addChatWindow('', true); // Pass true to indicate this is a workflow window
+        
+        // Wait for the new window to be initialized
+        setTimeout(() => {
+            // Get the newest window
+            const allWindows = document.querySelectorAll('.chat-window');
+            const newWindow = allWindows[allWindows.length - 1];
+            const newWindowId = newWindow.getAttribute('data-window-id');
+            
+            // Configure the window with workflow settings
+            configureWorkflowWindow(newWindow);
+            
+            // Send the prompt in the new window
+            sendPrompt(newWindowId, prompt);
+            
+            // Close the current window after a short delay
+            setTimeout(() => {
+                autoCloseWindow(currentWindowId);
+            }, 500);
+        }, 200);
+    }, 1000);
+}
+
+function configureWorkflowWindow(windowElement) {
+    console.log('Configuring window for workflow mode');
+    
+    // Set model to Claude 4 Sonnet
+    const modelSelect = windowElement.querySelector('.model-select');
+    if (modelSelect) {
+        // Wait for models to be loaded if not already
+        const setModel = () => {
+            for (let i = 0; i < modelSelect.options.length; i++) {
+                if (modelSelect.options[i].value === WORKFLOW_MODEL_ID) {
+                    modelSelect.selectedIndex = i;
+                    console.log('Set model to Claude 4 Sonnet');
+                    break;
+                }
+            }
+        };
+        
+        if (modelSelect.options.length > 1) {
+            setModel();
+        } else {
+            // Wait for models to load
+            setTimeout(setModel, 500);
+        }
+    }
+    
+    // Set preset to developer_agent
+    const presetSelect = windowElement.querySelector('.preset-select');
+    if (presetSelect) {
+        // Wait for presets to be loaded if not already
+        const setPreset = () => {
+            for (let i = 0; i < presetSelect.options.length; i++) {
+                if (presetSelect.options[i].value === WORKFLOW_PRESET_ID) {
+                    presetSelect.selectedIndex = i;
+                    console.log('Set preset to developer_agent');
+                    break;
+                }
+            }
+        };
+        
+        if (presetSelect.options.length > 1) {
+            setPreset();
+        } else {
+            // Wait for presets to load
+            setTimeout(setPreset, 500);
+        }
+    }
+}
+
+function autoCloseWindow(windowId) {
+    console.log('Auto-closing window:', windowId);
+    
+    const windowElement = document.querySelector(`[data-window-id="${windowId}"]`);
+    if (!windowElement) return;
+    
+    // Make sure we're not closing the last window
+    const allWindows = document.querySelectorAll('.chat-window');
+    if (allWindows.length <= 1) {
+        console.log('Cannot close the last window');
+        return;
+    }
+    
+    // Remove from global state
+    chatWindows.delete(windowId);
+    
+    // Remove the element
+    windowElement.remove();
+    
+    // Set another window as active if needed
+    const remainingWindows = document.querySelectorAll('.chat-window');
+    if (remainingWindows.length > 0) {
+        const lastWindow = remainingWindows[remainingWindows.length - 1];
+        setActiveWindow(lastWindow.getAttribute('data-window-id'));
+    }
+    
+    // Update UI elements
+    updateChatAwayToggleVisibility();
+    
+    // Disable remove button if only one window remains
+    if (remainingWindows.length <= 1) {
+        document.getElementById('remove-window-btn').disabled = true;
+    }
+}
 
 function fetchLastAssistantMessage() {
     return new Promise((resolve, reject) => {
@@ -291,13 +493,17 @@ function setupControlPanel() {
         if (conversationId) {
             fetchLastAssistantMessage(conversationId)
                 .then(lastMessage => {
-                    addChatWindow(lastMessage);
+                    // Check if workflow is active and configure accordingly
+                    const isWorkflowWindow = workflowActive;
+                    addChatWindow(lastMessage, isWorkflowWindow);
                 })
                 .catch(() => {
-                    addChatWindow('');
+                    const isWorkflowWindow = workflowActive;
+                    addChatWindow('', isWorkflowWindow);
                 });
         } else {
-            addChatWindow('');
+            const isWorkflowWindow = workflowActive;
+            addChatWindow('', isWorkflowWindow);
         }
     });
     
@@ -320,6 +526,9 @@ function setupControlPanel() {
             stopChatAway();
         }
     });
+    
+    // Workflow toggle
+    document.getElementById('workflow-toggle').addEventListener('change', toggleWorkflow);
 }
 
 function setLastConversationId(conversationId) {
@@ -383,6 +592,13 @@ function initializeChatWindow(windowElement) {
     
     newChatBtn.addEventListener('click', function() {
         resetConversation(windowId);
+        
+        // If workflow is active, configure the new chat with workflow settings
+        if (workflowActive) {
+            setTimeout(() => {
+                configureWorkflowWindow(windowElement);
+            }, 100);
+        }
     });
     
     // Load available models for this window
@@ -417,7 +633,7 @@ function setActiveWindow(windowId) {
     }
 }
 
-function addChatWindow(initialInput) {
+function addChatWindow(initialInput, isWorkflowWindow = false) {
     const windowsContainer = document.getElementById('chat-windows-container');
     const currentWindows = document.querySelectorAll('.chat-window');
     const newWindowId = `window-${currentWindows.length + 1}`;
@@ -495,6 +711,14 @@ function addChatWindow(initialInput) {
         const presetSelectEl = newWindow.querySelector('.preset-select');
         populateModelSelect(modelSelectEl);
         populatePresetSelect(presetSelectEl);
+        
+        // Configure for workflow if needed
+        if (isWorkflowWindow) {
+            setTimeout(() => {
+                configureWorkflowWindow(newWindow);
+            }, 500); // Wait for selects to be populated
+        }
+        
         setActiveWindow(newWindowId);
     }, 100);
 
@@ -741,6 +965,9 @@ function sendPrompt(windowId, customInput = null) {
                 const statusElement = windowElement.querySelector('.conversation-status');
                 statusElement.textContent = `Gesprek: ${data.title || 'Onbenoemd gesprek'}`;
             }
+
+            // Monitor response for workflow patterns
+            monitorResponse(windowId, content);
 
             if (chatAwayActive && !chatAwayInProgress) {
                 forwardResponseToNextWindow(windowId, content);

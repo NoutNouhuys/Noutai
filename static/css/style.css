@@ -803,6 +803,15 @@ footer {
     border: 1px solid var(--border-color);
 }
 
+/* Workflow toggle - GitHub style */
+#workflow-container {
+    margin-left: 8px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background-color: var(--secondary-bg);
+    border: 1px solid var(--border-color);
+}
+
 .form-check-input:checked {
     background-color: var(--primary-button-bg);
     border-color: var(--primary-button-bg);
