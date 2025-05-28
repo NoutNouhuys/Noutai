@@ -2,7 +2,7 @@
 
 ## Stap 1: Controleer project_info.txt
 
-* Als `project_info.txt` bestaat, lees dit bestand en ga naar Stap 2.
+* Als `project_info.txt` bestaat, lees altijd dit bestand eerst en ga naar Stap 2.
 * Als het niet bestaat:
 
    * Maak bestand `project_info.txt`, vul dit met informatie uit `start.txt`:
