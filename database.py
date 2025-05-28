@@ -39,6 +39,7 @@ def init_db(app: Flask):
     with app.app_context():
         # Import models to ensure they are registered with SQLAlchemy
         from models.conversation import Conversation, Message
+        from models.token_usage import TokenUsage
         db.create_all()
 
 
