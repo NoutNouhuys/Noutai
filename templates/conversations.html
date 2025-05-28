@@ -9,7 +9,10 @@
                     <h2 class="fs-4 mb-2">Gesprekken</h2>
                     <p class="text-muted mb-0">Bekijk, hervat of verwijder je eerdere gesprekken met Claude</p>
                 </div>
-                <div>
+                <div class="d-flex gap-2">
+                    <button id="bulk-delete-btn" class="btn btn-outline-danger" style="display: none;">
+                        <i class="fas fa-trash me-1"></i> <span id="bulk-delete-count">0</span> verwijderen
+                    </button>
                     <button id="new-conversation-btn" class="btn btn-primary">
                         <i class="fas fa-plus me-1"></i> Nieuw Gesprek
                     </button>
@@ -25,6 +28,14 @@
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0 fs-6">Gesprekken</h5>
+                        <div class="bulk-select-controls" style="display: none;">
+                            <button id="select-all-btn" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-check-square me-1"></i> Alles
+                            </button>
+                            <button id="deselect-all-btn" class="btn btn-sm btn-outline-secondary ms-1">
+                                <i class="fas fa-square me-1"></i> Geen
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div class="card-body p-0">
@@ -52,6 +63,36 @@
                     </div>
                 </div>
                 <div class="card-body">
+                    <!-- Token Usage Summary -->
+                    <div id="token-usage-summary" class="mb-3" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="text-center p-2 border rounded">
+                                    <div class="fw-bold text-primary" id="total-tokens">0</div>
+                                    <small class="text-muted">Totaal tokens</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center p-2 border rounded">
+                                    <div class="fw-bold text-success" id="input-tokens">0</div>
+                                    <small class="text-muted">Input tokens</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center p-2 border rounded">
+                                    <div class="fw-bold text-info" id="output-tokens">0</div>
+                                    <small class="text-muted">Output tokens</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center p-2 border rounded">
+                                    <div class="fw-bold text-warning" id="total-cost">$0.00</div>
+                                    <small class="text-muted">Kosten</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div id="conversation-messages" class="conversation-messages">
                         <p class="text-center text-muted py-5">Selecteer een gesprek om de inhoud te bekijken.</p>
                     </div>
@@ -108,11 +149,31 @@
         </div>
     </div>
 </div>
+
+<!-- Bulk Delete Confirmation Modal -->
+<div class="modal fade" id="bulk-delete-modal" tabindex="-1" aria-labelledby="bulkDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fs-6" id="bulkDeleteModalLabel">Gesprekken verwijderen</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Sluiten"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-0">Weet je zeker dat je <span id="bulk-delete-modal-count">0</span> gesprekken wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuleren</button>
+                <button type="button" class="btn btn-danger" id="confirm-bulk-delete-btn">Verwijderen</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
 let currentConversationId = null;
+let selectedConversations = new Set();
 
 // Load conversations on page load
 document.addEventListener('DOMContentLoaded', function() {
@@ -157,6 +218,23 @@ function setupEventListeners() {
     document.getElementById('resume-conversation-btn').addEventListener('click', function() {
         window.location.href = `/dashboard?conversation_id=${currentConversationId}`;
     });
+    
+    // Bulk selection controls
+    document.getElementById('select-all-btn').addEventListener('click', selectAllConversations);
+    document.getElementById('deselect-all-btn').addEventListener('click', deselectAllConversations);
+    
+    // Bulk delete
+    document.getElementById('bulk-delete-btn').addEventListener('click', function() {
+        document.getElementById('bulk-delete-modal-count').textContent = selectedConversations.size;
+        const modal = new bootstrap.Modal(document.getElementById('bulk-delete-modal'));
+        modal.show();
+    });
+    
+    // Confirm bulk delete
+    document.getElementById('confirm-bulk-delete-btn').addEventListener('click', function() {
+        bulkDeleteConversations();
+        bootstrap.Modal.getInstance(document.getElementById('bulk-delete-modal')).hide();
+    });
 }
 
 function loadConversations() {
@@ -169,8 +247,22 @@ function loadConversations() {
             if (data.success && data.conversations && data.conversations.length > 0) {
                 data.conversations.forEach(conversation => {
                     const listItem = document.createElement('li');
-                    listItem.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center border-0 border-bottom py-2';
+                    listItem.className = 'list-group-item list-group-item-action border-0 border-bottom py-2';
                     listItem.setAttribute('data-id', conversation.id);
+                    
+                    // Create checkbox for bulk selection
+                    const checkboxContainer = document.createElement('div');
+                    checkboxContainer.className = 'd-flex align-items-start gap-2';
+                    
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'form-check-input conversation-checkbox mt-1';
+                    checkbox.setAttribute('data-id', conversation.id);
+                    checkbox.addEventListener('change', handleConversationSelection);
+                    
+                    const contentContainer = document.createElement('div');
+                    contentContainer.className = 'd-flex justify-content-between align-items-center flex-grow-1';
+                    contentContainer.style.cursor = 'pointer';
                     
                     const titleContainer = document.createElement('div');
                     titleContainer.className = 'd-flex flex-column';
@@ -178,6 +270,9 @@ function loadConversations() {
                     const titleSpan = document.createElement('span');
                     titleSpan.className = 'conversation-title fw-medium';
                     titleSpan.textContent = conversation.title;
+                    
+                    const metaContainer = document.createElement('div');
+                    metaContainer.className = 'd-flex gap-2 align-items-center';
                     
                     const dateSpan = document.createElement('small');
                     dateSpan.className = 'text-muted';
@@ -193,23 +288,47 @@ function loadConversations() {
                         dateSpan.textContent = formattedDate;
                     }
                     
+                    // Add token usage info if available
+                    if (conversation.token_usage) {
+                        const tokenSpan = document.createElement('small');
+                        tokenSpan.className = 'text-muted';
+                        tokenSpan.innerHTML = `<i class="fas fa-coins me-1"></i>${conversation.token_usage.total_tokens || 0} tokens`;
+                        metaContainer.appendChild(tokenSpan);
+                        
+                        if (conversation.token_usage.total_cost > 0) {
+                            const costSpan = document.createElement('small');
+                            costSpan.className = 'text-muted';
+                            costSpan.innerHTML = `<i class="fas fa-dollar-sign me-1"></i>$${(conversation.token_usage.total_cost || 0).toFixed(4)}`;
+                            metaContainer.appendChild(costSpan);
+                        }
+                    }
+                    
+                    metaContainer.appendChild(dateSpan);
+                    
                     titleContainer.appendChild(titleSpan);
-                    titleContainer.appendChild(dateSpan);
+                    titleContainer.appendChild(metaContainer);
                     
                     const badgeSpan = document.createElement('span');
                     badgeSpan.className = 'badge rounded-pill';
                     badgeSpan.style.backgroundColor = '#0969da';
                     badgeSpan.textContent = conversation.message_count;
                     
-                    listItem.appendChild(titleContainer);
-                    listItem.appendChild(badgeSpan);
+                    contentContainer.appendChild(titleContainer);
+                    contentContainer.appendChild(badgeSpan);
                     
-                    listItem.addEventListener('click', function() {
+                    contentContainer.addEventListener('click', function() {
                         loadConversationDetail(conversation.id);
                     });
                     
+                    checkboxContainer.appendChild(checkbox);
+                    checkboxContainer.appendChild(contentContainer);
+                    listItem.appendChild(checkboxContainer);
+                    
                     conversationsList.appendChild(listItem);
                 });
+                
+                // Show bulk selection controls if there are conversations
+                document.querySelector('.bulk-select-controls').style.display = 'block';
             } else {
                 const listItem = document.createElement('li');
                 listItem.className = 'list-group-item text-center py-3';
@@ -224,6 +343,101 @@ function loadConversations() {
                     <i class="fas fa-exclamation-circle me-2"></i> Fout bij het laden van gesprekken.
                 </li>
             `;
+        });
+}
+
+function handleConversationSelection(event) {
+    const conversationId = parseInt(event.target.getAttribute('data-id'));
+    
+    if (event.target.checked) {
+        selectedConversations.add(conversationId);
+    } else {
+        selectedConversations.delete(conversationId);
+    }
+    
+    updateBulkDeleteButton();
+}
+
+function updateBulkDeleteButton() {
+    const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+    const countSpan = document.getElementById('bulk-delete-count');
+    
+    if (selectedConversations.size > 0) {
+        bulkDeleteBtn.style.display = 'block';
+        countSpan.textContent = selectedConversations.size;
+    } else {
+        bulkDeleteBtn.style.display = 'none';
+    }
+}
+
+function selectAllConversations() {
+    const checkboxes = document.querySelectorAll('.conversation-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+        selectedConversations.add(parseInt(checkbox.getAttribute('data-id')));
+    });
+    updateBulkDeleteButton();
+}
+
+function deselectAllConversations() {
+    const checkboxes = document.querySelectorAll('.conversation-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+    selectedConversations.clear();
+    updateBulkDeleteButton();
+}
+
+function bulkDeleteConversations() {
+    if (selectedConversations.size === 0) return;
+    
+    const conversationIds = Array.from(selectedConversations);
+    
+    fetch('/api/conversations/bulk', {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            conversation_ids: conversationIds,
+            soft_delete: true
+        })
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove deleted conversations from the list
+                conversationIds.forEach(id => {
+                    const listItem = document.querySelector(`#conversations-list .list-group-item[data-id="${id}"]`);
+                    if (listItem) {
+                        listItem.remove();
+                    }
+                });
+                
+                // Clear selection
+                selectedConversations.clear();
+                updateBulkDeleteButton();
+                
+                // Reset conversation detail if current conversation was deleted
+                if (conversationIds.includes(currentConversationId)) {
+                    resetConversationDetail();
+                }
+                
+                // Show success message
+                showAlert('success', `${data.summary.successful} gesprekken succesvol verwijderd.`);
+                
+                // Check if no conversations left
+                if (document.querySelectorAll('#conversations-list .list-group-item').length === 0) {
+                    document.getElementById('conversations-list').innerHTML = '<li class="list-group-item text-center py-3"><i class="fas fa-comment-slash me-2"></i> Geen gesprekken gevonden.</li>';
+                    document.querySelector('.bulk-select-controls').style.display = 'none';
+                }
+            } else {
+                showAlert('danger', data.error || 'Fout bij het verwijderen van gesprekken.');
+            }
+        })
+        .catch(error => {
+            console.error('Error bulk deleting conversations:', error);
+            showAlert('danger', 'Fout bij het verwijderen van gesprekken.');
         });
 }
 
@@ -247,14 +461,26 @@ function loadConversationDetail(conversationId) {
     document.getElementById('conversation-actions').style.display = 'block';
     document.getElementById('resume-conversation-footer').style.display = 'block';
     
-    fetch(`/api/conversations/${conversationId}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success && data.data) {
-                const { conversation, messages } = data.data;
+    // Load conversation data and token usage
+    Promise.all([
+        fetch(`/api/conversations/${conversationId}`),
+        fetch(`/api/analytics/conversations/${conversationId}/usage`)
+    ])
+        .then(responses => Promise.all(responses.map(r => r.json())))
+        .then(([conversationData, usageData]) => {
+            if (conversationData.success && conversationData.data) {
+                const { conversation, messages } = conversationData.data;
                 
                 // Update title
                 document.getElementById('conversation-title').textContent = conversation.title;
+                
+                // Update token usage summary
+                if (usageData.success && !usageData.error) {
+                    updateTokenUsageSummary(usageData);
+                } else {
+                    // Hide token usage if no data available
+                    document.getElementById('token-usage-summary').style.display = 'none';
+                }
                 
                 // Display messages
                 const messagesContainer = document.getElementById('conversation-messages');
@@ -285,7 +511,7 @@ function loadConversationDetail(conversationId) {
                     const metaDiv = document.createElement('div');
                     metaDiv.className = 'message-meta';
                     
-                    // Format date
+                    // Format date and add token info if available
                     const messageDate = new Date(message.created_at);
                     const formattedDate = messageDate.toLocaleString('nl-NL', {
                         day: '2-digit',
@@ -295,7 +521,12 @@ function loadConversationDetail(conversationId) {
                         minute: '2-digit'
                     });
                     
-                    metaDiv.textContent = formattedDate;
+                    let metaText = formattedDate;
+                    if (message.metadata && message.metadata.token_count) {
+                        metaText += ` • ${message.metadata.token_count} tokens`;
+                    }
+                    
+                    metaDiv.textContent = metaText;
                     
                     messageDiv.appendChild(iconSpan);
                     messageDiv.appendChild(contentDiv);
@@ -305,7 +536,7 @@ function loadConversationDetail(conversationId) {
             } else {
                 document.getElementById('conversation-messages').innerHTML = `
                     <p class="text-center text-danger py-5">
-                        <i class="fas fa-exclamation-circle me-2"></i> ${data.error || 'Fout bij het laden van het gesprek.'}
+                        <i class="fas fa-exclamation-circle me-2"></i> ${conversationData.error || 'Fout bij het laden van het gesprek.'}
                     </p>
                 `;
             }
@@ -318,6 +549,30 @@ function loadConversationDetail(conversationId) {
                 </p>
             `;
         });
+}
+
+function updateTokenUsageSummary(usageData) {
+    const summary = document.getElementById('token-usage-summary');
+    
+    if (usageData && !usageData.error) {
+        document.getElementById('total-tokens').textContent = (usageData.total_tokens || 0).toLocaleString();
+        document.getElementById('input-tokens').textContent = (usageData.total_input_tokens || 0).toLocaleString();
+        document.getElementById('output-tokens').textContent = (usageData.total_output_tokens || 0).toLocaleString();
+        document.getElementById('total-cost').textContent = `$${(usageData.total_cost || 0).toFixed(4)}`;
+        
+        summary.style.display = 'block';
+    } else {
+        summary.style.display = 'none';
+    }
+}
+
+function resetConversationDetail() {
+    currentConversationId = null;
+    document.getElementById('conversation-title').textContent = 'Selecteer een gesprek';
+    document.getElementById('conversation-messages').innerHTML = '<p class="text-center text-muted py-5">Selecteer een gesprek om de inhoud te bekijken.</p>';
+    document.getElementById('conversation-actions').style.display = 'none';
+    document.getElementById('resume-conversation-footer').style.display = 'none';
+    document.getElementById('token-usage-summary').style.display = 'none';
 }
 
 function renameConversation(conversationId, newTitle) {
@@ -368,11 +623,7 @@ function deleteConversation(conversationId) {
                 }
                 
                 // Reset conversation detail
-                currentConversationId = null;
-                document.getElementById('conversation-title').textContent = 'Selecteer een gesprek';
-                document.getElementById('conversation-messages').innerHTML = '<p class="text-center text-muted py-5">Selecteer een gesprek om de inhoud te bekijken.</p>';
-                document.getElementById('conversation-actions').style.display = 'none';
-                document.getElementById('resume-conversation-footer').style.display = 'none';
+                resetConversationDetail();
                 
                 // Show success message
                 showAlert('success', 'Gesprek succesvol verwijderd.');
@@ -380,6 +631,7 @@ function deleteConversation(conversationId) {
                 // Check if no conversations left
                 if (document.querySelectorAll('#conversations-list .list-group-item').length === 0) {
                     document.getElementById('conversations-list').innerHTML = '<li class="list-group-item text-center py-3"><i class="fas fa-comment-slash me-2"></i> Geen gesprekken gevonden.</li>';
+                    document.querySelector('.bulk-select-controls').style.display = 'none';
                 }
             } else {
                 showAlert('danger', data.error || 'Fout bij het verwijderen van het gesprek.');
@@ -499,6 +751,37 @@ function showAlert(type, message) {
 
 .modal-footer {
     border-top: 1px solid var(--border-color);
+}
+
+/* Bulk selection styles */
+.conversation-checkbox {
+    margin-top: 2px;
+}
+
+.bulk-select-controls {
+    display: flex;
+    gap: 4px;
+}
+
+/* Token usage summary */
+#token-usage-summary .border {
+    border-color: var(--border-color) !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #token-usage-summary .row > div {
+        margin-bottom: 8px;
+    }
+    
+    .bulk-select-controls {
+        margin-top: 8px;
+    }
+    
+    .d-flex.gap-2 {
+        flex-direction: column;
+        gap: 8px !important;
+    }
 }
 </style>
 {% endblock %}
