@@ -45,25 +45,19 @@
 * Werk wijzigingen uit volgens beschrijving
 * Werk tegelijk documenten bij (`project_info.txt`, `project_stappen.txt`) en vat al uitgevoerde stappen in 'project_stappen.txt' samen om het document compact te houden.
 * Commit wijzigingen met duidelijk bericht
-* Push naar GitHub
-
-## Stap 5: Pull Request
-
 * Maak Pull Request
 
   * Titel: korte omschrijving
   * Beschrijving: refereer naar issue, beschrijf uitgevoerde wijzigingen, status tests en documentatie
   * Als je klaar bent geef je geen samenvatting van je werkzaamheden maar vertelt alleen: 'Ik heb Pull Request [nummer] aangemaakt voor Repo [owner]/[repo]', je doet verder niks en je wacht verdere instructies
 
-## Stap 6: Mergen Pull Request (deze actie mag alleen worden uitgevoerd als de vraag 'Ik heb Pull Request [nummer] aangemaakt voor Repo [owner]/[repo]' wordt gesteld)
+## Stap 5: Mergen Pull Request (deze actie mag alleen worden uitgevoerd als de vraag 'Ik heb Pull Request [nummer] aangemaakt voor Repo [owner]/[repo]' wordt gesteld)
 
   * Merge de Pull Request
-  * Verwijder de bijbehorende branche 
-
-## Stap 7: Afronden
-
-* Na goedkeuring en merge PR: sluit het betreffende issue
-* Als je klaar bent geef je geen samenvatting van je werkzaamheden maar vertelt alleen: 'Ik heb Pull Request [nummer] verwerkt en bijbehorende branche [branche] verwijderd voor Repo [owner]/[repo]', je doet verder niks en je wacht verdere instructies
+  * Als je een Pull Request heb gemerged: 
+    * Verwijder de bijbehorende branche
+    * sluit je het bijbehorende issue
+  * Als je klaar bent geef je geen samenvatting van je werkzaamheden maar vertelt alleen: 'Ik heb Pull Request [nummer] verwerkt en bijbehorende branche [branche] verwijderd voor Repo [owner]/[repo]', je doet verder niks en je wacht verdere instructies
 
 
 Algemeen: Houd code overzichtelijk en documentatie synchroon. Splits grote wijzigingen (>400 regels) in kleinere delen.
