@@ -28,6 +28,7 @@
 * Maak nieuw issue op basis van eerstvolgende 'must-have 'stap uit `project_stappen.txt` als er geen open issue aanwezig is:
 
   * Titel: omschrijving te implementeren functionaliteit
+  * Analyseer de revelante scripts om te bepalen hoe de functionaliteit het beste toegevoegd kan worden
   * Beschrijving:
 
     * Duidelijke uitleg implementatie
