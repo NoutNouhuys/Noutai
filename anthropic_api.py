@@ -12,6 +12,7 @@ from anthropic_client import AnthropicClient
 from conversation_manager import ConversationManager
 from mcp_integration import MCPIntegration
 from repositories.conversation_repository import ConversationRepository
+from analytics.token_tracker import TokenTracker
 
 # Setup logger
 logger = logging.getLogger(__name__)
@@ -38,6 +39,7 @@ class AnthropicAPI:
         self.client = AnthropicClient(self.anthropic_config)
         self.conversation_manager = ConversationManager()
         self.mcp_integration = MCPIntegration(self.anthropic_config)
+        self.token_tracker = TokenTracker()
         
         # For backwards compatibility
         self.api_key = self.anthropic_config.api_key
@@ -189,6 +191,24 @@ class AnthropicAPI:
         """
         self.conversation_manager.add_exchange(conversation_id, user_message, system_message)
     
+    def get_conversation_analytics(self, conversation_id: Union[str, int]) -> Dict[str, Any]:
+        """
+        Get analytics data for a conversation.
+        
+        Args:
+            conversation_id: The ID of the conversation
+            
+        Returns:
+            Analytics data for the conversation
+        """
+        try:
+            # Convert to int if needed for database lookup
+            conv_id = int(conversation_id) if isinstance(conversation_id, str) and conversation_id.isdigit() else conversation_id
+            return self.token_tracker.get_conversation_usage(conv_id)
+        except Exception as e:
+            logger.error(f"Error getting conversation analytics: {e}")
+            return {'error': str(e)}
+    
     async def _send_prompt_async(
         self,
         messages: List[Dict[str, Any]],
@@ -199,8 +219,10 @@ class AnthropicAPI:
         project_info: Optional[str],
         preset_name: Optional[str],
         emit_log: callable,
-        include_logs: bool
-    ) -> str:
+        include_logs: bool,
+        conversation_id: Union[str, int],
+        message_id: Optional[int] = None
+    ) -> Tuple[str, Dict[str, Any]]:
         """
         Internal async method to send prompt and handle tool usage.
         
@@ -214,9 +236,11 @@ class AnthropicAPI:
             preset_name: Optional LLM preset name
             emit_log: Logging callback
             include_logs: Whether to emit logs
+            conversation_id: ID of the conversation
+            message_id: Optional message ID for tracking
             
         Returns:
-            Response text from the model
+            Tuple of (response text, usage data)
         """
         # Connect to MCP server if configured
         tools = []
@@ -268,10 +292,47 @@ class AnthropicAPI:
                 )
             
             response_text = response.content[0].text
+            
+            # Extract usage data from response
+            usage_data = {}
+            if hasattr(response, 'usage'):
+                usage_data = {
+                    'input_tokens': response.usage.input_tokens,
+                    'output_tokens': response.usage.output_tokens,
+                    'cache_creation_input_tokens': getattr(response.usage, 'cache_creation_input_tokens', 0),
+                    'cache_read_input_tokens': getattr(response.usage, 'cache_read_input_tokens', 0)
+                }
+                
+                # Record token usage
+                try:
+                    conv_id = int(conversation_id) if isinstance(conversation_id, str) and conversation_id.isdigit() else conversation_id
+                    request_metadata = {
+                        'model_version': getattr(response, 'model', model_id),
+                        'request_type': 'chat',
+                        'temperature': temperature,
+                        'max_tokens': max_tokens,
+                        'preset_used': preset_name
+                    }
+                    
+                    self.token_tracker.record_usage(
+                        conversation_id=conv_id,
+                        model_name=model_id,
+                        usage_data=usage_data,
+                        message_id=message_id,
+                        request_metadata=request_metadata
+                    )
+                    
+                    if include_logs:
+                        total_tokens = usage_data['input_tokens'] + usage_data['output_tokens']
+                        emit_log(f"Token gebruik: {total_tokens} tokens (in: {usage_data['input_tokens']}, out: {usage_data['output_tokens']})")
+                        
+                except Exception as e:
+                    logger.error(f"Error recording token usage: {e}")
+            
             if include_logs:
                 emit_log("Antwoord van Claude ontvangen")
                 
-            return response_text
+            return response_text, usage_data
             
         finally:
             # Disconnect from MCP server
@@ -416,8 +477,8 @@ class AnthropicAPI:
         loop = ensure_event_loop()
         
         try:
-            # Send prompt and get response
-            response_text = loop.run_until_complete(
+            # Send prompt and get response with usage data
+            response_text, usage_data = loop.run_until_complete(
                 self._send_prompt_async(
                     messages=messages,
                     model_id=model_id,
@@ -427,7 +488,8 @@ class AnthropicAPI:
                     project_info=project_info,
                     preset_name=preset_name,
                     emit_log=emit_log,
-                    include_logs=include_logs
+                    include_logs=include_logs,
+                    conversation_id=conversation_id
                 )
             )
             
@@ -447,6 +509,7 @@ class AnthropicAPI:
                 "temperature": temperature,
                 "max_tokens": max_tokens,
                 "preset_name": preset_name,
+                "usage": usage_data,
                 "success": True,
                 "logs": logs if include_logs else [],
             }
