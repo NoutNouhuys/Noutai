@@ -45,7 +45,7 @@
 4.1 Kijk of er een branch genoemd wordt in het issue:
 * 4.1.1 Zo ja, werk daarin verder
 * 4.1.2 Zo nee, maak een branche aan en voer daar de werkzaamheden uit
-4.2 Werk wijzigingen uit volgens beschrijving
+4.2 Werk wijzigingen uit volgens beschrijving, lees relevantie files of scripts om goed te berijpen hoe het issue ontwikkeld moet worden.
 4.3 Commit wijzigingen of file direct en met een duidelijk bericht
 4.4 Werk tegelijk documenten bij (`project_info.txt`, `project_stappen.txt`) en verwijder al uitgevoerde stappen uit 'project\_stappen.txt' door ze samen te vatten en daarmee het document compact te houden.
 
