@@ -117,7 +117,50 @@
      - Error handling voor preset-gerelateerde fouten
    - Bestanden gewijzigd:
      - templates/home.html - Preset selector UI en JavaScript functionaliteit
-13. [✓] Implementatie van Workflow Toggle Automation (Issue #60) - VOLTOOID
+13. [✓] Implementatie van Analytics en Token Usage Tracking (Issue #56) - VOLTOOID
+   - Backend modules:
+     - [✓] `analytics/token_tracker.py` - Token usage tracking en berekeningen met conversation analytics, trends, en cleanup
+     - [✓] `analytics/cost_calculator.py` - Kosten berekening op basis van actuele model pricing inclusief cache costs
+     - [✓] `analytics/analytics_service.py` - Service voor analytics data aggregatie met insights generation
+     - [✓] `models/token_usage.py` - Database model voor token usage opslag met cost calculations
+     - [✓] `repositories/analytics_repository.py` - CRUD operaties voor analytics data met aggregaties en trends
+   - API endpoints:
+     - [✓] `routes/analytics.py` - Volledige API voor analytics data inclusief dashboard, costs, trends, model comparison
+     - [✓] GET /api/analytics/dashboard - Comprehensive dashboard data
+     - [✓] GET /api/analytics/token-usage - Token usage data per user/conversation
+     - [✓] GET /api/analytics/costs - Cost analysis en projections
+     - [✓] GET /api/analytics/trends - Usage patterns en trends
+     - [✓] GET /api/analytics/models - Model usage en comparison
+     - [✓] GET /api/analytics/conversations/top - Top conversations by usage
+     - [✓] POST /api/analytics/estimate-cost - Cost estimation voor requests
+   - Frontend implementation:
+     - [✓] `templates/analytics.html` - Analytics dashboard pagina met charts en insights
+     - [✓] `static/js/analytics.js` - JavaScript voor analytics visualisatie met Chart.js
+     - [✓] `static/css/analytics.css` - Responsive styling voor analytics componenten
+     - [✓] Token usage display in chat interface headers
+     - [✓] Conversation analytics in chat input area
+     - [✓] Analytics link in navigation
+   - Database integration:
+     - [✓] TokenUsage model toegevoegd aan database.py
+     - [✓] Automatic token usage recording in anthropic_api.py
+     - [✓] Real-time cost calculations en display
+   - Features:
+     - [✓] Real-time token usage tracking per message
+     - [✓] Comprehensive cost calculations inclusief cache costs
+     - [✓] Usage trends en patterns analysis
+     - [✓] Model efficiency comparison
+     - [✓] Automated insights generation
+     - [✓] Export functionaliteit voor analytics data
+     - [✓] Cleanup van oude records
+   - UI/UX:
+     - [✓] Token count en cost display in chat headers
+     - [✓] Conversation totals in input area
+     - [✓] Analytics dashboard met period selection
+     - [✓] Charts voor usage en cost trends
+     - [✓] Model en preset breakdown tables
+     - [✓] Top conversations lijst
+     - [✓] Automated insights met recommendations
+14. [✓] Implementatie van Workflow Toggle Automation (Issue #60) - VOLTOOID
    - UI uitbreiding:
      - [✓] Workflow toggle button toegevoegd naast chat away toggle
      - [✓] Toggle state wordt opgeslagen in localStorage voor persistentie
@@ -150,13 +193,37 @@
      - [✓] Verificatie dat bestaande functionaliteit ongewijzigd blijft
    - Bestanden gewijzigd:
      - templates/home.html - Workflow toggle UI, automatisering logic en configuratie functionaliteit
+15. [✓] Token usage weergave in Gespreksgeschiedenis en bulk delete functionaliteit (Issue #62) - VOLTOOID
+   - Token usage weergave:
+     - [✓] Token count (input/output) zichtbaar per gesprek in lijst
+     - [✓] Kosten per gesprek weergave in lijst
+     - [✓] Gedetailleerde token usage in conversation detail view
+     - [✓] Real-time token data uit analytics systeem
+   - Bulk delete functionaliteit:
+     - [✓] Checkbox selectie per conversation
+     - [✓] "Selecteer alles" / "Deselecteer alles" functionaliteit  
+     - [✓] Bulk delete knop alleen zichtbaar bij selecties
+     - [✓] Bevestigingsmodal toont aantal geselecteerde gesprekken
+     - [✓] Succesvolle bulk delete met feedback
+     - [✓] UI update na bulk delete (verwijderde items verdwijnen)
+   - Technische implementatie:
+     - [✓] Gebruik bestaande analytics infrastructure voor token data
+     - [✓] Integratie met bestaande conversation repository patterns
+     - [✓] Behoud bestaande UI/UX consistentie
+     - [✓] Gebruik bestaande bulk delete API endpoint
+     - [✓] Responsive design voor mobile devices
+   - API uitbreiding:
+     - [✓] GET /api/analytics/conversations/<id>/usage endpoint voor conversation-specifieke token data
+     - [✓] GET /api/analytics/users/<id>/usage endpoint voor user usage summaries
+     - [✓] Enhanced conversations endpoint met include_usage parameter voor automatische token data
+   - Bestanden gewijzigd:
+     - [✓] templates/conversations.html - Token usage display en bulk delete UI
+     - [✓] routes/api.py - Token usage endpoints en enhanced conversations API
+     - [✓] static/css/style.css - Styling voor nieuwe functionaliteit
 
 ## Toekomstige stappen (Must-have)
 
-1. Analytics en insights
-   - Geef token gebruik per chat weer in de voorkant
-   - Leg token gerbuik per chat weer in de historie
-   - Indien dit ook omgezet kan worden in $, laat dit ook zien.
+Alle must-have taken zijn uitgevoerd.
 
 ## Toekomstige stappen (Nice-to-have)
 
@@ -166,32 +233,39 @@
    - Conversation branching voor different paths
    - Integration met external knowledge bases
 
-3. Integration uitbreidingen
+2. Integration uitbreidingen
    - Slack/Teams bot integration
    - API webhooks voor external systems
    - Third-party authentication providers
    - Mobile app development
 
-4. UI/UX verbeteringen
+3. UI/UX verbeteringen
    - Dark/light mode toggle verbetering
    - Customizable interface layouts
    - Keyboard shortcuts en accessibility
    - Responsive design optimalisatie
 
-5. Development en deployment
+4. Development en deployment
    - Automated testing pipeline uitbreiding
    - Staging environment setup
    - Blue-green deployment strategy
    - Container orchestration met Kubernetes
 
-6. Multi-tenancy support
+5. Multi-tenancy support
    - Organization-level conversation management
    - Role-based access control
    - Resource isolation en billing
    - Admin dashboard voor organization management
 
-7. Advanced LLM features
+6. Advanced LLM features
    - Custom model fine-tuning support
    - A/B testing voor verschillende settings
    - LLM performance analytics
    - Context window management optimalisatie
+
+7. Enhanced analytics features
+   - Advanced cost optimization recommendations
+   - Usage pattern analysis en alerts
+   - Model performance comparison metrics
+   - Custom reporting en data export
+   - Integration met external analytics platforms
