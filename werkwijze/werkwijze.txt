@@ -55,7 +55,7 @@
   * Beschrijving: refereer naar issue, beschrijf uitgevoerde wijzigingen, status tests en documentatie
   * Als je klaar bent geef je geen samenvatting van je werkzaamheden maar vertelt alleen: 'Ik heb Pull Request [nummer] aangemaakt voor Repo [owner]/[repo]', je doet verder niks en je wacht verdere instructies
 
-## Stap 6: Mergen Pull Request
+## Stap 6: Mergen Pull Request (deze actie mag alleen worden uitgevoerd als de vraag 'Ik heb Pull Request [nummer] aangemaakt voor Repo [owner]/[repo]' wordt gesteld)
 
   * Merge de Pull Request
   * Verwijder de bijbehorende branche 
