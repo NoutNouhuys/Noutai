@@ -47,7 +47,7 @@
 * 4.1.2 Zo nee, maak een branche aan en voer daar de werkzaamheden uit
 4.2 Werk wijzigingen uit volgens beschrijving
 4.3 Commit wijzigingen of file direct en met een duidelijk bericht
-4.4 Werk tegelijk documenten bij (`project_info.txt`, `project_stappen.txt`) en vat al uitgevoerde stappen in 'project\_stappen.txt' samen om het document compact te houden
+4.4 Werk tegelijk documenten bij (`project_info.txt`, `project_stappen.txt`) en verwijder al uitgevoerde stappen uit 'project\_stappen.txt' door ze samen te vatten en daarmee het document compact te houden.
 
 4.5 Maak Pull Request:
 * 4.5.1 Titel: korte omschrijving
