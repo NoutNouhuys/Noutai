@@ -1,17 +1,23 @@
 # Project Informatie: aiontwikkelhulp
 
 ## Projectoverzicht
-De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt nu configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie. Bevat nu ook workflow automatisering voor het automatisch openen en sluiten van chat windows op basis van AI responses, inclusief automatische configuratie van nieuwe chats met Claude Sonnet 4 en developer_agent preset.
+De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt nu configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie. Bevat nu ook workflow automatisering voor het automatisch openen en sluiten van chat windows op basis van AI responses, inclusief automatische configuratie van nieuwe chats met Claude Sonnet 4 en developer_agent preset. Nieuw: Volledig analytics systeem voor token usage tracking, kosten berekening en usage insights met real-time weergave in de chat interface.
 
 ## Architectuur
 De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruikers te helpen bij het ontwikkelen van software met behulp van AI:
 
 ### Core Modules:
-- Flask web-applicatie (app.py)
-- Anthropic API integratie (anthropic_api.py) - met LLM settings support
+- Flask web-applicatie (app.py) - met analytics routes
+- Anthropic API integratie (anthropic_api.py) - met token tracking integratie
 - MCP Connector voor tools integratie (mcp_connector.py)
 - Configuratie (config.py)
 - Repository beheer
+
+### Analytics Modules:
+- Token tracker (analytics/token_tracker.py) - Token usage monitoring en recording
+- Cost calculator (analytics/cost_calculator.py) - Kosten berekening op basis van model pricing
+- Analytics service (analytics/analytics_service.py) - Data aggregatie en insights
+- Analytics repository (repositories/analytics_repository.py) - Database operaties voor analytics
 
 ### Nieuwe Modules (Refactoring):
 - Anthropic configuratie (anthropic_config.py) - met LLM settings en presets
@@ -20,18 +26,75 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - MCP integratie (mcp_integration.py)
 
 ### Frontend Modules:
-- templates/home.html - Hoofdtemplate met chat interface, preset selector en workflow toggle
+- templates/home.html - Hoofdtemplate met chat interface, preset selector, workflow toggle en token usage display
+- templates/analytics.html - Analytics dashboard template
 - static/css/style.css - Styling voor de applicatie inclusief workflow toggle styling
+- static/css/analytics.css - Styling voor analytics dashboard
+- static/js/analytics.js - JavaScript voor analytics dashboard functionaliteit
 - static/js/log-formatter.js - Log formatting functionaliteit
 - static/css/log-formatter.css - Styling voor geformatteerde logs
 
 ## Modules
 
+### analytics/token_tracker.py
+- **Status**: Nieuw toegevoegd
+- **Pad**: /analytics/token_tracker.py
+- **Functionaliteit**: Tracks token usage en berekent kosten voor AI model interacties. Ondersteunt recording van usage data, conversation analytics, usage trends, cost estimates, model statistics, en cleanup van oude records.
+- **Afhankelijkheden**: models/token_usage.py, analytics/cost_calculator.py, database.py
+
+### analytics/cost_calculator.py
+- **Status**: Nieuw toegevoegd
+- **Pad**: /analytics/cost_calculator.py
+- **Functionaliteit**: Berekent kosten voor token usage op basis van model pricing. Ondersteunt alle Claude modellen inclusief Claude 4 Sonnet, cache pricing, cost projections, efficiency metrics, en model recommendations.
+- **Afhankelijkheden**: Geen directe afhankelijkheden
+
+### analytics/analytics_service.py
+- **Status**: Nieuw toegevoegd
+- **Pad**: /analytics/analytics_service.py
+- **Functionaliteit**: Service voor analytics data aggregatie en insights. Biedt dashboard data, conversation analytics, cost analysis, usage patterns, model comparison, en automated insights generation.
+- **Afhankelijkheden**: analytics/token_tracker.py, analytics/cost_calculator.py, repositories/analytics_repository.py
+
+### repositories/analytics_repository.py
+- **Status**: Nieuw toegevoegd
+- **Pad**: /repositories/analytics_repository.py
+- **Functionaliteit**: Repository voor analytics en token usage data access. Ondersteunt CRUD operaties, aggregaties, trends analysis, top conversations, model breakdowns, en data cleanup.
+- **Afhankelijkheden**: models/token_usage.py, models/conversation.py, database.py
+
+### models/token_usage.py
+- **Status**: Nieuw toegevoegd
+- **Pad**: /models/token_usage.py
+- **Functionaliteit**: Database model voor token usage tracking. Ondersteunt input/output tokens, cache tokens, cost calculations, metadata storage, en relationships met conversations en messages.
+- **Afhankelijkheden**: database.py (SQLAlchemy)
+
+### routes/analytics.py
+- **Status**: Nieuw toegevoegd
+- **Pad**: /routes/analytics.py
+- **Functionaliteit**: API endpoints voor analytics data. Ondersteunt dashboard data, token usage, costs, trends, model analytics, conversation analytics, cost estimates, pricing info, data export, en cleanup.
+- **Afhankelijkheden**: analytics/analytics_service.py, analytics/token_tracker.py, analytics/cost_calculator.py
+
+### templates/analytics.html
+- **Status**: Nieuw toegevoegd
+- **Pad**: /templates/analytics.html
+- **Functionaliteit**: Analytics dashboard template met summary cards, charts, model breakdown, top conversations, en insights. Ondersteunt periode selectie en real-time data loading.
+- **Afhankelijkheden**: base.html, static/css/analytics.css, static/js/analytics.js
+
+### static/css/analytics.css
+- **Status**: Nieuw toegevoegd
+- **Pad**: /static/css/analytics.css
+- **Functionaliteit**: Styling voor analytics dashboard inclusief responsive design, dark mode support, charts styling, breakdown tables, en insights display.
+- **Afhankelijkheden**: Gebruikt CSS variabelen uit style.css
+
+### static/js/analytics.js
+- **Status**: Nieuw toegevoegd
+- **Pad**: /static/js/analytics.js
+- **Functionaliteit**: JavaScript voor analytics dashboard functionaliteit. Ondersteunt data loading, Chart.js visualisaties, period selection, error handling, en data formatting.
+- **Afhankelijkheden**: Chart.js library
+
 ### anthropic_api.py
-- **Status**: Uitgebreid met LLM settings management
+- **Status**: Uitgebreid met token tracking integratie
 - **Pad**: /anthropic_api.py
-- **Functionaliteit**: High-level API voor interactie met Anthropic Claude modellen. Coördineert tussen client, conversation management, en MCP integratie. Ondersteunt conditionele inclusie van project_info in cache. Nieuw: LLM settings management, temperature configuratie, runtime settings updates, en preset ondersteuning.
-- **Afhankelijkheden**: anthropic_config.py, anthropic_client.py, conversation_manager.py, mcp_integration.py, repositories
+- **Functionaliteit**: High-level API voor interactie met Anthropic Claude modellen. Coördineert tussen client, conversation management, MCP integratie, en token tracking. Ondersteunt conditionele inclusie van project_info in cache. Nieuw: Token usage recording, conversation analytics, real-time usage tracking.
+- **Afhankelijkheden**: anthropic_config.py, anthropic_client.py, conversation_manager.py, mcp_integration.py, repositories, analytics/token_tracker.py
 
 ### anthropic_config.py
 - **Status**: Uitgebreid met LLM settings en presets
@@ -70,10 +133,16 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: Geen directe afhankelijkheden binnen het project
 
 ### app.py
-- **Status**: Actief
+- **Status**: Uitgebreid met analytics routes
 - **Pad**: /app.py
-- **Functionaliteit**: Flask web-applicatie die de gebruikersinterface biedt.
-- **Afhankelijkheden**: anthropic_api.py, config.py
+- **Functionaliteit**: Flask web-applicatie die de gebruikersinterface biedt. Nieuw: Analytics route registratie en analytics pagina endpoint.
+- **Afhankelijkheden**: anthropic_api.py, config.py, routes/analytics.py
+
+### database.py
+- **Status**: Uitgebreid met TokenUsage model
+- **Pad**: /database.py
+- **Functionaliteit**: Database configuratie en session management voor SQLAlchemy. Nieuw: TokenUsage model import voor analytics functionaliteit.
+- **Afhankelijkheden**: Flask-SQLAlchemy, models/token_usage.py
 
 ### routes/api.py
 - **Status**: Uitgebreid met LLM settings API endpoints
@@ -82,9 +151,9 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: anthropic_api.py, ConversationManager, ConversationRepository, Flask app context
 
 ### templates/home.html
-- **Status**: Actief (bijgewerkt met workflow toggle automation)
+- **Status**: Uitgebreid met token usage display
 - **Pad**: /templates/home.html
-- **Functionaliteit**: Hoofdtemplate voor de chat interface. Ondersteunt nu gesplitste weergave van chat en log berichten in aparte kolommen. Geïntegreerd met conversation persistence en enhanced log formatting. Nieuw: Preset selector naast model selector voor LLM configuratie, dynamisch laden van presets via API, preset parameter doorgeven aan prompt requests. Workflow toggle button voor automatische chat window management op basis van AI response patterns. Volledig geïmplementeerde workflow automation met automatische configuratie van Claude Sonnet 4 en developer_agent preset voor nieuwe workflow chats.
+- **Functionaliteit**: Hoofdtemplate voor de chat interface. Ondersteunt nu gesplitste weergave van chat en log berichten in aparte kolommen. Geïntegreerd met conversation persistence en enhanced log formatting. Nieuw: Preset selector naast model selector voor LLM configuratie, dynamisch laden van presets via API, preset parameter doorgeven aan prompt requests. Workflow toggle button voor automatische chat window management op basis van AI response patterns. Volledig geïmplementeerde workflow automation met automatische configuratie van Claude Sonnet 4 en developer_agent preset voor nieuwe workflow chats. Token usage display in chat headers en conversation analytics.
 - **Afhankelijkheden**: base.html, static/css/style.css, static/js/log-formatter.js, static/css/log-formatter.css
 
 ### templates/conversations.html
@@ -141,12 +210,6 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Functionaliteit**: Database modellen voor conversations en messages. Ondersteunt metadata storage, timestamps, en relationships.
 - **Afhankelijkheden**: database.py (SQLAlchemy)
 
-### database.py
-- **Status**: Actief
-- **Pad**: /database.py
-- **Functionaliteit**: Database configuratie en session management voor SQLAlchemy.
-- **Afhankelijkheden**: Flask-SQLAlchemy
-
 ### tests/test_anthropic_config.py
 - **Status**: Actief (bijgewerkt)
 - **Pad**: /tests/test_anthropic_config.py
@@ -184,6 +247,50 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: routes/api.py, anthropic_api
 
 ## Recente Wijzigingen
+
+### Implementatie van Analytics en Token Usage Tracking (Issue #56) - VOLTOOID
+- **Backend Modules**:
+  - `analytics/token_tracker.py` - Token usage tracking en berekeningen met conversation analytics, trends, en cleanup
+  - `analytics/cost_calculator.py` - Kosten berekening op basis van actuele model pricing inclusief cache costs
+  - `analytics/analytics_service.py` - Service voor analytics data aggregatie met insights generation
+  - `models/token_usage.py` - Database model voor token usage opslag met cost calculations
+  - `repositories/analytics_repository.py` - CRUD operaties voor analytics data met aggregaties en trends
+- **API Endpoints**:
+  - `routes/analytics.py` - Volledige API voor analytics data inclusief dashboard, costs, trends, model comparison
+  - GET /api/analytics/dashboard - Comprehensive dashboard data
+  - GET /api/analytics/token-usage - Token usage data per user/conversation
+  - GET /api/analytics/costs - Cost analysis en projections
+  - GET /api/analytics/trends - Usage patterns en trends
+  - GET /api/analytics/models - Model usage en comparison
+  - GET /api/analytics/conversations/top - Top conversations by usage
+  - POST /api/analytics/estimate-cost - Cost estimation voor requests
+- **Frontend Implementation**:
+  - `templates/analytics.html` - Analytics dashboard pagina met charts en insights
+  - `static/js/analytics.js` - JavaScript voor analytics visualisatie met Chart.js
+  - `static/css/analytics.css` - Responsive styling voor analytics componenten
+  - Token usage display in chat interface headers
+  - Conversation analytics in chat input area
+  - Analytics link in navigation
+- **Database Integration**:
+  - TokenUsage model toegevoegd aan database.py
+  - Automatic token usage recording in anthropic_api.py
+  - Real-time cost calculations en display
+- **Features**:
+  - Real-time token usage tracking per message
+  - Comprehensive cost calculations inclusief cache costs
+  - Usage trends en patterns analysis
+  - Model efficiency comparison
+  - Automated insights generation
+  - Export functionaliteit voor analytics data
+  - Cleanup van oude records
+- **UI/UX**:
+  - Token count en cost display in chat headers
+  - Conversation totals in input area
+  - Analytics dashboard met period selection
+  - Charts voor usage en cost trends
+  - Model en preset breakdown tables
+  - Top conversations lijst
+  - Automated insights met recommendations
 
 ### Implementatie van Workflow Toggle Automation (Issue #60) - VOLTOOID
 - **UI Uitbreiding**:
