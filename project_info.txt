@@ -1,7 +1,7 @@
 # Project Informatie: aiontwikkelhulp
 
 ## Projectoverzicht
-De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt nu configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie.
+De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt nu configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie. Bevat nu ook workflow automatisering voor het automatisch openen en sluiten van chat windows op basis van AI responses.
 
 ## Architectuur
 De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruikers te helpen bij het ontwikkelen van software met behulp van AI:
@@ -20,8 +20,8 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - MCP integratie (mcp_integration.py)
 
 ### Frontend Modules:
-- templates/home.html - Hoofdtemplate met chat interface en preset selector
-- static/css/style.css - Styling voor de applicatie
+- templates/home.html - Hoofdtemplate met chat interface, preset selector en workflow toggle
+- static/css/style.css - Styling voor de applicatie inclusief workflow toggle styling
 - static/js/log-formatter.js - Log formatting functionaliteit
 - static/css/log-formatter.css - Styling voor geformatteerde logs
 
@@ -82,9 +82,9 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: anthropic_api.py, ConversationManager, ConversationRepository, Flask app context
 
 ### templates/home.html
-- **Status**: Actief (bijgewerkt met preset selector)
+- **Status**: Actief (bijgewerkt met workflow toggle)
 - **Pad**: /templates/home.html
-- **Functionaliteit**: Hoofdtemplate voor de chat interface. Ondersteunt nu gesplitste weergave van chat en log berichten in aparte kolommen. Geïntegreerd met conversation persistence en enhanced log formatting. Nieuw: Preset selector naast model selector voor LLM configuratie, dynamisch laden van presets via API, preset parameter doorgeven aan prompt requests.
+- **Functionaliteit**: Hoofdtemplate voor de chat interface. Ondersteunt nu gesplitste weergave van chat en log berichten in aparte kolommen. Geïntegreerd met conversation persistence en enhanced log formatting. Nieuw: Preset selector naast model selector voor LLM configuratie, dynamisch laden van presets via API, preset parameter doorgeven aan prompt requests. Workflow toggle button voor automatische chat window management op basis van AI response patterns.
 - **Afhankelijkheden**: base.html, static/css/style.css, static/js/log-formatter.js, static/css/log-formatter.css
 
 ### templates/conversations.html
@@ -94,9 +94,9 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: base.html, API endpoints
 
 ### static/css/style.css
-- **Status**: Actief (bijgewerkt)
+- **Status**: Actief (bijgewerkt met workflow toggle styling)
 - **Pad**: /static/css/style.css
-- **Functionaliteit**: Styling voor de applicatie inclusief GitHub-achtige thema's. Ondersteunt nu de gesplitste kolom layout voor chat en logs.
+- **Functionaliteit**: Styling voor de applicatie inclusief GitHub-achtige thema's. Ondersteunt nu de gesplitste kolom layout voor chat en logs. Nieuw: Styling voor workflow toggle button consistent met bestaande UI.
 - **Afhankelijkheden**: Geen
 
 ### static/js/log-formatter.js
@@ -184,6 +184,30 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: routes/api.py, anthropic_api
 
 ## Recente Wijzigingen
+
+### Implementatie van Workflow Toggle Automation (Issue #53) - IN PROGRESS
+- **UI Uitbreiding**:
+  - Workflow toggle button toegevoegd naast chat away toggle
+  - Toggle state wordt opgeslagen in localStorage voor persistentie
+  - Visuele indicatie van workflow mode status
+  - Consistent styling met bestaande UI elementen
+- **JavaScript Functionaliteit**:
+  - `toggleWorkflow()` functie voor het aan/uitzetten van workflow mode
+  - `monitorResponse()` functie die AI responses analyseert voor patterns
+  - `autoCreateChatWindow()` functie voor automatisch openen nieuwe windows
+  - `autoCloseWindow()` functie voor automatisch sluiten huidige window
+  - Pattern matching met regex voor drie scenario's
+- **Workflow Patterns**:
+  - Issue Creation: "Ik heb issue [nummer] aangemaakt voor Repo [owner]/[repo]"
+  - PR Creation: "Ik heb Pull Request [nummer] aangemaakt voor Repo [owner]/[repo]"
+  - PR Processed: "Ik heb Pull Request [nummer] verwerkt en bijbehorende branche [branche] verwijderd voor Repo [owner]/[repo]"
+- **State Management**:
+  - Workflow state opgeslagen in localStorage
+  - State wordt hersteld bij page reload
+  - Workflow functionaliteit alleen actief wanneer toggle "aan" staat
+- **Bestanden gewijzigd**:
+  - templates/home.html - Workflow toggle UI en automatisering logic
+  - static/css/style.css - Styling voor workflow toggle container
 
 ### Implementatie van Preset Selector UI (Issue #48)
 - **Frontend Uitbreiding**:
