@@ -36,6 +36,11 @@
     --gh-btn-border: #d0d7de;
     --gh-btn-hover-bg: #f3f4f6;
     --gh-counter-bg: #f3f4f6;
+    /* Token usage colors */
+    --token-primary: #0969da;
+    --token-success: #1a7f37;
+    --token-info: #0969da;
+    --token-warning: #9a6700;
 }
 
 /* Dark mode colors - GitHub Dark */
@@ -75,6 +80,11 @@
     --gh-btn-border: #30363d;
     --gh-btn-hover-bg: #30363d;
     --gh-counter-bg: #30363d;
+    /* Token usage colors */
+    --token-primary: #58a6ff;
+    --token-success: #56d364;
+    --token-info: #58a6ff;
+    --token-warning: #f2cc60;
 }
 
 /* Theme transition */
@@ -923,6 +933,92 @@ footer {
     color: #ffa657;
 }
 
+/* Conversations page specific styles */
+.conversation-checkbox {
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.bulk-select-controls {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
+.bulk-select-controls .btn {
+    font-size: 12px;
+    padding: 2px 8px;
+}
+
+/* Token usage summary styles */
+#token-usage-summary {
+    background-color: var(--secondary-bg);
+    border-radius: 6px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+}
+
+#token-usage-summary .border {
+    border-color: var(--border-color) !important;
+    background-color: var(--card-bg);
+}
+
+#token-usage-summary .text-primary {
+    color: var(--token-primary) !important;
+}
+
+#token-usage-summary .text-success {
+    color: var(--token-success) !important;
+}
+
+#token-usage-summary .text-info {
+    color: var(--token-info) !important;
+}
+
+#token-usage-summary .text-warning {
+    color: var(--token-warning) !important;
+}
+
+/* Conversation list item enhancements */
+.list-group-item .d-flex.align-items-start {
+    gap: 8px;
+}
+
+.list-group-item .conversation-title {
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.list-group-item .text-muted {
+    font-size: 12px;
+}
+
+.list-group-item .badge {
+    font-size: 11px;
+    min-width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Bulk delete button styling */
+#bulk-delete-btn {
+    position: relative;
+    animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .chat-windows-container {
@@ -955,5 +1051,31 @@ footer {
     .log-column {
         flex: 1 1 auto;
         height: 300px;
+    }
+    
+    /* Conversations page mobile adjustments */
+    #token-usage-summary .row > div {
+        margin-bottom: 8px;
+    }
+    
+    .bulk-select-controls {
+        margin-top: 8px;
+        justify-content: center;
+    }
+    
+    .d-flex.gap-2 {
+        flex-direction: column;
+        gap: 8px !important;
+        align-items: stretch;
+    }
+    
+    .list-group-item .d-flex.align-items-start {
+        flex-direction: column;
+        gap: 4px;
+    }
+    
+    .conversation-checkbox {
+        align-self: flex-start;
+        margin-bottom: 4px;
     }
 }

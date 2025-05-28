@@ -159,6 +159,24 @@ let workflowActive = false;
 // Global presets cache
 let availablePresets = {};
 
+// Get CSRF token from meta tag
+function getCSRFToken() {
+    return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+}
+
+// Create headers with CSRF token for API requests
+function getAPIHeaders(includeContentType = true) {
+    const headers = {
+        'X-CSRFToken': getCSRFToken()
+    };
+    
+    if (includeContentType) {
+        headers['Content-Type'] = 'application/json';
+    }
+    
+    return headers;
+}
+
 // Workflow patterns
 const workflowPatterns = {
     issueCreation: /Ik heb issue (\d+) aangemaakt voor Repo ([^\/]+)\/([^\s]+)/i,

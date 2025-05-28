@@ -1,13 +1,13 @@
 # Project Informatie: aiontwikkelhulp
 
 ## Projectoverzicht
-De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt nu configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie. Bevat nu ook workflow automatisering voor het automatisch openen en sluiten van chat windows op basis van AI responses, inclusief automatische configuratie van nieuwe chats met Claude Sonnet 4 en developer_agent preset. Nieuw: Volledig analytics systeem voor token usage tracking, kosten berekening en usage insights met real-time weergave in de chat interface.
+De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt nu configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie. Bevat nu ook workflow automatisering voor het automatisch openen en sluiten van chat windows op basis van AI responses, inclusief automatische configuratie van nieuwe chats met Claude Sonnet 4 en developer_agent preset. Nieuw: Volledig analytics systeem voor token usage tracking, kosten berekening en usage insights met real-time weergave in de chat interface. Uitgebreid met conversation enhancements voor token usage weergave en bulk delete functionaliteit. CSRF token ondersteuning geïmplementeerd voor alle API calls.
 
 ## Architectuur
 De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruikers te helpen bij het ontwikkelen van software met behulp van AI:
 
 ### Core Modules:
-- Flask web-applicatie (app.py) - met analytics routes
+- Flask web-applicatie (app.py) - met analytics routes en CSRF protection
 - Anthropic API integratie (anthropic_api.py) - met token tracking integratie
 - MCP Connector voor tools integratie (mcp_connector.py)
 - Configuratie (config.py)
@@ -26,15 +26,46 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - MCP integratie (mcp_integration.py)
 
 ### Frontend Modules:
-- templates/home.html - Hoofdtemplate met chat interface, preset selector, workflow toggle en token usage display
+- templates/home.html - Hoofdtemplate met chat interface, preset selector, workflow toggle, token usage display en CSRF token ondersteuning
+- templates/conversations.html - Conversation management met token usage, bulk delete en CSRF token ondersteuning
 - templates/analytics.html - Analytics dashboard template
-- static/css/style.css - Styling voor de applicatie inclusief workflow toggle styling
+- static/css/style.css - Styling voor de applicatie inclusief conversation enhancements
 - static/css/analytics.css - Styling voor analytics dashboard
 - static/js/analytics.js - JavaScript voor analytics dashboard functionaliteit
 - static/js/log-formatter.js - Log formatting functionaliteit
 - static/css/log-formatter.css - Styling voor geformatteerde logs
 
 ## Modules
+
+### templates/conversations.html
+- **Status**: Uitgebreid met token usage, bulk delete functionaliteit en CSRF token ondersteuning
+- **Pad**: /templates/conversations.html
+- **Functionaliteit**: Template voor conversation management interface. Ondersteunt conversation listing, search, rename, delete operations met real-time updates. Nieuw: Token usage weergave per gesprek (input/output tokens, kosten), bulk delete functionaliteit met checkboxes, selecteer alles/geen functionaliteit, bevestigingsmodals voor bulk acties, responsive design voor mobile devices. CSRF token ondersteuning: getCSRFToken() functie, X-CSRFToken header in alle fetch requests, proper error handling.
+- **Afhankelijkheden**: base.html, API endpoints, analytics API endpoints
+
+### templates/home.html
+- **Status**: Uitgebreid met token usage display en CSRF token ondersteuning
+- **Pad**: /templates/home.html
+- **Functionaliteit**: Hoofdtemplate voor de chat interface. Ondersteunt nu gesplitste weergave van chat en log berichten in aparte kolommen. Geïntegreerd met conversation persistence en enhanced log formatting. Nieuw: Preset selector naast model selector voor LLM configuratie, dynamisch laden van presets via API, preset parameter doorgeven aan prompt requests. Workflow toggle button voor automatische chat window management op basis van AI response patterns. Volledig geïmplementeerde workflow automation met automatische configuratie van Claude Sonnet 4 en developer_agent preset voor nieuwe workflow chats. Token usage display in chat headers en conversation analytics. CSRF token ondersteuning: getCSRFToken() functie voor alle API calls, proper error handling voor CSRF fouten.
+- **Afhankelijkheden**: base.html, static/css/style.css, static/js/log-formatter.js, static/css/log-formatter.css
+
+### templates/base.html
+- **Status**: Actief met CSRF token ondersteuning
+- **Pad**: /templates/base.html
+- **Functionaliteit**: Basis template met navigatie, thema switching en CSRF token meta tag. Bevat `<meta name="csrf-token" content="{{ csrf_token() }}">` voor frontend toegang tot CSRF token.
+- **Afhankelijkheden**: Flask-WTF CSRF token functionaliteit
+
+### routes/api.py
+- **Status**: Uitgebreid met token usage endpoints, enhanced conversations API en CSRF protection
+- **Pad**: /routes/api.py
+- **Functionaliteit**: API endpoints voor conversation management inclusief pagination, search, bulk operations, CRUD operaties met database persistence. Geïntegreerd met ConversationManager voor robuuste data handling. Bugfix toegepast voor thread context issue in send_prompt_stream functie. Nieuw: LLM settings API endpoints, temperature en preset ondersteuning in prompt endpoints. Token usage endpoints: GET /api/analytics/conversations/<id>/usage voor conversation-specifieke usage data, GET /api/analytics/users/<id>/usage voor user usage summaries. Enhanced conversations endpoint met include_usage parameter voor token data. CSRF protection via Flask-WTF voor alle POST/PUT/DELETE endpoints.
+- **Afhankelijkheden**: anthropic_api.py, ConversationManager, ConversationRepository, AnalyticsRepository, Flask app context, Flask-WTF CSRF
+
+### static/css/style.css
+- **Status**: Uitgebreid met conversation enhancements styling
+- **Pad**: /static/css/style.css
+- **Functionaliteit**: Styling voor de applicatie inclusief GitHub-achtige thema's. Ondersteunt nu de gesplitste kolom layout voor chat en logs. Nieuw: Styling voor workflow toggle button consistent met bestaande UI. Conversation enhancements: Bulk selection styling, token usage summary styling, responsive design voor mobile devices, checkbox styling, bulk delete button animations.
+- **Afhankelijkheden**: Geen
 
 ### analytics/token_tracker.py
 - **Status**: Nieuw toegevoegd
@@ -133,40 +164,16 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: Geen directe afhankelijkheden binnen het project
 
 ### app.py
-- **Status**: Uitgebreid met analytics routes
+- **Status**: Uitgebreid met analytics routes en CSRF protection
 - **Pad**: /app.py
-- **Functionaliteit**: Flask web-applicatie die de gebruikersinterface biedt. Nieuw: Analytics route registratie en analytics pagina endpoint.
-- **Afhankelijkheden**: anthropic_api.py, config.py, routes/analytics.py
+- **Functionaliteit**: Flask web-applicatie die de gebruikersinterface biedt. Nieuw: Analytics route registratie en analytics pagina endpoint. CSRF protection via Flask-WTF CSRFProtect() voor alle formulieren en API calls.
+- **Afhankelijkheden**: anthropic_api.py, config.py, routes/analytics.py, Flask-WTF
 
 ### database.py
 - **Status**: Uitgebreid met TokenUsage model
 - **Pad**: /database.py
 - **Functionaliteit**: Database configuratie en session management voor SQLAlchemy. Nieuw: TokenUsage model import voor analytics functionaliteit.
 - **Afhankelijkheden**: Flask-SQLAlchemy, models/token_usage.py
-
-### routes/api.py
-- **Status**: Uitgebreid met LLM settings API endpoints
-- **Pad**: /routes/api.py
-- **Functionaliteit**: API endpoints voor conversation management inclusief pagination, search, bulk operations, CRUD operaties met database persistence. Geïntegreerd met ConversationManager voor robuuste data handling. Bugfix toegepast voor thread context issue in send_prompt_stream functie. Nieuw: LLM settings API endpoints (GET/PUT /api/llm-settings, GET /api/llm-settings/defaults, GET /api/llm-settings/presets), temperature en preset ondersteuning in prompt endpoints.
-- **Afhankelijkheden**: anthropic_api.py, ConversationManager, ConversationRepository, Flask app context
-
-### templates/home.html
-- **Status**: Uitgebreid met token usage display
-- **Pad**: /templates/home.html
-- **Functionaliteit**: Hoofdtemplate voor de chat interface. Ondersteunt nu gesplitste weergave van chat en log berichten in aparte kolommen. Geïntegreerd met conversation persistence en enhanced log formatting. Nieuw: Preset selector naast model selector voor LLM configuratie, dynamisch laden van presets via API, preset parameter doorgeven aan prompt requests. Workflow toggle button voor automatische chat window management op basis van AI response patterns. Volledig geïmplementeerde workflow automation met automatische configuratie van Claude Sonnet 4 en developer_agent preset voor nieuwe workflow chats. Token usage display in chat headers en conversation analytics.
-- **Afhankelijkheden**: base.html, static/css/style.css, static/js/log-formatter.js, static/css/log-formatter.css
-
-### templates/conversations.html
-- **Status**: Actief (bijgewerkt voor persistence)
-- **Pad**: /templates/conversations.html
-- **Functionaliteit**: Template voor conversation management interface. Ondersteunt conversation listing, search, rename, delete operations met real-time updates.
-- **Afhankelijkheden**: base.html, API endpoints
-
-### static/css/style.css
-- **Status**: Actief (bijgewerkt met workflow toggle styling)
-- **Pad**: /static/css/style.css
-- **Functionaliteit**: Styling voor de applicatie inclusief GitHub-achtige thema's. Ondersteunt nu de gesplitste kolom layout voor chat en logs. Nieuw: Styling voor workflow toggle button consistent met bestaande UI.
-- **Afhankelijkheden**: Geen
 
 ### static/js/log-formatter.js
 - **Status**: Nieuw toegevoegd
@@ -247,6 +254,62 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: routes/api.py, anthropic_api
 
 ## Recente Wijzigingen
+
+### CSRF Token Missing Error Fix (Issue #64) - VOLTOOID
+- **Probleem**: CSRF token ontbrak in bulk delete en andere API calls, resulteerde in 400 errors
+- **Oplossing**:
+  - **Frontend Implementatie**:
+    - `getCSRFToken()` functie toegevoegd om token uit meta tag te lezen
+    - `getAPIHeaders()` functie voor consistent header management
+    - X-CSRFToken header toegevoegd aan alle fetch requests (POST/PUT/DELETE)
+    - Error handling voor CSRF token gerelateerde fouten
+  - **Templates Bijgewerkt**:
+    - `templates/conversations.html` - CSRF token ondersteuning in bulk delete, rename, delete functionaliteit
+    - `templates/home.html` - CSRF token ondersteuning in chat functionaliteit
+    - `templates/base.html` - Bevat al CSRF token meta tag via `{{ csrf_token() }}`
+  - **Backend Configuratie**:
+    - `app.py` - CSRF protection via Flask-WTF CSRFProtect() al actief
+    - `routes/api.py` - Alle endpoints beschermd door CSRF protection
+- **Resultaat**: Alle API calls werken nu correct zonder CSRF fouten
+- **Bestanden gewijzigd**:
+  - templates/conversations.html - CSRF token functies en headers
+  - templates/home.html - CSRF token functies en headers
+  - project_info.txt - Documentatie update
+
+### Implementatie van Token Usage Weergave en Bulk Delete Functionaliteit (Issue #62) - VOLTOOID
+- **Frontend Uitbreiding**:
+  - Token usage weergave per gesprek in conversations lijst (input/output tokens, kosten)
+  - Token usage summary in conversation detail view met real-time data
+  - Bulk delete functionaliteit met checkboxes voor elke conversation
+  - "Selecteer alles" / "Deselecteer alles" functionaliteit
+  - Bulk delete knop alleen zichtbaar bij selecties
+  - Bevestigingsmodal toont aantal geselecteerde gesprekken
+  - Succesvolle bulk delete met feedback en UI update
+- **API Uitbreiding**:
+  - GET /api/analytics/conversations/<id>/usage endpoint voor conversation-specifieke token data
+  - GET /api/analytics/users/<id>/usage endpoint voor user usage summaries
+  - Enhanced conversations endpoint met include_usage parameter voor automatische token data
+  - Bestaande bulk delete endpoint gebruikt voor bulk operations
+- **UI/UX Verbeteringen**:
+  - Token count en cost display per conversation in lijst
+  - Gedetailleerde token usage in conversation detail view
+  - Real-time token data uit analytics systeem
+  - Responsive design voor mobile devices
+  - Consistent styling met bestaande GitHub-achtige UI
+  - Checkbox selectie per conversation met visuele feedback
+  - Bulk actions alleen zichtbaar wanneer relevant
+- **Technical Implementation**:
+  - Integratie met bestaande analytics infrastructure
+  - Gebruik van AnalyticsRepository voor token data
+  - Error handling voor ontbrekende token data
+  - Efficient data loading met Promise.all voor parallelle requests
+  - State management voor bulk selection
+  - LocalStorage voor UI state persistence
+- **Bestanden gewijzigd**:
+  - templates/conversations.html - Token usage display en bulk delete UI
+  - routes/api.py - Token usage endpoints en enhanced conversations API
+  - static/css/style.css - Styling voor nieuwe functionaliteit
+  - project_info.txt - Documentatie update
 
 ### Implementatie van Analytics en Token Usage Tracking (Issue #56) - VOLTOOID
 - **Backend Modules**:

@@ -6,6 +6,7 @@ from flask_login import login_required, current_user
 from anthropic_api import anthropic_api
 from auth import check_lynxx_domain
 from repositories.conversation_repository import ConversationRepository
+from repositories.analytics_repository import AnalyticsRepository
 from models.conversation import Conversation, Message
 from conversation_manager import ConversationManager
 
@@ -40,7 +41,7 @@ def get_models():
 def get_llm_settings():
     """
     API endpoint to retrieve current LLM settings.
-    
+
     Query parameters:
         model_id: Optional model identifier for model-specific settings
         preset_name: Optional preset name to load settings from
@@ -200,6 +201,7 @@ def list_conversations():
         limit: Maximum number of conversations to return (default: 50, max: 100)
         offset: Number of conversations to skip (default: 0)
         active_only: Return only active conversations (default: true)
+        include_usage: Include token usage data (default: true)
         
     Returns:
         JSON response with list of conversations and pagination info
@@ -209,6 +211,7 @@ def list_conversations():
         limit = min(int(request.args.get('limit', 50)), 100)  # Cap at 100
         offset = max(int(request.args.get('offset', 0)), 0)   # Non-negative
         active_only = request.args.get('active_only', 'true').lower() == 'true'
+        include_usage = request.args.get('include_usage', 'true').lower() == 'true'
         
         # Create conversation manager with database backend
         conv_manager = ConversationManager(storage_backend=True, user_id=current_user.id)
@@ -219,6 +222,14 @@ def list_conversations():
             limit=limit,
             offset=offset
         )
+        
+        # Add token usage data if requested
+        if include_usage:
+            analytics_repo = AnalyticsRepository()
+            for conversation in conversations:
+                usage_summary = analytics_repo.get_usage_summary_by_conversation(conversation['id'])
+                if not usage_summary.get('error'):
+                    conversation['token_usage'] = usage_summary
         
         # Get total count for pagination info
         total_conversations = ConversationRepository.get_conversations(current_user.id, active_only)
@@ -545,6 +556,102 @@ def bulk_delete_conversations():
             }
         })
         
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@api_bp.route('/analytics/conversations/<int:conversation_id>/usage', methods=['GET'])
+@login_required
+@check_lynxx_domain
+def get_conversation_usage(conversation_id):
+    """
+    API endpoint to get token usage summary for a conversation.
+    
+    Args:
+        conversation_id: ID of the conversation
+        
+    Returns:
+        JSON response with usage summary
+    """
+    try:
+        # Verify the conversation belongs to the current user
+        conversation = ConversationRepository.get_conversation(conversation_id)
+        if not conversation or conversation.user_id != current_user.id:
+            return jsonify({
+                "success": False,
+                "error": "Conversation not found or not authorized"
+            }), 404
+        
+        # Get usage summary
+        analytics_repo = AnalyticsRepository()
+        usage_summary = analytics_repo.get_usage_summary_by_conversation(conversation_id)
+        
+        if usage_summary.get('error'):
+            return jsonify({
+                "success": False,
+                "error": usage_summary['error']
+            }), 500
+        
+        return jsonify({
+            "success": True,
+            **usage_summary
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@api_bp.route('/analytics/users/<int:user_id>/usage', methods=['GET'])
+@login_required
+@check_lynxx_domain
+def get_user_usage(user_id):
+    """
+    API endpoint to get token usage summary for a user.
+    
+    Args:
+        user_id: ID of the user
+        
+    Query parameters:
+        days: Number of days to look back (optional)
+        
+    Returns:
+        JSON response with usage summary
+    """
+    try:
+        # Verify the user is requesting their own data
+        if user_id != current_user.id:
+            return jsonify({
+                "success": False,
+                "error": "Not authorized to access this user's data"
+            }), 403
+        
+        days = request.args.get('days')
+        if days:
+            try:
+                days = int(days)
+            except ValueError:
+                return jsonify({
+                    "success": False,
+                    "error": "Days must be a valid integer"
+                }), 400
+        
+        # Get usage summary
+        analytics_repo = AnalyticsRepository()
+        usage_summary = analytics_repo.get_usage_summary_by_user(user_id, days)
+        
+        if usage_summary.get('error'):
+            return jsonify({
+                "success": False,
+                "error": usage_summary['error']
+            }), 500
+        
+        return jsonify({
+            "success": True,
+            **usage_summary
+        })
     except Exception as e:
         return jsonify({
             "success": False,
