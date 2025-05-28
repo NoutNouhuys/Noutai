@@ -120,7 +120,33 @@
 
 ## Huidige stap
 
-- Pull request aanmaken voor preset selector UI implementatie
+13. [ ] Implementatie van Workflow Toggle Automation (Issue #53) - IN PROGRESS
+   - UI uitbreiding:
+     - [✓] Workflow toggle button toegevoegd naast chat away toggle
+     - [✓] Toggle state wordt opgeslagen in localStorage voor persistentie
+     - [✓] Visuele indicatie van workflow mode status
+     - [✓] Consistent styling met bestaande UI elementen
+   - JavaScript functionaliteit:
+     - [✓] `toggleWorkflow()` functie voor het aan/uitzetten van workflow mode
+     - [✓] `monitorResponse()` functie die AI responses analyseert voor patterns
+     - [✓] `autoCreateChatWindow()` functie voor automatisch openen nieuwe windows
+     - [✓] `autoCloseWindow()` functie voor automatisch sluiten huidige window
+     - [✓] Pattern matching met regex voor drie scenario's
+   - Workflow patterns:
+     - [✓] Issue Creation: "Ik heb issue [nummer] aangemaakt voor Repo [owner]/[repo]"
+     - [✓] PR Creation: "Ik heb Pull Request [nummer] aangemaakt voor Repo [owner]/[repo]"
+     - [✓] PR Processed: "Ik heb Pull Request [nummer] verwerkt en bijbehorende branche [branche] verwijderd voor Repo [owner]/[repo]"
+   - State management:
+     - [✓] Workflow state opgeslagen in localStorage
+     - [✓] State wordt hersteld bij page reload
+     - [✓] Workflow functionaliteit alleen actief wanneer toggle "aan" staat
+   - Testing:
+     - [ ] Manuele tests voor alle drie workflow scenario's
+     - [ ] Edge case testing (malformed responses, etc.)
+     - [ ] Verificatie dat bestaande functionaliteit ongewijzigd blijft
+   - Bestanden gewijzigd:
+     - templates/home.html - Workflow toggle UI en automatisering logic
+     - static/css/style.css - Styling voor workflow toggle container
 
 ## Toekomstige stappen (Must-have)
 
