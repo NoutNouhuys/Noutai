@@ -322,13 +322,16 @@ async function autoCreateChatWindow(prompt, currentWindowId, workflowConfig) {
             const newWindow = await addChatWindow('', true, workflowConfig);
             const newWindowId = newWindow.getAttribute('data-window-id');
 
-            // Send the prompt after the window is ready
-            sendPrompt(newWindowId, prompt);
+            // Wait for configuration to complete before sending prompt
+            setTimeout(() => {
+                // Send the prompt with the configured model and preset
+                sendPromptWithConfig(newWindowId, prompt, workflowConfig.model, workflowConfig.preset);
+            }, 1000);
 
             // Close the current window after a short delay
             setTimeout(() => {
                 autoCloseWindow(currentWindowId);
-            }, 500);
+            }, 1500);
         } catch (error) {
             console.error('Error configuring workflow window:', error);
         }
@@ -352,8 +355,19 @@ function configureWorkflowWindow(windowElement, config = null) {
         const presetId = config ? config.preset : FALLBACK_PRESET_ID;
         const description = config ? config.description : 'Workflow mode';
 
+        // Store the workflow configuration in the window data
+        const windowId = windowElement.getAttribute('data-window-id');
+        const windowData = chatWindows.get(windowId);
+        if (windowData) {
+            windowData.workflowConfig = {
+                model: modelId,
+                preset: presetId,
+                description: description
+            };
+        }
+
         addLogMessage(
-            windowElement.getAttribute('data-window-id'),
+            windowId,
             `Workflow configuratie ontvangen: model ${modelId}, preset ${presetId || 'geen'}`
         );
         
@@ -381,7 +395,7 @@ function configureWorkflowWindow(windowElement, config = null) {
             if (modelsLoaded && presetsLoaded) {
                 console.log('✓ Both models and presets loaded, configuration complete');
                 addLogMessage(
-                    windowElement.getAttribute('data-window-id'),
+                    windowId,
                     `Model gebruikt: ${modelSelect.value}, preset: ${presetSelect.value || 'geen'}`
                 );
                 resolve();
@@ -414,7 +428,7 @@ function configureWorkflowWindow(windowElement, config = null) {
                             if (modelSelect.options[i].value === FALLBACK_MODEL_ID) {
                                 modelSelect.selectedIndex = i;
                                 console.warn(`⚠ Model ${modelId} not found, using fallback: ${FALLBACK_MODEL_ID}`);
-                                addLogMessage(windowElement.getAttribute('data-window-id'), 
+                                addLogMessage(windowId, 
                                     `Waarschuwing: Model ${modelId} niet beschikbaar, teruggevallen op ${FALLBACK_MODEL_ID}`);
                                 break;
                             }
@@ -456,7 +470,7 @@ function configureWorkflowWindow(windowElement, config = null) {
                             if (presetSelect.options[i].value === FALLBACK_PRESET_ID) {
                                 presetSelect.selectedIndex = i;
                                 console.warn(`⚠ Preset ${presetId} not found, using fallback: ${FALLBACK_PRESET_ID}`);
-                                addLogMessage(windowElement.getAttribute('data-window-id'), 
+                                addLogMessage(windowId, 
                                     `Waarschuwing: Preset ${presetId} niet beschikbaar, teruggevallen op ${FALLBACK_PRESET_ID}`);
                                 break;
                             }
@@ -466,7 +480,7 @@ function configureWorkflowWindow(windowElement, config = null) {
                             // Use no preset (default)
                             presetSelect.selectedIndex = 0;
                             console.warn(`⚠ Preset ${presetId} and fallback not found, using default`);
-                            addLogMessage(windowElement.getAttribute('data-window-id'), 
+                            addLogMessage(windowId, 
                                 `Waarschuwing: Preset ${presetId} niet beschikbaar, geen preset gebruikt`);
                         }
                     }
@@ -707,7 +721,8 @@ function initializeChatWindow(windowElement) {
     // Store window data in the global state
     chatWindows.set(windowId, {
         conversationId: null,
-        isWaitingForResponse: false
+        isWaitingForResponse: false,
+        workflowConfig: null
     });
     
     // Add click event to make this window active
@@ -1028,6 +1043,7 @@ function resetConversation(windowId) {
     if (!windowData) return;
 
     windowData.conversationId = null;
+    windowData.workflowConfig = null;
 
     const windowElement = document.querySelector(`[data-window-id="${windowId}"]`);
     const chatMessages = windowElement.querySelector('.chat-messages');
@@ -1044,6 +1060,90 @@ function resetConversation(windowId) {
     promptInput.focus();
 }
 
+// New function to send prompt with specific model and preset configuration
+function sendPromptWithConfig(windowId, prompt, modelId, presetName) {
+    const windowData = chatWindows.get(windowId);
+    if (!windowData || windowData.isWaitingForResponse) return;
+    
+    const windowElement = document.querySelector(`[data-window-id="${windowId}"]`);
+    
+    if (!prompt || prompt.trim() === '') {
+        return;
+    }
+    
+    // Add user message to chat
+    addMessageToChat(windowId, 'user', prompt);
+    
+    // Add loading indicator
+    const loadingId = 'loading-' + Date.now();
+    addLoadingMessage(windowId, loadingId);
+    
+    console.log(`Sending prompt with configured model: ${modelId}, preset: ${presetName || 'none'}`);
+    
+    // Set waiting flag
+    windowData.isWaitingForResponse = true;
+    
+    // Prepare request with specific model and preset
+    const requestData = {
+        prompt: prompt,
+        model_id: modelId,
+        preset_name: presetName || undefined
+    };
+    
+    // Add conversation_id if continuing a conversation
+    if (windowData.conversationId) {
+        requestData.conversation_id = windowData.conversationId;
+    }
+    
+    const params = new URLSearchParams(requestData);
+    const eventSource = new EventSource('/api/prompt_stream?' + params.toString());
+
+    eventSource.addEventListener('log', function(e) {
+        const msg = JSON.parse(e.data);
+        addLogMessage(windowId, msg);
+    });
+
+    eventSource.addEventListener('final', function(e) {
+        const data = JSON.parse(e.data);
+
+        removeLoadingMessage(windowId, loadingId);
+        windowData.isWaitingForResponse = false;
+
+        if (data.success) {
+            if (Array.isArray(data.logs)) {
+                data.logs.forEach(log => addLogMessage(windowId, log));
+            }
+            const content = data.content || data.message;
+            addMessageToChat(windowId, 'assistant', content);
+            updateMcpStatus(data.active_mcp_servers);
+
+            if (data.conversation_id && !windowData.conversationId) {
+                windowData.conversationId = data.conversation_id;
+                setLastConversationId(data.conversation_id);
+                const statusElement = windowElement.querySelector('.conversation-status');
+                statusElement.textContent = `Gesprek: ${data.title || 'Onbenoemd gesprek'}`;
+            }
+
+            // Monitor response for workflow patterns
+            monitorResponse(windowId, content);
+
+            if (chatAwayActive && !chatAwayInProgress) {
+                forwardResponseToNextWindow(windowId, content);
+            }
+        } else {
+            addErrorMessage(windowId, data.error || 'Er is een fout opgetreden.');
+        }
+        eventSource.close();
+    });
+
+    eventSource.addEventListener('error', function(err) {
+        removeLoadingMessage(windowId, loadingId);
+        windowData.isWaitingForResponse = false;
+        addErrorMessage(windowId, 'Er is een fout opgetreden bij het verwerken van je vraag.');
+        console.error('Error sending prompt:', err);
+        eventSource.close();
+    });
+}
 
 function sendPrompt(windowId, customInput = null) {
     const windowData = chatWindows.get(windowId);
@@ -1057,6 +1157,20 @@ function sendPrompt(windowId, customInput = null) {
         return;
     }
     
+    // Check if this window has workflow configuration
+    if (windowData.workflowConfig) {
+        // Use the workflow configuration for model and preset
+        const { model, preset } = windowData.workflowConfig;
+        sendPromptWithConfig(windowId, prompt, model, preset);
+        
+        // Clear input only if it was not pre-filled
+        if (!customInput) {
+            promptInput.value = '';
+        }
+        return;
+    }
+    
+    // Normal flow: use the selected values from the UI
     // Add user message to chat
     addMessageToChat(windowId, 'user', prompt);
     
