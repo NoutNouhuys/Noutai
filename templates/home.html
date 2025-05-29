@@ -194,7 +194,7 @@ const workflowConfig = {
     issueCreation: {
         pattern: workflowPatterns.issueCreation,
         action: "Ga naar Repo [owner]/[repo] en pak issue [nummer] op",
-        model: "claude-3-5-sonnet-20241022",
+        model: "claude-sonnet-4-20250514",
         preset: "developer_agent",
         description: "Issue Creation - Developer Agent met Claude Sonnet 4"
     },
@@ -208,8 +208,8 @@ const workflowConfig = {
     prProcessed: {
         pattern: workflowPatterns.prProcessed,
         action: "Ga Repo [owner]/[repo]",
-        model: "claude-3-opus-20240229",
-        preset: "developer_agent",        
+        model: "claude-opus-4-20250514",
+        preset: "creative_writing",        
         description: "PR Processed - Developer Agent met Claude Opus 4"
     }
 };
