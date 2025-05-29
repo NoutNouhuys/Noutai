@@ -233,46 +233,25 @@ class AnthropicConfig:
         # This could be loaded from a config file in the future
         return [
             {
-                "id": "claude-3-opus-20240229",
-                "name": "Claude 3 Opus",
-                "description": "Most powerful for complex tasks",
+                 "id": "claude-opus-4-20250514",
+                "name": "Claude Opus 4",
+                "description": "Most powerful model for complex tasks, best coding model in the world",
                 "context_length": 200000,
-                "max_tokens": 4096,
-            },
-            {
-                "id": "claude-3-sonnet-20240229",
-                "name": "Claude 3 Sonnet",
-                "description": "Balance of intelligence and speed",
-                "context_length": 200000,
-                "max_tokens": 8192,
-            },
-            {
-                "id": "claude-3-haiku-20240307",
-                "name": "Claude 3 Haiku",
-                "description": "Fastest model for simpler tasks",  
-                "context_length": 200000,
-                "max_tokens": 4096,
-            },
-            {
-                "id": "claude-3-7-sonnet-20250219",
-                "name": "Claude 3.7 Sonnet",
-                "description": "Current most intelligent model",
-                "context_length": 200000,
-                "max_tokens": 20480,
+                "max_tokens": 20000,
             },
             {
                 "id": "claude-sonnet-4-20250514",
-                "name": "Claude 4 Sonnet",
-                "description": "Improved reasoning and intelligence capabilities compared to Claude Sonnet 3.7",
+                "name": "Claude Sonnet 4",
+                "description": "Excellent balance of intelligence and speed for production workloads",
                 "context_length": 200000,
-                "max_tokens": 20480,
+                "max_tokens": 20000,
             },
             {
-                "id": "claude-opus-4-20250514",
-                "name": "Claude 4 Opus",
-                "description": "Most capable model with superior reasoning and intelligence, Slower than Sonnet models,Best for complex tasks requiring deep analysis",
+                "id": "claude-3-5-haiku-20241022",
+                "name": "Claude 3.5 Haiku",
+                "description": "Fastest model for simpler tasks",
                 "context_length": 200000,
-                "max_tokens": 20480,
+                "max_tokens": 8192,
             }
         ]
     

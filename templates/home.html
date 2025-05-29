@@ -87,6 +87,11 @@
                                     <!-- Presets worden dynamisch geladen -->
                                 </select>
                             </div>
+                            <div id="workflow-status-window-1" class="workflow-status d-none">
+                                <span class="badge bg-info">
+                                    <i class="fas fa-cog"></i> Workflow
+                                </span>
+                            </div>
                         </div>
                         <div>
                             <button class="new-chat-btn btn btn-sm btn-outline-secondary">
@@ -181,12 +186,37 @@ function getAPIHeaders(includeContentType = true) {
 const workflowPatterns = {
     issueCreation: /Ik heb issue (\d+) aangemaakt voor Repo ([^\/]+)\/([^\s]+)/i,
     prCreation: /Ik heb Pull Request (\d+) aangemaakt voor Repo ([^\/]+)\/([^\s]+)/i,
-    prProcessed: /Ik heb Pull Request (\d+) verwerkt en bijbehorende branche ([^\s]+) verwijderd voor Repo ([^\/]+)\/([^\s]+)/i
+    prProcessed: /Ik heb Pull Request (\d+) verwerkt en bijbehorende branche(?: ([^\s]+))? verwijderd voor Repo ([^\/]+)\/([^\s.]+)\.?/i
 };
 
-// Workflow configuration
-const WORKFLOW_MODEL_ID = 'claude-sonnet-4-20250514'; // Claude 4 Sonnet
-const WORKFLOW_PRESET_ID = 'developer_agent'; // Developer Agent preset
+// Workflow configuration with model and preset settings per pattern
+const workflowConfig = {
+    issueCreation: {
+        pattern: workflowPatterns.issueCreation,
+        action: "Ga naar Repo [owner]/[repo] en pak issue [nummer] op",
+        model: "claude-sonnet-4-20250514",
+        preset: "developer_agent",
+        description: "Issue Creation - Developer Agent met Claude Sonnet 4"
+    },
+    prCreation: {
+        pattern: workflowPatterns.prCreation,
+        action: "Ga naar Repo [owner]/[repo] en merge Pull Request [nummer] en delete de bijbehorende branche",
+        model: "claude-3-5-haiku-20241022",
+        preset: "developer_agent",
+        description: "PR Creation - Developer Agent met Claude Haiku 3.5"
+    },
+    prProcessed: {
+        pattern: workflowPatterns.prProcessed,
+        action: "Ga Repo [owner]/[repo]",
+        model: "claude-opus-4-20250514",
+        preset: "creative_writing",        
+        description: "PR Processed - Developer Agent met Claude Opus 4"
+    }
+};
+
+// Fallback configuration
+const FALLBACK_MODEL_ID = 'claude-sonnet-4-20250514';
+const FALLBACK_PRESET_ID = 'developer_agent';
 
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize the first window
@@ -257,115 +287,225 @@ function monitorResponse(windowId, content) {
     
     console.log('Monitoring response for workflow patterns:', content);
     
-    // Check for issue creation pattern
-    const issueMatch = content.match(workflowPatterns.issueCreation);
-    if (issueMatch) {
-        const [, issueNumber, owner, repo] = issueMatch;
-        console.log(`Issue creation detected: #${issueNumber} for ${owner}/${repo}`);
-        
-        const prompt = `Ga naar Repo ${owner}/${repo} en pak issue ${issueNumber} op`;
-        autoCreateChatWindow(prompt, windowId);
-        return;
-    }
-    
-    // Check for PR creation pattern
-    const prCreationMatch = content.match(workflowPatterns.prCreation);
-    if (prCreationMatch) {
-        const [, prNumber, owner, repo] = prCreationMatch;
-        console.log(`PR creation detected: #${prNumber} for ${owner}/${repo}`);
-        
-        const prompt = `Ga naar Repo ${owner}/${repo} en merge Pull Request ${prNumber} en delete de bijbehorende branche`;
-        autoCreateChatWindow(prompt, windowId);
-        return;
-    }
-    
-    // Check for PR processed pattern
-    const prProcessedMatch = content.match(workflowPatterns.prProcessed);
-    if (prProcessedMatch) {
-        const [, prNumber, branch, owner, repo] = prProcessedMatch;
-        console.log(`PR processed detected: #${prNumber} (branch: ${branch}) for ${owner}/${repo}`);
-        
-        const prompt = `Ga Repo ${owner}/${repo}`;
-        autoCreateChatWindow(prompt, windowId);
-        return;
+    // Check each workflow pattern and use the appropriate configuration
+    for (const [patternName, config] of Object.entries(workflowConfig)) {
+        const match = content.match(config.pattern);
+        if (match) {
+            console.log(`${patternName} pattern detected:`, match);
+            
+            let prompt;
+            if (patternName === 'issueCreation') {
+                const [, issueNumber, owner, repo] = match;
+                prompt = `Ga naar Repo ${owner}/${repo} en pak issue ${issueNumber} op`;
+            } else if (patternName === 'prCreation') {
+                const [, prNumber, owner, repo] = match;
+                prompt = `Ga naar Repo ${owner}/${repo} en merge Pull Request ${prNumber} en delete de bijbehorende branche`;
+            } else if (patternName === 'prProcessed') {
+                const [, prNumber, branch, owner, repo] = match;
+                prompt = `Ga Repo ${owner}/${repo}`;
+            }
+            
+            autoCreateChatWindow(prompt, windowId, config);
+            return;
+        }
     }
 }
 
-function autoCreateChatWindow(prompt, currentWindowId) {
+async function autoCreateChatWindow(prompt, currentWindowId, workflowConfig) {
     console.log('Auto-creating new chat window with prompt:', prompt);
-    
+    console.log('Using workflow config:', workflowConfig);
+
     // Add a small delay to ensure the current response is fully processed
-    setTimeout(() => {
-        // Create new window with the prompt and workflow settings
-        addChatWindow('', true); // Pass true to indicate this is a workflow window
-        
-        // Wait for the new window to be initialized
-        setTimeout(() => {
-            // Get the newest window
-            const allWindows = document.querySelectorAll('.chat-window');
-            const newWindow = allWindows[allWindows.length - 1];
+    setTimeout(async () => {
+        try {
+            // Create and configure a new workflow window
+            const newWindow = await addChatWindow('', true, workflowConfig);
             const newWindowId = newWindow.getAttribute('data-window-id');
-            
-            // Configure the window with workflow settings
-            configureWorkflowWindow(newWindow);
-            
-            // Send the prompt in the new window
-            sendPrompt(newWindowId, prompt);
-            
+
+            // Wait for configuration to complete before sending prompt
+            setTimeout(() => {
+                // Send the prompt with the configured model and preset
+                sendPromptWithConfig(newWindowId, prompt, workflowConfig.model, workflowConfig.preset);
+            }, 1000);
+
             // Close the current window after a short delay
             setTimeout(() => {
                 autoCloseWindow(currentWindowId);
-            }, 500);
-        }, 200);
+            }, 1500);
+        } catch (error) {
+            console.error('Error configuring workflow window:', error);
+        }
     }, 1000);
 }
 
-function configureWorkflowWindow(windowElement) {
+function configureWorkflowWindow(windowElement, config = null) {
     console.log('Configuring window for workflow mode');
     
-    // Set model to Claude 4 Sonnet
-    const modelSelect = windowElement.querySelector('.model-select');
-    if (modelSelect) {
-        // Wait for models to be loaded if not already
-        const setModel = () => {
-            for (let i = 0; i < modelSelect.options.length; i++) {
-                if (modelSelect.options[i].value === WORKFLOW_MODEL_ID) {
-                    modelSelect.selectedIndex = i;
-                    console.log('Set model to Claude 4 Sonnet');
-                    break;
-                }
+    return new Promise((resolve, reject) => {
+        if (config) {
+            console.log('Workflow configuration:', {
+                model: config.model,
+                preset: config.preset,
+                description: config.description
+            });
+        }
+        
+        // Use provided config or default workflow config
+        const modelId = config ? config.model : FALLBACK_MODEL_ID;
+        const presetId = config ? config.preset : FALLBACK_PRESET_ID;
+        const description = config ? config.description : 'Workflow mode';
+
+        // Store the workflow configuration in the window data
+        const windowId = windowElement.getAttribute('data-window-id');
+        const windowData = chatWindows.get(windowId);
+        if (windowData) {
+            windowData.workflowConfig = {
+                model: modelId,
+                preset: presetId,
+                description: description
+            };
+        }
+
+        addLogMessage(
+            windowId,
+            `Workflow configuratie ontvangen: model ${modelId}, preset ${presetId || 'geen'}`
+        );
+        
+        console.log(`Applying workflow config: ${description}`);
+        console.log(`Target model: ${modelId}, Target preset: ${presetId}`);
+        
+        // Show workflow status badge
+        const workflowStatus = windowElement.querySelector('.workflow-status');
+        if (workflowStatus) {
+            workflowStatus.classList.remove('d-none');
+            const badge = workflowStatus.querySelector('.badge');
+            if (badge) {
+                badge.title = description;
+            }
+        }
+        
+        // Wait for models and presets to be loaded before configuring
+        const modelSelect = windowElement.querySelector('.model-select');
+        const presetSelect = windowElement.querySelector('.preset-select');
+        
+        let modelsLoaded = false;
+        let presetsLoaded = false;
+        
+        const checkCompletion = () => {
+            if (modelsLoaded && presetsLoaded) {
+                console.log('✓ Both models and presets loaded, configuration complete');
+                addLogMessage(
+                    windowId,
+                    `Model gebruikt: ${modelSelect.value}, preset: ${presetSelect.value || 'geen'}`
+                );
+                resolve();
             }
         };
         
-        if (modelSelect.options.length > 1) {
-            setModel();
-        } else {
-            // Wait for models to load
-            setTimeout(setModel, 500);
-        }
-    }
-    
-    // Set preset to developer_agent
-    const presetSelect = windowElement.querySelector('.preset-select');
-    if (presetSelect) {
-        // Wait for presets to be loaded if not already
-        const setPreset = () => {
-            for (let i = 0; i < presetSelect.options.length; i++) {
-                if (presetSelect.options[i].value === WORKFLOW_PRESET_ID) {
-                    presetSelect.selectedIndex = i;
-                    console.log('Set preset to developer_agent');
-                    break;
-                }
-            }
+        // Set model with promise-based approach
+        const configureModel = () => {
+            return new Promise((resolveModel) => {
+                const setModel = () => {
+                    if (!modelSelect || modelSelect.options.length <= 1) {
+                        // Models not loaded yet, wait a bit more
+                        setTimeout(setModel, 100);
+                        return;
+                    }
+                    
+                    let modelSet = false;
+                    for (let i = 0; i < modelSelect.options.length; i++) {
+                        if (modelSelect.options[i].value === modelId) {
+                            modelSelect.selectedIndex = i;
+                            console.log(`✓ Model set to: ${modelId}`);
+                            modelSet = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!modelSet) {
+                        // Try fallback model
+                        for (let i = 0; i < modelSelect.options.length; i++) {
+                            if (modelSelect.options[i].value === FALLBACK_MODEL_ID) {
+                                modelSelect.selectedIndex = i;
+                                console.warn(`⚠ Model ${modelId} not found, using fallback: ${FALLBACK_MODEL_ID}`);
+                                addLogMessage(windowId, 
+                                    `Waarschuwing: Model ${modelId} niet beschikbaar, teruggevallen op ${FALLBACK_MODEL_ID}`);
+                                break;
+                            }
+                        }
+                    }
+                    
+                    modelsLoaded = true;
+                    resolveModel();
+                    checkCompletion();
+                };
+                
+                setModel();
+            });
         };
         
-        if (presetSelect.options.length > 1) {
-            setPreset();
-        } else {
-            // Wait for presets to load
-            setTimeout(setPreset, 500);
-        }
-    }
+        // Set preset with promise-based approach
+        const configurePreset = () => {
+            return new Promise((resolvePreset) => {
+                const setPreset = () => {
+                    if (!presetSelect || presetSelect.options.length <= 1) {
+                        // Presets not loaded yet, wait a bit more
+                        setTimeout(setPreset, 100);
+                        return;
+                    }
+                    
+                    let presetSet = false;
+                    for (let i = 0; i < presetSelect.options.length; i++) {
+                        if (presetSelect.options[i].value === presetId) {
+                            presetSelect.selectedIndex = i;
+                            console.log(`✓ Preset set to: ${presetId}`);
+                            presetSet = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!presetSet && presetId) {
+                        // Try fallback preset
+                        for (let i = 0; i < presetSelect.options.length; i++) {
+                            if (presetSelect.options[i].value === FALLBACK_PRESET_ID) {
+                                presetSelect.selectedIndex = i;
+                                console.warn(`⚠ Preset ${presetId} not found, using fallback: ${FALLBACK_PRESET_ID}`);
+                                addLogMessage(windowId, 
+                                    `Waarschuwing: Preset ${presetId} niet beschikbaar, teruggevallen op ${FALLBACK_PRESET_ID}`);
+                                break;
+                            }
+                        }
+                        
+                        if (!presetSet) {
+                            // Use no preset (default)
+                            presetSelect.selectedIndex = 0;
+                            console.warn(`⚠ Preset ${presetId} and fallback not found, using default`);
+                            addLogMessage(windowId, 
+                                `Waarschuwing: Preset ${presetId} niet beschikbaar, geen preset gebruikt`);
+                        }
+                    }
+                    
+                    presetsLoaded = true;
+                    resolvePreset();
+                    checkCompletion();
+                };
+                
+                setPreset();
+            });
+        };
+        
+        // Configure both model and preset
+        configureModel();
+        configurePreset();
+        
+        // Set a timeout to prevent hanging
+        setTimeout(() => {
+            if (!modelsLoaded || !presetsLoaded) {
+                console.warn('⚠ Configuration timeout, proceeding with current settings');
+                reject(new Error('Configuration timeout'));
+            }
+        }, 5000);
+    });
 }
 
 function autoCloseWindow(windowId) {
@@ -581,7 +721,8 @@ function initializeChatWindow(windowElement) {
     // Store window data in the global state
     chatWindows.set(windowId, {
         conversationId: null,
-        isWaitingForResponse: false
+        isWaitingForResponse: false,
+        workflowConfig: null
     });
     
     // Add click event to make this window active
@@ -651,10 +792,11 @@ function setActiveWindow(windowId) {
     }
 }
 
-function addChatWindow(initialInput, isWorkflowWindow = false) {
-    const windowsContainer = document.getElementById('chat-windows-container');
-    const currentWindows = document.querySelectorAll('.chat-window');
-    const newWindowId = `window-${currentWindows.length + 1}`;
+function addChatWindow(initialInput, isWorkflowWindow = false, workflowConfig = null) {
+    return new Promise((resolve) => {
+        const windowsContainer = document.getElementById('chat-windows-container');
+        const currentWindows = document.querySelectorAll('.chat-window');
+        const newWindowId = `window-${currentWindows.length + 1}`;
 
     const newWindow = document.createElement('div');
     newWindow.className = 'chat-window';
@@ -679,6 +821,11 @@ function addChatWindow(initialInput, isWorkflowWindow = false) {
                             <option value="">Standaard</option>
                             <!-- Presets worden dynamisch geladen -->
                         </select>
+                    </div>
+                    <div id="workflow-status-${newWindowId}" class="workflow-status d-none">
+                        <span class="badge bg-info">
+                            <i class="fas fa-cog"></i> Workflow
+                        </span>
                     </div>
                 </div>
                 <div>
@@ -729,15 +876,19 @@ function addChatWindow(initialInput, isWorkflowWindow = false) {
         const presetSelectEl = newWindow.querySelector('.preset-select');
         populateModelSelect(modelSelectEl);
         populatePresetSelect(presetSelectEl);
-        
-        // Configure for workflow if needed
+
+        const finalize = () => {
+            setActiveWindow(newWindowId);
+            resolve(newWindow);
+        };
+
         if (isWorkflowWindow) {
             setTimeout(() => {
-                configureWorkflowWindow(newWindow);
+                configureWorkflowWindow(newWindow, workflowConfig).then(finalize);
             }, 500); // Wait for selects to be populated
+        } else {
+            finalize();
         }
-        
-        setActiveWindow(newWindowId);
     }, 100);
 
     // Automatically send the initial input if there is one
@@ -754,6 +905,7 @@ function addChatWindow(initialInput, isWorkflowWindow = false) {
     // Setup event listener for the send button
     document.getElementById(`send-${newWindowId}`).addEventListener('click', function() {
         sendPrompt(newWindowId);
+    });
     });
 }
 function removeActiveWindow() {
@@ -891,6 +1043,7 @@ function resetConversation(windowId) {
     if (!windowData) return;
 
     windowData.conversationId = null;
+    windowData.workflowConfig = null;
 
     const windowElement = document.querySelector(`[data-window-id="${windowId}"]`);
     const chatMessages = windowElement.querySelector('.chat-messages');
@@ -907,6 +1060,90 @@ function resetConversation(windowId) {
     promptInput.focus();
 }
 
+// New function to send prompt with specific model and preset configuration
+function sendPromptWithConfig(windowId, prompt, modelId, presetName) {
+    const windowData = chatWindows.get(windowId);
+    if (!windowData || windowData.isWaitingForResponse) return;
+    
+    const windowElement = document.querySelector(`[data-window-id="${windowId}"]`);
+    
+    if (!prompt || prompt.trim() === '') {
+        return;
+    }
+    
+    // Add user message to chat
+    addMessageToChat(windowId, 'user', prompt);
+    
+    // Add loading indicator
+    const loadingId = 'loading-' + Date.now();
+    addLoadingMessage(windowId, loadingId);
+    
+    console.log(`Sending prompt with configured model: ${modelId}, preset: ${presetName || 'none'}`);
+    
+    // Set waiting flag
+    windowData.isWaitingForResponse = true;
+    
+    // Prepare request with specific model and preset
+    const requestData = {
+        prompt: prompt,
+        model_id: modelId,
+        preset_name: presetName || undefined
+    };
+    
+    // Add conversation_id if continuing a conversation
+    if (windowData.conversationId) {
+        requestData.conversation_id = windowData.conversationId;
+    }
+    
+    const params = new URLSearchParams(requestData);
+    const eventSource = new EventSource('/api/prompt_stream?' + params.toString());
+
+    eventSource.addEventListener('log', function(e) {
+        const msg = JSON.parse(e.data);
+        addLogMessage(windowId, msg);
+    });
+
+    eventSource.addEventListener('final', function(e) {
+        const data = JSON.parse(e.data);
+
+        removeLoadingMessage(windowId, loadingId);
+        windowData.isWaitingForResponse = false;
+
+        if (data.success) {
+            if (Array.isArray(data.logs)) {
+                data.logs.forEach(log => addLogMessage(windowId, log));
+            }
+            const content = data.content || data.message;
+            addMessageToChat(windowId, 'assistant', content);
+            updateMcpStatus(data.active_mcp_servers);
+
+            if (data.conversation_id && !windowData.conversationId) {
+                windowData.conversationId = data.conversation_id;
+                setLastConversationId(data.conversation_id);
+                const statusElement = windowElement.querySelector('.conversation-status');
+                statusElement.textContent = `Gesprek: ${data.title || 'Onbenoemd gesprek'}`;
+            }
+
+            // Monitor response for workflow patterns
+            monitorResponse(windowId, content);
+
+            if (chatAwayActive && !chatAwayInProgress) {
+                forwardResponseToNextWindow(windowId, content);
+            }
+        } else {
+            addErrorMessage(windowId, data.error || 'Er is een fout opgetreden.');
+        }
+        eventSource.close();
+    });
+
+    eventSource.addEventListener('error', function(err) {
+        removeLoadingMessage(windowId, loadingId);
+        windowData.isWaitingForResponse = false;
+        addErrorMessage(windowId, 'Er is een fout opgetreden bij het verwerken van je vraag.');
+        console.error('Error sending prompt:', err);
+        eventSource.close();
+    });
+}
 
 function sendPrompt(windowId, customInput = null) {
     const windowData = chatWindows.get(windowId);
@@ -920,6 +1157,20 @@ function sendPrompt(windowId, customInput = null) {
         return;
     }
     
+    // Check if this window has workflow configuration
+    if (windowData.workflowConfig) {
+        // Use the workflow configuration for model and preset
+        const { model, preset } = windowData.workflowConfig;
+        sendPromptWithConfig(windowId, prompt, model, preset);
+        
+        // Clear input only if it was not pre-filled
+        if (!customInput) {
+            promptInput.value = '';
+        }
+        return;
+    }
+    
+    // Normal flow: use the selected values from the UI
     // Add user message to chat
     addMessageToChat(windowId, 'user', prompt);
     
@@ -933,8 +1184,23 @@ function sendPrompt(windowId, customInput = null) {
     addLoadingMessage(windowId, loadingId);
     
     // Get selected model and preset
-    const modelId = windowElement.querySelector('.model-select').value;
-    const presetName = windowElement.querySelector('.preset-select').value;
+    const modelSelect = windowElement.querySelector('.model-select');
+    const presetSelect = windowElement.querySelector('.preset-select');
+    
+    // Validate that a proper model is selected (avoid placeholder option)
+    const modelId = modelSelect.value;
+    // if (!modelId || modelId === '' || modelSelect.selectedIndex === 0) {
+    const selectedOption = modelSelect.options[modelSelect.selectedIndex];
+    if (!modelId || (selectedOption && selectedOption.disabled)) {
+        console.error('No valid model selected, cannot send prompt');
+        removeLoadingMessage(windowId, loadingId);
+        addErrorMessage(windowId, 'Geen geldig model geselecteerd. Wacht tot de modellen zijn geladen.');
+        return;
+    }
+    
+    const presetName = presetSelect.value;
+    
+    console.log(`Sending prompt with model: ${modelId}, preset: ${presetName || 'none'}`);
     
     // Set waiting flag
     windowData.isWaitingForResponse = true;
@@ -1343,6 +1609,16 @@ function escapeHtml(unsafe) {
 
 .message-content {
     padding: 12px;
+}
+
+/* Workflow status badge styling */
+.workflow-status .badge {
+    font-size: 11px;
+    padding: 4px 8px;
+}
+
+.workflow-status .badge i {
+    margin-right: 4px;
 }
 
 /* Responsive adjustments */

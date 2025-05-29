@@ -220,6 +220,17 @@
      - [✓] templates/conversations.html - Token usage display en bulk delete UI
      - [✓] routes/api.py - Token usage endpoints en enhanced conversations API
      - [✓] static/css/style.css - Styling voor nieuwe functionaliteit
+16. [✓] Workflow Model/Preset Configuration Bug Fix (Issue #76) - VOLTOOID
+   - Probleem: Model en preset instellingen werden niet correct overgenomen in nieuwe workflow chat windows
+   - Oorzaak: Race condition tussen configuratie en prompt verzending
+   - Oplossing:
+     - [✓] Workflow configuratie wordt opgeslagen in window data structuur
+     - [✓] Nieuwe `sendPromptWithConfig()` functie voor specifieke model/preset configuratie
+     - [✓] `sendPrompt()` controleert eerst op workflow configuratie
+     - [✓] Verbeterde timing tussen configuratie en prompt verzending
+   - Resultaat: Workflow windows gebruiken nu correct de geconfigureerde model en preset instellingen
+   - Bestanden gewijzigd:
+     - templates/home.html - Verbeterde workflow configuratie logica
 
 ## Toekomstige stappen (Must-have)
 

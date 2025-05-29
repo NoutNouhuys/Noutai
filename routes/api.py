@@ -190,6 +190,23 @@ def get_presets():
             "error": str(e)
         }), 500
 
+def _validate_model_id(model_id: str) -> bool:
+    """
+    Validate if the provided model_id exists in available models.
+    
+    Args:
+        model_id: The model ID to validate
+        
+    Returns:
+        True if model exists, False otherwise
+    """
+    try:
+        available_models = anthropic_api.get_available_models()
+        valid_model_ids = [model['id'] for model in available_models]
+        return model_id in valid_model_ids
+    except Exception:
+        return False
+
 @api_bp.route('/conversations', methods=['GET'])
 @login_required
 @check_lynxx_domain
@@ -725,6 +742,13 @@ def send_prompt():
         max_tokens = data.get('max_tokens')
         preset_name = data.get('preset_name')
         
+        # Validate model_id
+        if not _validate_model_id(model_id):
+            return jsonify({
+                "success": False,
+                "error": "Geen geldig model geselecteerd. Wacht tot de modellen zijn geladen."
+            }), 400
+        
         # Validate temperature if provided
         if temperature is not None:
             try:
@@ -880,6 +904,13 @@ def send_prompt_stream():
     max_tokens = request.args.get('max_tokens')
     preset_name = request.args.get('preset_name')
     
+    # Validate model_id
+    if not _validate_model_id(model_id):
+        return jsonify({
+            "success": False,
+            "error": "Geen geldig model geselecteerd. Wacht tot de modellen zijn geladen."
+        }), 400
+    
     # Validate temperature if provided
     if temperature is not None:
         try:
@@ -907,8 +938,8 @@ def send_prompt_stream():
         except (ValueError, TypeError):
             return jsonify({
                 "success": False,
-                "error": "Max tokens must be a valid integer"
-            }), 400
+                    "error": "Max tokens must be a valid integer"
+                }), 400
     
     # Capture user_id before starting the thread
     user_id = current_user.id if current_user.is_authenticated else None
