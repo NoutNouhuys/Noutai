@@ -87,6 +87,11 @@
                                     <!-- Presets worden dynamisch geladen -->
                                 </select>
                             </div>
+                            <div id="workflow-status-window-1" class="workflow-status d-none">
+                                <span class="badge bg-info">
+                                    <i class="fas fa-cog"></i> Workflow
+                                </span>
+                            </div>
                         </div>
                         <div>
                             <button class="new-chat-btn btn btn-sm btn-outline-secondary">
@@ -184,9 +189,34 @@ const workflowPatterns = {
     prProcessed: /Ik heb Pull Request (\d+) verwerkt en bijbehorende branche ([^\s]+) verwijderd voor Repo ([^\/]+)\/([^\s]+)/i
 };
 
-// Workflow configuration
-const WORKFLOW_MODEL_ID = 'claude-sonnet-4-20250514'; // Claude 4 Sonnet
-const WORKFLOW_PRESET_ID = 'developer_agent'; // Developer Agent preset
+// Workflow configuration with model and preset settings per pattern
+const workflowConfig = {
+    issueCreation: {
+        pattern: workflowPatterns.issueCreation,
+        action: "Ga naar Repo [owner]/[repo] en pak issue [nummer] op",
+        model: "claude-opus-4-20250514",
+        preset: "creative_writing",
+        description: "Issue Creation - Creative Writing met Claude Opus 4"
+    },
+    prCreation: {
+        pattern: workflowPatterns.prCreation,
+        action: "Ga naar Repo [owner]/[repo] en merge Pull Request [nummer] en delete de bijbehorende branche",
+        model: "claude-haiku-3.5-20250514",
+        preset: "developer_agent",
+        description: "PR Creation - Developer Agent met Claude Haiku 3.5"
+    },
+    prProcessed: {
+        pattern: workflowPatterns.prProcessed,
+        action: "Ga Repo [owner]/[repo]",
+        model: "claude-sonnet-4-20250514",
+        preset: "developer_agent",
+        description: "PR Processed - Developer Agent met Claude Sonnet 4"
+    }
+};
+
+// Fallback configuration
+const FALLBACK_MODEL_ID = 'claude-sonnet-4-20250514';
+const FALLBACK_PRESET_ID = 'balanced';
 
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize the first window
@@ -257,47 +287,38 @@ function monitorResponse(windowId, content) {
     
     console.log('Monitoring response for workflow patterns:', content);
     
-    // Check for issue creation pattern
-    const issueMatch = content.match(workflowPatterns.issueCreation);
-    if (issueMatch) {
-        const [, issueNumber, owner, repo] = issueMatch;
-        console.log(`Issue creation detected: #${issueNumber} for ${owner}/${repo}`);
-        
-        const prompt = `Ga naar Repo ${owner}/${repo} en pak issue ${issueNumber} op`;
-        autoCreateChatWindow(prompt, windowId);
-        return;
-    }
-    
-    // Check for PR creation pattern
-    const prCreationMatch = content.match(workflowPatterns.prCreation);
-    if (prCreationMatch) {
-        const [, prNumber, owner, repo] = prCreationMatch;
-        console.log(`PR creation detected: #${prNumber} for ${owner}/${repo}`);
-        
-        const prompt = `Ga naar Repo ${owner}/${repo} en merge Pull Request ${prNumber} en delete de bijbehorende branche`;
-        autoCreateChatWindow(prompt, windowId);
-        return;
-    }
-    
-    // Check for PR processed pattern
-    const prProcessedMatch = content.match(workflowPatterns.prProcessed);
-    if (prProcessedMatch) {
-        const [, prNumber, branch, owner, repo] = prProcessedMatch;
-        console.log(`PR processed detected: #${prNumber} (branch: ${branch}) for ${owner}/${repo}`);
-        
-        const prompt = `Ga Repo ${owner}/${repo}`;
-        autoCreateChatWindow(prompt, windowId);
-        return;
+    // Check each workflow pattern and use the appropriate configuration
+    for (const [patternName, config] of Object.entries(workflowConfig)) {
+        const match = content.match(config.pattern);
+        if (match) {
+            console.log(`${patternName} pattern detected:`, match);
+            
+            let prompt;
+            if (patternName === 'issueCreation') {
+                const [, issueNumber, owner, repo] = match;
+                prompt = `Ga naar Repo ${owner}/${repo} en pak issue ${issueNumber} op`;
+            } else if (patternName === 'prCreation') {
+                const [, prNumber, owner, repo] = match;
+                prompt = `Ga naar Repo ${owner}/${repo} en merge Pull Request ${prNumber} en delete de bijbehorende branche`;
+            } else if (patternName === 'prProcessed') {
+                const [, prNumber, branch, owner, repo] = match;
+                prompt = `Ga Repo ${owner}/${repo}`;
+            }
+            
+            autoCreateChatWindow(prompt, windowId, config);
+            return;
+        }
     }
 }
 
-function autoCreateChatWindow(prompt, currentWindowId) {
+function autoCreateChatWindow(prompt, currentWindowId, workflowConfig) {
     console.log('Auto-creating new chat window with prompt:', prompt);
+    console.log('Using workflow config:', workflowConfig);
     
     // Add a small delay to ensure the current response is fully processed
     setTimeout(() => {
         // Create new window with the prompt and workflow settings
-        addChatWindow('', true); // Pass true to indicate this is a workflow window
+        addChatWindow('', true, workflowConfig); // Pass workflow config
         
         // Wait for the new window to be initialized
         setTimeout(() => {
@@ -307,7 +328,7 @@ function autoCreateChatWindow(prompt, currentWindowId) {
             const newWindowId = newWindow.getAttribute('data-window-id');
             
             // Configure the window with workflow settings
-            configureWorkflowWindow(newWindow);
+            configureWorkflowWindow(newWindow, workflowConfig);
             
             // Send the prompt in the new window
             sendPrompt(newWindowId, prompt);
@@ -320,19 +341,51 @@ function autoCreateChatWindow(prompt, currentWindowId) {
     }, 1000);
 }
 
-function configureWorkflowWindow(windowElement) {
+function configureWorkflowWindow(windowElement, config = null) {
     console.log('Configuring window for workflow mode');
     
-    // Set model to Claude 4 Sonnet
+    // Use provided config or default workflow config
+    const modelId = config ? config.model : FALLBACK_MODEL_ID;
+    const presetId = config ? config.preset : FALLBACK_PRESET_ID;
+    const description = config ? config.description : 'Workflow mode';
+    
+    console.log(`Applying workflow config: ${description}`);
+    console.log(`Target model: ${modelId}, Target preset: ${presetId}`);
+    
+    // Show workflow status badge
+    const workflowStatus = windowElement.querySelector('.workflow-status');
+    if (workflowStatus) {
+        workflowStatus.classList.remove('d-none');
+        const badge = workflowStatus.querySelector('.badge');
+        if (badge) {
+            badge.title = description;
+        }
+    }
+    
+    // Set model with fallback
     const modelSelect = windowElement.querySelector('.model-select');
     if (modelSelect) {
-        // Wait for models to be loaded if not already
         const setModel = () => {
+            let modelSet = false;
             for (let i = 0; i < modelSelect.options.length; i++) {
-                if (modelSelect.options[i].value === WORKFLOW_MODEL_ID) {
+                if (modelSelect.options[i].value === modelId) {
                     modelSelect.selectedIndex = i;
-                    console.log('Set model to Claude 4 Sonnet');
+                    console.log(`✓ Model set to: ${modelId}`);
+                    modelSet = true;
                     break;
+                }
+            }
+            
+            if (!modelSet) {
+                // Try fallback model
+                for (let i = 0; i < modelSelect.options.length; i++) {
+                    if (modelSelect.options[i].value === FALLBACK_MODEL_ID) {
+                        modelSelect.selectedIndex = i;
+                        console.warn(`⚠ Model ${modelId} not found, using fallback: ${FALLBACK_MODEL_ID}`);
+                        addLogMessage(windowElement.getAttribute('data-window-id'), 
+                            `Waarschuwing: Model ${modelId} niet beschikbaar, teruggevallen op ${FALLBACK_MODEL_ID}`);
+                        break;
+                    }
                 }
             }
         };
@@ -345,16 +398,38 @@ function configureWorkflowWindow(windowElement) {
         }
     }
     
-    // Set preset to developer_agent
+    // Set preset with fallback
     const presetSelect = windowElement.querySelector('.preset-select');
     if (presetSelect) {
-        // Wait for presets to be loaded if not already
         const setPreset = () => {
+            let presetSet = false;
             for (let i = 0; i < presetSelect.options.length; i++) {
-                if (presetSelect.options[i].value === WORKFLOW_PRESET_ID) {
+                if (presetSelect.options[i].value === presetId) {
                     presetSelect.selectedIndex = i;
-                    console.log('Set preset to developer_agent');
+                    console.log(`✓ Preset set to: ${presetId}`);
+                    presetSet = true;
                     break;
+                }
+            }
+            
+            if (!presetSet && presetId) {
+                // Try fallback preset
+                for (let i = 0; i < presetSelect.options.length; i++) {
+                    if (presetSelect.options[i].value === FALLBACK_PRESET_ID) {
+                        presetSelect.selectedIndex = i;
+                        console.warn(`⚠ Preset ${presetId} not found, using fallback: ${FALLBACK_PRESET_ID}`);
+                        addLogMessage(windowElement.getAttribute('data-window-id'), 
+                            `Waarschuwing: Preset ${presetId} niet beschikbaar, teruggevallen op ${FALLBACK_PRESET_ID}`);
+                        break;
+                    }
+                }
+                
+                if (!presetSet) {
+                    // Use no preset (default)
+                    presetSelect.selectedIndex = 0;
+                    console.warn(`⚠ Preset ${presetId} and fallback not found, using default`);
+                    addLogMessage(windowElement.getAttribute('data-window-id'), 
+                        `Waarschuwing: Preset ${presetId} niet beschikbaar, geen preset gebruikt`);
                 }
             }
         };
@@ -651,7 +726,7 @@ function setActiveWindow(windowId) {
     }
 }
 
-function addChatWindow(initialInput, isWorkflowWindow = false) {
+function addChatWindow(initialInput, isWorkflowWindow = false, workflowConfig = null) {
     const windowsContainer = document.getElementById('chat-windows-container');
     const currentWindows = document.querySelectorAll('.chat-window');
     const newWindowId = `window-${currentWindows.length + 1}`;
@@ -679,6 +754,11 @@ function addChatWindow(initialInput, isWorkflowWindow = false) {
                             <option value="">Standaard</option>
                             <!-- Presets worden dynamisch geladen -->
                         </select>
+                    </div>
+                    <div id="workflow-status-${newWindowId}" class="workflow-status d-none">
+                        <span class="badge bg-info">
+                            <i class="fas fa-cog"></i> Workflow
+                        </span>
                     </div>
                 </div>
                 <div>
@@ -733,7 +813,7 @@ function addChatWindow(initialInput, isWorkflowWindow = false) {
         // Configure for workflow if needed
         if (isWorkflowWindow) {
             setTimeout(() => {
-                configureWorkflowWindow(newWindow);
+                configureWorkflowWindow(newWindow, workflowConfig);
             }, 500); // Wait for selects to be populated
         }
         
@@ -1343,6 +1423,16 @@ function escapeHtml(unsafe) {
 
 .message-content {
     padding: 12px;
+}
+
+/* Workflow status badge styling */
+.workflow-status .badge {
+    font-size: 11px;
+    padding: 4px 8px;
+}
+
+.workflow-status .badge i {
+    margin-right: 4px;
 }
 
 /* Responsive adjustments */
