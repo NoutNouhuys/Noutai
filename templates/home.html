@@ -320,135 +320,187 @@ function autoCreateChatWindow(prompt, currentWindowId, workflowConfig) {
         // Create new window with the prompt and workflow settings
         addChatWindow('', true, workflowConfig); // Pass workflow config
         
-        // Wait for the new window to be initialized
+        // Wait for the new window to be initialized and configured
         setTimeout(() => {
             // Get the newest window
             const allWindows = document.querySelectorAll('.chat-window');
             const newWindow = allWindows[allWindows.length - 1];
             const newWindowId = newWindow.getAttribute('data-window-id');
             
-            // Configure the window with workflow settings
-            configureWorkflowWindow(newWindow, workflowConfig);
-            
-            // Send the prompt in the new window
-            sendPrompt(newWindowId, prompt);
-            
-            // Close the current window after a short delay
-            setTimeout(() => {
-                autoCloseWindow(currentWindowId);
-            }, 500);
-        }, 200);
+            // Configure the window with workflow settings first
+            configureWorkflowWindow(newWindow, workflowConfig).then(() => {
+                console.log('Window configured, now sending prompt');
+                
+                // Send the prompt in the new window after configuration is complete
+                sendPrompt(newWindowId, prompt);
+                
+                // Close the current window after a short delay
+                setTimeout(() => {
+                    autoCloseWindow(currentWindowId);
+                }, 500);
+            }).catch(error => {
+                console.error('Error configuring workflow window:', error);
+                addLogMessage(newWindowId, `Fout bij configureren workflow venster: ${error.message}`);
+                
+                // Still try to send the prompt with fallback settings
+                sendPrompt(newWindowId, prompt);
+                
+                setTimeout(() => {
+                    autoCloseWindow(currentWindowId);
+                }, 500);
+            });
+        }, 100); // Reduced delay since we now wait for configuration to complete
     }, 1000);
 }
 
 function configureWorkflowWindow(windowElement, config = null) {
     console.log('Configuring window for workflow mode');
     
-    if (config) {
-        console.log('Workflow configuration:', {
-            model: config.model,
-            preset: config.preset,
-            description: config.description
-        });
-    }
-    
-    // Use provided config or default workflow config
-    const modelId = config ? config.model : FALLBACK_MODEL_ID;
-    const presetId = config ? config.preset : FALLBACK_PRESET_ID;
-    const description = config ? config.description : 'Workflow mode';
-    
-    console.log(`Applying workflow config: ${description}`);
-    console.log(`Target model: ${modelId}, Target preset: ${presetId}`);
-    
-    // Show workflow status badge
-    const workflowStatus = windowElement.querySelector('.workflow-status');
-    if (workflowStatus) {
-        workflowStatus.classList.remove('d-none');
-        const badge = workflowStatus.querySelector('.badge');
-        if (badge) {
-            badge.title = description;
+    return new Promise((resolve, reject) => {
+        if (config) {
+            console.log('Workflow configuration:', {
+                model: config.model,
+                preset: config.preset,
+                description: config.description
+            });
         }
-    }
-    
-    // Set model with fallback
-    const modelSelect = windowElement.querySelector('.model-select');
-    if (modelSelect) {
-        const setModel = () => {
-            let modelSet = false;
-            for (let i = 0; i < modelSelect.options.length; i++) {
-                if (modelSelect.options[i].value === modelId) {
-                    modelSelect.selectedIndex = i;
-                    console.log(`✓ Model set to: ${modelId}`);
-                    modelSet = true;
-                    break;
-                }
+        
+        // Use provided config or default workflow config
+        const modelId = config ? config.model : FALLBACK_MODEL_ID;
+        const presetId = config ? config.preset : FALLBACK_PRESET_ID;
+        const description = config ? config.description : 'Workflow mode';
+        
+        console.log(`Applying workflow config: ${description}`);
+        console.log(`Target model: ${modelId}, Target preset: ${presetId}`);
+        
+        // Show workflow status badge
+        const workflowStatus = windowElement.querySelector('.workflow-status');
+        if (workflowStatus) {
+            workflowStatus.classList.remove('d-none');
+            const badge = workflowStatus.querySelector('.badge');
+            if (badge) {
+                badge.title = description;
             }
-            
-            if (!modelSet) {
-                // Try fallback model
-                for (let i = 0; i < modelSelect.options.length; i++) {
-                    if (modelSelect.options[i].value === FALLBACK_MODEL_ID) {
-                        modelSelect.selectedIndex = i;
-                        console.warn(`⚠ Model ${modelId} not found, using fallback: ${FALLBACK_MODEL_ID}`);
-                        addLogMessage(windowElement.getAttribute('data-window-id'), 
-                            `Waarschuwing: Model ${modelId} niet beschikbaar, teruggevallen op ${FALLBACK_MODEL_ID}`);
-                        break;
-                    }
-                }
+        }
+        
+        // Wait for models and presets to be loaded before configuring
+        const modelSelect = windowElement.querySelector('.model-select');
+        const presetSelect = windowElement.querySelector('.preset-select');
+        
+        let modelsLoaded = false;
+        let presetsLoaded = false;
+        
+        const checkCompletion = () => {
+            if (modelsLoaded && presetsLoaded) {
+                console.log('✓ Both models and presets loaded, configuration complete');
+                resolve();
             }
         };
         
-        if (modelSelect.options.length > 1) {
-            setModel();
-        } else {
-            // Wait for models to load
-            setTimeout(setModel, 500);
-        }
-    }
-    
-    // Set preset with fallback
-    const presetSelect = windowElement.querySelector('.preset-select');
-    if (presetSelect) {
-        const setPreset = () => {
-            let presetSet = false;
-            for (let i = 0; i < presetSelect.options.length; i++) {
-                if (presetSelect.options[i].value === presetId) {
-                    presetSelect.selectedIndex = i;
-                    console.log(`✓ Preset set to: ${presetId}`);
-                    presetSet = true;
-                    break;
-                }
-            }
-            
-            if (!presetSet && presetId) {
-                // Try fallback preset
-                for (let i = 0; i < presetSelect.options.length; i++) {
-                    if (presetSelect.options[i].value === FALLBACK_PRESET_ID) {
-                        presetSelect.selectedIndex = i;
-                        console.warn(`⚠ Preset ${presetId} not found, using fallback: ${FALLBACK_PRESET_ID}`);
-                        addLogMessage(windowElement.getAttribute('data-window-id'), 
-                            `Waarschuwing: Preset ${presetId} niet beschikbaar, teruggevallen op ${FALLBACK_PRESET_ID}`);
-                        break;
+        // Set model with promise-based approach
+        const configureModel = () => {
+            return new Promise((resolveModel) => {
+                const setModel = () => {
+                    if (!modelSelect || modelSelect.options.length <= 1) {
+                        // Models not loaded yet, wait a bit more
+                        setTimeout(setModel, 100);
+                        return;
                     }
-                }
+                    
+                    let modelSet = false;
+                    for (let i = 0; i < modelSelect.options.length; i++) {
+                        if (modelSelect.options[i].value === modelId) {
+                            modelSelect.selectedIndex = i;
+                            console.log(`✓ Model set to: ${modelId}`);
+                            modelSet = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!modelSet) {
+                        // Try fallback model
+                        for (let i = 0; i < modelSelect.options.length; i++) {
+                            if (modelSelect.options[i].value === FALLBACK_MODEL_ID) {
+                                modelSelect.selectedIndex = i;
+                                console.warn(`⚠ Model ${modelId} not found, using fallback: ${FALLBACK_MODEL_ID}`);
+                                addLogMessage(windowElement.getAttribute('data-window-id'), 
+                                    `Waarschuwing: Model ${modelId} niet beschikbaar, teruggevallen op ${FALLBACK_MODEL_ID}`);
+                                break;
+                            }
+                        }
+                    }
+                    
+                    modelsLoaded = true;
+                    resolveModel();
+                    checkCompletion();
+                };
                 
-                if (!presetSet) {
-                    // Use no preset (default)
-                    presetSelect.selectedIndex = 0;
-                    console.warn(`⚠ Preset ${presetId} and fallback not found, using default`);
-                    addLogMessage(windowElement.getAttribute('data-window-id'), 
-                        `Waarschuwing: Preset ${presetId} niet beschikbaar, geen preset gebruikt`);
-                }
-            }
+                setModel();
+            });
         };
         
-        if (presetSelect.options.length > 1) {
-            setPreset();
-        } else {
-            // Wait for presets to load
-            setTimeout(setPreset, 500);
-        }
-    }
+        // Set preset with promise-based approach
+        const configurePreset = () => {
+            return new Promise((resolvePreset) => {
+                const setPreset = () => {
+                    if (!presetSelect || presetSelect.options.length <= 1) {
+                        // Presets not loaded yet, wait a bit more
+                        setTimeout(setPreset, 100);
+                        return;
+                    }
+                    
+                    let presetSet = false;
+                    for (let i = 0; i < presetSelect.options.length; i++) {
+                        if (presetSelect.options[i].value === presetId) {
+                            presetSelect.selectedIndex = i;
+                            console.log(`✓ Preset set to: ${presetId}`);
+                            presetSet = true;
+                            break;
+                        }
+                    }
+                    
+                    if (!presetSet && presetId) {
+                        // Try fallback preset
+                        for (let i = 0; i < presetSelect.options.length; i++) {
+                            if (presetSelect.options[i].value === FALLBACK_PRESET_ID) {
+                                presetSelect.selectedIndex = i;
+                                console.warn(`⚠ Preset ${presetId} not found, using fallback: ${FALLBACK_PRESET_ID}`);
+                                addLogMessage(windowElement.getAttribute('data-window-id'), 
+                                    `Waarschuwing: Preset ${presetId} niet beschikbaar, teruggevallen op ${FALLBACK_PRESET_ID}`);
+                                break;
+                            }
+                        }
+                        
+                        if (!presetSet) {
+                            // Use no preset (default)
+                            presetSelect.selectedIndex = 0;
+                            console.warn(`⚠ Preset ${presetId} and fallback not found, using default`);
+                            addLogMessage(windowElement.getAttribute('data-window-id'), 
+                                `Waarschuwing: Preset ${presetId} niet beschikbaar, geen preset gebruikt`);
+                        }
+                    }
+                    
+                    presetsLoaded = true;
+                    resolvePreset();
+                    checkCompletion();
+                };
+                
+                setPreset();
+            });
+        };
+        
+        // Configure both model and preset
+        configureModel();
+        configurePreset();
+        
+        // Set a timeout to prevent hanging
+        setTimeout(() => {
+            if (!modelsLoaded || !presetsLoaded) {
+                console.warn('⚠ Configuration timeout, proceeding with current settings');
+                reject(new Error('Configuration timeout'));
+            }
+        }, 5000);
+    });
 }
 
 function autoCloseWindow(windowId) {
@@ -1021,8 +1073,21 @@ function sendPrompt(windowId, customInput = null) {
     addLoadingMessage(windowId, loadingId);
     
     // Get selected model and preset
-    const modelId = windowElement.querySelector('.model-select').value;
-    const presetName = windowElement.querySelector('.preset-select').value;
+    const modelSelect = windowElement.querySelector('.model-select');
+    const presetSelect = windowElement.querySelector('.preset-select');
+    
+    // Validate that a proper model is selected (not the placeholder)
+    const modelId = modelSelect.value;
+    if (!modelId || modelId === '' || modelSelect.selectedIndex === 0) {
+        console.error('No valid model selected, cannot send prompt');
+        removeLoadingMessage(windowId, loadingId);
+        addErrorMessage(windowId, 'Geen geldig model geselecteerd. Wacht tot de modellen zijn geladen.');
+        return;
+    }
+    
+    const presetName = presetSelect.value;
+    
+    console.log(`Sending prompt with model: ${modelId}, preset: ${presetName || 'none'}`);
     
     // Set waiting flag
     windowData.isWaitingForResponse = true;
