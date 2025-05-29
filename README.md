@@ -69,6 +69,28 @@ Wanneer workflow mode actief is, worden nieuwe windows automatisch geconfigureer
 - **Consistente configuratie**: Altijd juiste model en preset
 - **Gestructureerde flow**: Volgt exact de werkwijze.txt instructies
 - **Efficiënte context switching**: Automatische window management
+- 
+#### 🏷️ Issue Labels en Workflow Prioritering
+
+De AI-ontwikkelworkflow gebruikt een gestructureerd label systeem voor prioritering:
+
+**Label Types:**
+- **`must-have`**: Essentiële functionaliteiten die vereist zijn voor een werkende applicatie
+- **`nice-to-have`**: Optionele verbeteringen en extra features
+- **`bug`**: Fouten die opgelost moeten worden
+
+**Workflow Prioritering:**
+1. **Bugs eerst**: Issues met label `bug` krijgen altijd de hoogste prioriteit
+2. **Must-have features**: Daarna worden `must-have` issues opgepakt
+3. **Nice-to-have features**: Alleen als alle must-have taken voltooid zijn
+
+**Workflow Stopconditie:**
+De automatische ontwikkelworkflow stopt wanneer:
+- Alle `must-have` taken zijn uitgevoerd
+- Er geen openstaande `bug` issues zijn
+- De AI meldt: *"Alle must-have taken zijn uitgevoerd"*
+
+Na deze melding zijn alleen nog `nice-to-have` features beschikbaar, die handmatig kunnen worden opgepakt indien gewenst.
 
 ### 🔧 Model Context Protocol (MCP) Integratie
 - **GitHub Tools**: Directe integratie met GitHub API voor repository beheer
