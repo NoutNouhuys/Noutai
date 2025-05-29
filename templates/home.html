@@ -311,45 +311,27 @@ function monitorResponse(windowId, content) {
     }
 }
 
-function autoCreateChatWindow(prompt, currentWindowId, workflowConfig) {
+async function autoCreateChatWindow(prompt, currentWindowId, workflowConfig) {
     console.log('Auto-creating new chat window with prompt:', prompt);
     console.log('Using workflow config:', workflowConfig);
-    
+
     // Add a small delay to ensure the current response is fully processed
-    setTimeout(() => {
-        // Create new window with the prompt and workflow settings
-        addChatWindow('', true, workflowConfig); // Pass workflow config
-        
-        // Wait for the new window to be initialized and configured
-        setTimeout(() => {
-            // Get the newest window
-            const allWindows = document.querySelectorAll('.chat-window');
-            const newWindow = allWindows[allWindows.length - 1];
+    setTimeout(async () => {
+        try {
+            // Create and configure a new workflow window
+            const newWindow = await addChatWindow('', true, workflowConfig);
             const newWindowId = newWindow.getAttribute('data-window-id');
-            
-            // Configure the window with workflow settings first
-            configureWorkflowWindow(newWindow, workflowConfig).then(() => {
-                console.log('Window configured, now sending prompt');
-                
-                // Send the prompt in the new window after configuration is complete
-                sendPrompt(newWindowId, prompt);
-                
-                // Close the current window after a short delay
-                setTimeout(() => {
-                    autoCloseWindow(currentWindowId);
-                }, 500);
-            }).catch(error => {
-                console.error('Error configuring workflow window:', error);
-                addLogMessage(newWindowId, `Fout bij configureren workflow venster: ${error.message}`);
-                
-                // Still try to send the prompt with fallback settings
-                sendPrompt(newWindowId, prompt);
-                
-                setTimeout(() => {
-                    autoCloseWindow(currentWindowId);
-                }, 500);
-            });
-        }, 100); // Reduced delay since we now wait for configuration to complete
+
+            // Send the prompt after the window is ready
+            sendPrompt(newWindowId, prompt);
+
+            // Close the current window after a short delay
+            setTimeout(() => {
+                autoCloseWindow(currentWindowId);
+            }, 500);
+        } catch (error) {
+            console.error('Error configuring workflow window:', error);
+        }
     }, 1000);
 }
 
@@ -796,9 +778,10 @@ function setActiveWindow(windowId) {
 }
 
 function addChatWindow(initialInput, isWorkflowWindow = false, workflowConfig = null) {
-    const windowsContainer = document.getElementById('chat-windows-container');
-    const currentWindows = document.querySelectorAll('.chat-window');
-    const newWindowId = `window-${currentWindows.length + 1}`;
+    return new Promise((resolve) => {
+        const windowsContainer = document.getElementById('chat-windows-container');
+        const currentWindows = document.querySelectorAll('.chat-window');
+        const newWindowId = `window-${currentWindows.length + 1}`;
 
     const newWindow = document.createElement('div');
     newWindow.className = 'chat-window';
@@ -878,15 +861,19 @@ function addChatWindow(initialInput, isWorkflowWindow = false, workflowConfig = 
         const presetSelectEl = newWindow.querySelector('.preset-select');
         populateModelSelect(modelSelectEl);
         populatePresetSelect(presetSelectEl);
-        
-        // Configure for workflow if needed
+
+        const finalize = () => {
+            setActiveWindow(newWindowId);
+            resolve(newWindow);
+        };
+
         if (isWorkflowWindow) {
             setTimeout(() => {
-                configureWorkflowWindow(newWindow, workflowConfig);
+                configureWorkflowWindow(newWindow, workflowConfig).then(finalize);
             }, 500); // Wait for selects to be populated
+        } else {
+            finalize();
         }
-        
-        setActiveWindow(newWindowId);
     }, 100);
 
     // Automatically send the initial input if there is one
@@ -903,6 +890,7 @@ function addChatWindow(initialInput, isWorkflowWindow = false, workflowConfig = 
     // Setup event listener for the send button
     document.getElementById(`send-${newWindowId}`).addEventListener('click', function() {
         sendPrompt(newWindowId);
+    });
     });
 }
 function removeActiveWindow() {
