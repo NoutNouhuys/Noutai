@@ -18,25 +18,25 @@ class AnthropicConfig:
         "developer_agent": {
             "name": "Python Developer Agent",
             "temperature": 0.2,
-            "max_tokens": 20000,
+          #  "max_tokens": 20000,
             "description": "Optimized for code generation and development tasks"
         },
         "creative_writing": {
             "name": "Creative Writing",
             "temperature": 0.8,
-            "max_tokens": 10000,
+        #    "max_tokens": 10000,
             "description": "Higher creativity for writing and storytelling"
         },
         "analysis": {
             "name": "Data Analysis",
             "temperature": 0.1,
-            "max_tokens": 10000,
+        #    "max_tokens": 10000,
             "description": "Low temperature for analytical and factual tasks"
         },
         "balanced": {
             "name": "Balanced",
             "temperature": 0.5,
-            "max_tokens": 10000,
+       #     "max_tokens": 10000,
             "description": "Balanced settings for general purpose use"
         }
     }
@@ -233,46 +233,25 @@ class AnthropicConfig:
         # This could be loaded from a config file in the future
         return [
             {
-                "id": "claude-3-opus-20240229",
-                "name": "Claude 3 Opus",
-                "description": "Most powerful for complex tasks",
+                 "id": "claude-opus-4-20250514",
+                "name": "Claude Opus 4",
+                "description": "Most powerful model for complex tasks, best coding model in the world",
                 "context_length": 200000,
-                "max_tokens": 4096,
-            },
-            {
-                "id": "claude-3-sonnet-20240229",
-                "name": "Claude 3 Sonnet",
-                "description": "Balance of intelligence and speed",
-                "context_length": 200000,
-                "max_tokens": 8192,
-            },
-            {
-                "id": "claude-3-haiku-20240307",
-                "name": "Claude 3 Haiku",
-                "description": "Fastest model for simpler tasks",  
-                "context_length": 200000,
-                "max_tokens": 4096,
-            },
-            {
-                "id": "claude-3-7-sonnet-20250219",
-                "name": "Claude 3.7 Sonnet",
-                "description": "Current most intelligent model",
-                "context_length": 200000,
-                "max_tokens": 20480,
+                "max_tokens": 32000,
             },
             {
                 "id": "claude-sonnet-4-20250514",
-                "name": "Claude 4 Sonnet",
-                "description": "Improved reasoning and intelligence capabilities compared to Claude Sonnet 3.7",
+                "name": "Claude Sonnet 4",
+                "description": "Excellent balance of intelligence and speed for production workloads",
                 "context_length": 200000,
-                "max_tokens": 20480,
+                "max_tokens": 32000,
             },
             {
-                "id": "claude-opus-4-20250514",
-                "name": "Claude 4 Opus",
-                "description": "Most capable model with superior reasoning and intelligence, Slower than Sonnet models,Best for complex tasks requiring deep analysis",
+                "id": "claude-3-5-haiku-20241022",
+                "name": "Claude 3.5 Haiku",
+                "description": "Fastest model for simpler tasks",
                 "context_length": 200000,
-                "max_tokens": 20480,
+                "max_tokens": 8192,
             }
         ]
     
