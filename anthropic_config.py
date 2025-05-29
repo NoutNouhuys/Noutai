@@ -237,14 +237,14 @@ class AnthropicConfig:
                 "name": "Claude Opus 4",
                 "description": "Most powerful model for complex tasks, best coding model in the world",
                 "context_length": 200000,
-                "max_tokens": 32000,
+                "max_tokens": 22000,
             },
             {
                 "id": "claude-sonnet-4-20250514",
                 "name": "Claude Sonnet 4",
                 "description": "Excellent balance of intelligence and speed for production workloads",
                 "context_length": 200000,
-                "max_tokens": 32000,
+                "max_tokens": 22000,
             },
             {
                 "id": "claude-3-5-haiku-20241022",
