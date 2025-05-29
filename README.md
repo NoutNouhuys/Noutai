@@ -10,6 +10,66 @@ Een gespecialiseerde tool die communicatie tussen gebruikers en AI-modellen (Cla
 - **Issue-driven development**: Automatische GitHub issue creatie en afhandeling
 - **Branch management**: Automatische branch creatie en pull request workflow
 
+### 🔄 Workflow Automation
+De applicatie beschikt over een geavanceerde workflow functionaliteit die automatisch de ontwikkelcyclus beheert door AI-responses te monitoren en nieuwe chat windows te openen op basis van specifieke patterns.
+
+#### Workflow Toggle Functionaliteit
+De **Workflow** toggle in de interface activeert een intelligente automatisering die:
+- **Automatisch nieuwe chat windows opent** wanneer specifieke AI-responses worden gedetecteerd
+- **Automatisch het huidige window sluit** na het starten van een nieuwe taak
+- **Configureert nieuwe windows** met Claude 4 Sonnet en developer_agent preset
+- **Monitort AI-responses** voor ontwikkelworkflow patterns
+
+#### Samenhang met werkwijze.txt
+De workflow automation is direct gekoppeld aan de instructies in `werkwijze/werkwijze.txt`:
+
+**Automatische Pattern Herkenning:**
+1. **Issue Creation Pattern**: `"Ik heb issue [nummer] aangemaakt voor Repo [owner]/[repo]"`
+   - **Actie**: Opent nieuw window met prompt: `"Ga naar Repo [owner]/[repo] en pak issue [nummer] op"`
+   - **Doel**: Automatisch doorschakelen naar issue uitvoering
+
+2. **PR Creation Pattern**: `"Ik heb Pull Request [nummer] aangemaakt voor Repo [owner]/[repo]"`
+   - **Actie**: Opent nieuw window met prompt: `"Ga naar Repo [owner]/[repo] en merge Pull Request [nummer] en delete de bijbehorende branche"`
+   - **Doel**: Automatisch doorschakelen naar PR merge proces
+
+3. **PR Processed Pattern**: `"Ik heb Pull Request [nummer] verwerkt en bijbehorende branche [branche] verwijderd voor Repo [owner]/[repo]"`
+   - **Actie**: Opent nieuw window met prompt: `"Ga Repo [owner]/[repo]"`
+   - **Doel**: Terugkeren naar algemene repository ontwikkeling
+
+#### Automatische Configuratie
+Wanneer workflow mode actief is, worden nieuwe windows automatisch geconfigureerd met:
+- **Model**: Claude 4 Sonnet (`claude-sonnet-4-20250514`)
+- **Preset**: Developer Agent (`developer_agent`)
+- **Timing**: 1 seconde delay voor natuurlijke flow
+- **Window Management**: Automatisch sluiten van vorige windows
+
+#### Gebruiksscenario's
+
+**Scenario 1: Complete Development Cycle**
+```
+1. Gebruiker: "ga myrepo"
+2. AI: "Ik heb issue 42 aangemaakt voor Repo user/myrepo"
+   → Workflow opent automatisch nieuw window
+3. AI: "Ik heb Pull Request 15 aangemaakt voor Repo user/myrepo"
+   → Workflow opent automatisch nieuw window voor merge
+4. AI: "Ik heb Pull Request 15 verwerkt..."
+   → Workflow keert terug naar algemene ontwikkeling
+```
+
+**Scenario 2: Multi-Repository Development**
+```
+1. Werk aan Repository A → Issue creation
+2. Automatisch switch naar issue uitvoering
+3. PR creation → Automatisch switch naar merge proces
+4. Terug naar Repository A voor volgende stap
+```
+
+**Voordelen van Workflow Mode:**
+- **Hands-free development**: Minimale gebruikersinteractie vereist
+- **Consistente configuratie**: Altijd juiste model en preset
+- **Gestructureerde flow**: Volgt exact de werkwijze.txt instructies
+- **Efficiënte context switching**: Automatische window management
+
 ### 🔧 Model Context Protocol (MCP) Integratie
 - **GitHub Tools**: Directe integratie met GitHub API voor repository beheer
 - **External Tools**: Ondersteuning voor custom MCP servers en tools
@@ -221,13 +281,25 @@ De applicatie is geconfigureerd voor Lynxx medewerkers:
 1. **Login**: Gebruik je @lynxx.com Google account
 2. **Chat Interface**: Stel vragen of geef opdrachten aan Claude
 3. **Repository Ontwikkeling**: Gebruik `ga [repository-naam]` voor automatische ontwikkeling
-4. **Gesprekken Beheren**: Bekijk, zoek, en beheer je gesprekgeschiedenis
+4. **Workflow Mode**: Activeer de workflow toggle voor geautomatiseerde development cycles
+5. **Gesprekken Beheren**: Bekijk, zoek, en beheer je gesprekgeschiedenis
 
 ### Voor Ontwikkelaars
 1. **Code Development**: Gebruik `ga` commando met repository naam
 2. **Issue Tracking**: Automatische GitHub issue creatie en management
 3. **Branch Workflow**: Automatische branch creatie en PR workflow
-4. **Testing**: Gebruik MCP tools voor code testing en validation
+4. **Workflow Automation**: Laat de AI automatisch door development cycles navigeren
+5. **Testing**: Gebruik MCP tools voor code testing en validation
+
+### Workflow Mode Gebruiken
+1. **Activeer Workflow**: Zet de "Workflow" toggle aan in de interface
+2. **Start Development**: Gebruik `ga [repository-naam]` commando
+3. **Automatische Flow**: De AI zal automatisch:
+   - Issues aanmaken en oppakken
+   - Pull requests creëren en mergen
+   - Nieuwe chat windows openen met juiste configuratie
+   - Vorige windows sluiten voor clean workflow
+4. **Monitor Progress**: Volg de automatische progressie in de logs
 
 ## 🚀 Productie Deployment
 
@@ -299,6 +371,12 @@ pytest tests/test_api_conversation_persistence.py -v
 - **Error**: `sqlite3.OperationalError`
   - **Oplossing**: Run `flask db upgrade` om database schema bij te werken
 
+#### Workflow Issues
+- **Error**: Workflow patterns niet herkend
+  - **Oplossing**: Controleer of AI responses exact overeenkomen met patterns in `werkwijze.txt`
+- **Error**: Nieuwe windows openen niet automatisch
+  - **Oplossing**: Verifieer dat workflow toggle geactiveerd is en Claude 4 Sonnet beschikbaar is
+
 ### Logging & Debugging
 ```bash
 # Verhoog log level voor debugging
@@ -306,6 +384,9 @@ export LOG_LEVEL=DEBUG
 
 # Check logs voor specifieke modules
 tail -f logs/app.log | grep "anthropic_api"
+
+# Monitor workflow patterns
+tail -f logs/app.log | grep "workflow"
 ```
 
 ## 🤝 Contributing
@@ -319,6 +400,7 @@ tail -f logs/app.log | grep "anthropic_api"
 ## 📝 Changelog
 
 ### Recent Updates
+- **v2.2.0**: Workflow automation en pattern matching
 - **v2.1.0**: Log formatting en UI verbeteringen
 - **v2.0.0**: Database persistence voor conversations
 - **v1.5.0**: MCP integration en GitHub tools
