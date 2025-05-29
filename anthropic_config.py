@@ -18,25 +18,25 @@ class AnthropicConfig:
         "developer_agent": {
             "name": "Python Developer Agent",
             "temperature": 0.2,
-          #  "max_tokens": 20000,
+            "max_tokens": 20000,
             "description": "Optimized for code generation and development tasks"
         },
         "creative_writing": {
             "name": "Creative Writing",
             "temperature": 0.8,
-        #    "max_tokens": 10000,
+            "max_tokens": 10000,
             "description": "Higher creativity for writing and storytelling"
         },
         "analysis": {
             "name": "Data Analysis",
             "temperature": 0.1,
-        #    "max_tokens": 10000,
+            "max_tokens": 10000,
             "description": "Low temperature for analytical and factual tasks"
         },
         "balanced": {
             "name": "Balanced",
             "temperature": 0.5,
-       #     "max_tokens": 10000,
+            "max_tokens": 10000,
             "description": "Balanced settings for general purpose use"
         }
     }
