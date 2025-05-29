@@ -196,7 +196,7 @@ const workflowConfig = {
         action: "Ga naar Repo [owner]/[repo] en pak issue [nummer] op",
         model: "claude-3-5-sonnet-20241022",
         preset: "developer_agent",
-        description: "Issue Creation - Developer Agent met Claude Sonnet 3.5"
+        description: "Issue Creation - Developer Agent met Claude Sonnet 4"
     },
     prCreation: {
         pattern: workflowPatterns.prCreation,
@@ -210,13 +210,13 @@ const workflowConfig = {
         action: "Ga Repo [owner]/[repo]",
         model: "claude-3-opus-20240229",
         preset: "developer_agent",        
-        description: "PR Processed - Developer Agent met Claude Opus 3"
+        description: "PR Processed - Developer Agent met Claude Opus 4"
     }
 };
 
 // Fallback configuration
 const FALLBACK_MODEL_ID = 'claude-3-5-sonnet-20241022';
-const FALLBACK_PRESET_ID = 'balanced';
+const FALLBACK_PRESET_ID = 'developer_agent';
 
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize the first window
