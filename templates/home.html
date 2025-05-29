@@ -369,6 +369,11 @@ function configureWorkflowWindow(windowElement, config = null) {
         const modelId = config ? config.model : FALLBACK_MODEL_ID;
         const presetId = config ? config.preset : FALLBACK_PRESET_ID;
         const description = config ? config.description : 'Workflow mode';
+
+        addLogMessage(
+            windowElement.getAttribute('data-window-id'),
+            `Workflow configuratie ontvangen: model ${modelId}, preset ${presetId || 'geen'}`
+        );
         
         console.log(`Applying workflow config: ${description}`);
         console.log(`Target model: ${modelId}, Target preset: ${presetId}`);
@@ -393,6 +398,10 @@ function configureWorkflowWindow(windowElement, config = null) {
         const checkCompletion = () => {
             if (modelsLoaded && presetsLoaded) {
                 console.log('✓ Both models and presets loaded, configuration complete');
+                addLogMessage(
+                    windowElement.getAttribute('data-window-id'),
+                    `Model gebruikt: ${modelSelect.value}, preset: ${presetSelect.value || 'geen'}`
+                );
                 resolve();
             }
         };

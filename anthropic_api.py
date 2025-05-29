@@ -265,11 +265,12 @@ class AnthropicAPI:
             )
             
             if include_logs:
-                log_msg = "Prompt verzonden naar Claude"
+                log_msg = f"Prompt verzonden naar Claude (model: {model_id}"
                 if preset_name:
-                    log_msg += f" (preset: {preset_name})"
+                    log_msg += f", preset: {preset_name}"
                 if temperature is not None:
-                    log_msg += f" (temperature: {temperature})"
+                    log_msg += f", temperature: {temperature}"
+                log_msg += ")"
                 emit_log(log_msg)
             
             # Handle tool usage if needed
