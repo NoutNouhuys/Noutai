@@ -194,23 +194,23 @@ const workflowConfig = {
     issueCreation: {
         pattern: workflowPatterns.issueCreation,
         action: "Ga naar Repo [owner]/[repo] en pak issue [nummer] op",
-        model: "claude-sonnet-4-20250514",
+        model: "claude-3-5-sonnet-20241022",
         preset: "developer_agent",
-        description: "Issue Creation - Developer Agent met Claude Sonnet 4"
+        description: "Issue Creation - Developer Agent met Claude 3.5 Sonnet"
     },
     prCreation: {
         pattern: workflowPatterns.prCreation,
         action: "Ga naar Repo [owner]/[repo] en merge Pull Request [nummer] en delete de bijbehorende branche",
         model: "claude-3-5-haiku-20241022",
         preset: "developer_agent",
-        description: "PR Creation - Developer Agent met Claude Haiku 3.5"
+        description: "PR Creation - Developer Agent met Claude 3.5 Haiku"
     },
     prProcessed: {
         pattern: workflowPatterns.prProcessed,
         action: "Ga Repo [owner]/[repo]",
-        model: "claude-opus-4-20250514",
+        model: "claude-3-5-sonnet-20241022",
         preset: "creative_writing",        
-        description: "PR Processed - Developer Agent met Claude Opus 4"
+        description: "PR Processed - Creative Writing met Claude 3.5 Sonnet"
     }
 };
 
