@@ -1076,9 +1076,11 @@ function sendPrompt(windowId, customInput = null) {
     const modelSelect = windowElement.querySelector('.model-select');
     const presetSelect = windowElement.querySelector('.preset-select');
     
-    // Validate that a proper model is selected (not the placeholder)
+    // Validate that a proper model is selected (avoid placeholder option)
     const modelId = modelSelect.value;
-    if (!modelId || modelId === '' || modelSelect.selectedIndex === 0) {
+    // if (!modelId || modelId === '' || modelSelect.selectedIndex === 0) {
+    const selectedOption = modelSelect.options[modelSelect.selectedIndex];
+    if (!modelId || (selectedOption && selectedOption.disabled)) {
         console.error('No valid model selected, cannot send prompt');
         removeLoadingMessage(windowId, loadingId);
         addErrorMessage(windowId, 'Geen geldig model geselecteerd. Wacht tot de modellen zijn geladen.');
