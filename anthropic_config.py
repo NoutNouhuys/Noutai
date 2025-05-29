@@ -233,18 +233,18 @@ class AnthropicConfig:
         # This could be loaded from a config file in the future
         return [
             {
-                 "id": "claude-opus-4-20250514",
-                "name": "Claude Opus 4",
+                 "id": "claude-3-5-sonnet-20241022",
+                "name": "Most powerful model for complex tasks, best coding model in the world",
                 "description": "Most powerful model for complex tasks, best coding model in the world",
                 "context_length": 200000,
-                "max_tokens": 20000,
+                "max_tokens": 8192,
             },
             {
-                "id": "claude-sonnet-4-20250514",
-                "name": "Claude Sonnet 4",
+                "id": "claude-3-5-sonnet-20240620",
+                "name": "Claude 3.5 Sonnet",
                 "description": "Excellent balance of intelligence and speed for production workloads",
                 "context_length": 200000,
-                "max_tokens": 20000,
+                "max_tokens": 8192,
             },
             {
                 "id": "claude-3-5-haiku-20241022",
