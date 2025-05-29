@@ -194,28 +194,28 @@ const workflowConfig = {
     issueCreation: {
         pattern: workflowPatterns.issueCreation,
         action: "Ga naar Repo [owner]/[repo] en pak issue [nummer] op",
-        model: "claude-sonnet-4-20250514",
+        model: "claude-3-5-sonnet-20241022",
         preset: "developer_agent",
-        description: "Issue Creation - Creative Writing met Claude Opus 4"
+        description: "Issue Creation - Developer Agent met Claude Sonnet 3.5"
     },
     prCreation: {
         pattern: workflowPatterns.prCreation,
         action: "Ga naar Repo [owner]/[repo] en merge Pull Request [nummer] en delete de bijbehorende branche",
-        model: "claude-haiku-3.5-20250514",
+        model: "claude-3-5-haiku-20241022",
         preset: "developer_agent",
         description: "PR Creation - Developer Agent met Claude Haiku 3.5"
     },
     prProcessed: {
         pattern: workflowPatterns.prProcessed,
         action: "Ga Repo [owner]/[repo]",
-        model: "claude-opus-4-20250514",
-        preset: "creative_writing",        
-        description: "PR Processed - Developer Agent met Claude Sonnet 4"
+        model: "claude-3-opus-20240229",
+        preset: "developer_agent",        
+        description: "PR Processed - Developer Agent met Claude Opus 3"
     }
 };
 
 // Fallback configuration
-const FALLBACK_MODEL_ID = 'claude-sonnet-4-20250514';
+const FALLBACK_MODEL_ID = 'claude-3-5-sonnet-20241022';
 const FALLBACK_PRESET_ID = 'balanced';
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -343,6 +343,14 @@ function autoCreateChatWindow(prompt, currentWindowId, workflowConfig) {
 
 function configureWorkflowWindow(windowElement, config = null) {
     console.log('Configuring window for workflow mode');
+    
+    if (config) {
+        console.log('Workflow configuration:', {
+            model: config.model,
+            preset: config.preset,
+            description: config.description
+        });
+    }
     
     // Use provided config or default workflow config
     const modelId = config ? config.model : FALLBACK_MODEL_ID;
