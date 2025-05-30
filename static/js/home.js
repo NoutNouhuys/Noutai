@@ -35,7 +35,7 @@ function getAPIHeaders(includeContentType = true) {
 const workflowPatterns = {
     issueCreation: /\bIk heb issue #?(\d+) aangemaakt voor Repo ([^\/]+)\/([^\s]+)\b/i,
     prCreation: /\bIk heb Pull Request #?(\d+) aangemaakt voor Repo ([^\/]+)\/([^\s]+)\b/i,
-    prProcessed: /\bIk heb Pull Request #?(\d+) verwerkt en bijbehorende branche(?:([^\\s]+))? verwijderd voor Repo ([^\/]+)\/([^\s.]+)\.?\b/i
+    prProcessed: /\bIk heb Pull Request #?(\d+) verwerkt en bijbehorende branche(?:([^\s]+))? verwijderd voor Repo ([^\/]+)\/([^\s.]+)\.?\b/i
 };
 
 // Workflow configuration with model and preset settings per pattern
@@ -194,6 +194,7 @@ function initializeWorkflowTabs() {
         if (windowData) {
             windowData.isWorkflowWindow = true;
             windowData.workflowTabId = tabId;
+            windowData.isWorkflowTriggered = false; // NEW: track if activated by workflow
         }
         
         // Configure the window with workflow settings
@@ -201,6 +202,22 @@ function initializeWorkflowTabs() {
             configureWorkflowWindow(chatWindow, config);
         }, 500);
     }
+    
+    // Add event listeners for manual tab switching
+    document.querySelectorAll('.workflow-tabs-container .nav-link').forEach(tabButton => {
+        tabButton.addEventListener('shown.bs.tab', function(event) {
+            // This is a manual tab switch (not workflow triggered)
+            const tabId = event.target.getAttribute('data-bs-target').substring(1);
+            const windowId = `workflow-${tabId}`;
+            const windowData = chatWindows.get(windowId);
+            
+            if (windowData) {
+                // Ensure flag is false for manual switches
+                windowData.isWorkflowTriggered = false;
+                console.log(`[Manual Tab Switch] Tab ${tabId} manually activated, workflow trigger flag reset`);
+            }
+        });
+    });
 }
 
 function createChatWindowElement(windowId) {
@@ -357,6 +374,10 @@ function autoCreateTabWindow(prompt, workflowConfig) {
         console.error(`[Tab Workflow] Window ${windowId} not found in chatWindows`);
         return;
     }
+    
+    // Mark window as workflow triggered
+    windowData.isWorkflowTriggered = true;
+    console.log(`[Tab Workflow] Window ${windowId} marked as workflow triggered`);
     
     // Check if window is not waiting for response
     if (windowData.isWaitingForResponse) {
@@ -858,7 +879,8 @@ function initializeChatWindow(windowElement) {
         isWaitingForResponse: false,
         workflowConfig: null,
         queuedPrompt: null,
-        queuedConfig: null
+        queuedConfig: null,
+        isWorkflowTriggered: false // NEW: track if activated by workflow
     });
     
     // Add click event to make this window active
@@ -1180,6 +1202,7 @@ function resetConversation(windowId) {
 
     windowData.conversationId = null;
     windowData.workflowConfig = null;
+    windowData.isWorkflowTriggered = false; // Reset workflow trigger flag
 
     const windowElement = document.querySelector(`[data-window-id="${windowId}"]`);
     const chatMessages = windowElement.querySelector('.chat-messages');
@@ -1191,6 +1214,9 @@ function resetConversation(windowId) {
     chatMessages.innerHTML = '';
     logMessages.innerHTML = '';
     statusElement.textContent = 'Nieuw gesprek';
+
+    // Add log message about new conversation
+    addLogMessage(windowId, 'Nieuwe conversatie gestart');
 
     // Focus on the input
     promptInput.focus();
@@ -1205,6 +1231,15 @@ function sendPromptWithConfig(windowId, prompt, modelId, presetName) {
     
     if (!prompt || prompt.trim() === '') {
         return;
+    }
+    
+    // Check if this is a workflow-triggered prompt that needs new conversation
+    if (windowData.isWorkflowTriggered && windowData.conversationId) {
+        console.log(`[Workflow Trigger] Forcing new conversation for window ${windowId}`);
+        // Reset conversation before sending prompt
+        resetConversation(windowId);
+        windowData.isWorkflowTriggered = false; // Reset flag after use
+        addLogMessage(windowId, 'Nieuwe conversatie gestart via workflow trigger');
     }
     
     // Add user message to chat
@@ -1226,7 +1261,7 @@ function sendPromptWithConfig(windowId, prompt, modelId, presetName) {
         preset_name: presetName || undefined
     };
     
-    // Add conversation_id if continuing a conversation
+    // Add conversation_id if continuing a conversation (but not if we just reset it)
     if (windowData.conversationId) {
         requestData.conversation_id = windowData.conversationId;
     }
