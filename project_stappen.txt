@@ -231,6 +231,25 @@
    - Resultaat: Workflow windows gebruiken nu correct de geconfigureerde model en preset instellingen
    - Bestanden gewijzigd:
      - templates/home.html - Verbeterde workflow configuratie logica
+17. [✓] Refactor home.html: Split JavaScript, CSS en HTML naar aparte bestanden (Issue #77) - VOLTOOID
+   - Probleem: home.html was 62KB groot met alle code door elkaar
+   - Doelstelling: Separation of concerns voor betere onderhoudbaarheid
+   - Implementatie:
+     - [✓] JavaScript geëxtraheerd naar static/js/home.js (51KB)
+     - [✓] CSS geëxtraheerd naar static/css/home.css (2KB)
+     - [✓] Chat window component naar templates/components/chat_window.html (3KB)
+     - [✓] CSRF token handling via meta tag
+     - [✓] Alle functionaliteit behouden
+   - Resultaat:
+     - [✓] home.html gereduceerd van 62KB naar 4.7KB (92% reductie!)
+     - [✓] Betere code organisatie en onderhoudbaarheid
+     - [✓] Browser caching voor statische bestanden
+     - [✓] Herbruikbare chat window component
+   - Bestanden gewijzigd:
+     - templates/home.html - Refactored naar minimale template
+     - static/js/home.js - Nieuwe file met alle JavaScript
+     - static/css/home.css - Nieuwe file met alle CSS
+     - templates/components/chat_window.html - Nieuwe component
 
 ## Toekomstige stappen (Must-have)
 
