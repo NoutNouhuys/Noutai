@@ -330,6 +330,51 @@
      - static/js/home.js - Tab-based workflow functionaliteit (59KB)
      - static/css/home.css - Workflow tabs styling (3.7KB)
      - project_info.txt - Documentatie update
+20. [✓] Refactor home.js naar modulaire structuur voor betere onderhoudbaarheid (Issue #94) - VOLTOOID
+   - Probleem: home.js was uitgegroeid tot 1620 regels code (65KB), wat onderhoud en testen complex maakte
+   - Doelstelling: Opdelen in logische, herbruikbare modules voor betere onderhoudbaarheid, testbaarheid en code organisatie
+   - Modulaire Structuur:
+     - [✓] **state.js** (2.7KB) - Globale staat management (chatWindows, workflow state, presets cache, localStorage)
+     - [✓] **formatting.js** (7.1KB) - Berichten formatting en display (markdown, syntax highlighting, message display)
+     - [✓] **network.js** (21.7KB) - Backend communicatie (API calls, model/preset loading, conversation management)
+     - [✓] **windowManager.js** (17.6KB) - Chat window beheer (creatie, initialisatie, layout management)
+     - [✓] **workflow.js** (22.4KB) - Workflow automatisering (pattern detectie, tab management, configuratie)
+     - [✓] **chatAway.js** (3.1KB) - Chat Away functionaliteit (automatisch doorsturen tussen windows)
+     - [✓] **main.js** (4.6KB) - Hoofdcoördinatie en initialisatie (DOMContentLoaded, control panel setup)
+   - Implementatie Aanpak:
+     - [✓] Namespace pattern gebruikt (AIOntwikkelhulp.ModuleName) voor browser compatibiliteit
+     - [✓] Revealing module pattern voor encapsulation en clean public APIs
+     - [✓] Logische scheiding van verantwoordelijkheden per module
+     - [✓] Cross-module communicatie via namespace references
+     - [✓] Behoud van alle bestaande functionaliteit
+   - Template Updates:
+     - [✓] home.html bijgewerkt voor modulaire JavaScript loading
+     - [✓] Correcte load volgorde: core modules → afhankelijke modules → main.js
+     - [✓] Verwijdering van oude home.js referentie
+   - Code Organisatie Voordelen:
+     - [✓] **Onderhoudbaarheid**: Ontwikkelaars kunnen snel de juiste module vinden
+     - [✓] **Testbaarheid**: Elke module kan afzonderlijk getest worden
+     - [✓] **Code organisatie**: Gerelateerde functionaliteit is gegroepeerd
+     - [✓] **Performance**: Mogelijkheid voor lazy loading indien nodig
+     - [✓] **Debugging**: Duidelijke module boundaries voor foutopsporing
+   - Functionaliteit Behoud:
+     - [✓] Alle bestaande features werken exact hetzelfde
+     - [✓] Workflow automatisering blijft volledig functioneel
+     - [✓] Chat away functionaliteit ongewijzigd
+     - [✓] Model/preset configuratie werkt correct
+     - [✓] Error handling intact
+     - [✓] Browser compatibiliteit behouden
+   - Resultaat:
+     - [✓] Oude home.js (65KB) vervangen door 7 modulaire bestanden (totaal ~79KB maar beter georganiseerd)
+     - [✓] Duidelijke module boundaries en verantwoordelijkheden
+     - [✓] Betere code leesbaarheid en onderhoudbaarheid
+     - [✓] Voorbereiding voor toekomstige unit testing van JavaScript modules
+     - [✓] Geen merkbare performance degradatie
+   - Bestanden gewijzigd:
+     - static/js/modules/ - Nieuwe directory met 6 modules
+     - static/js/main.js - Nieuwe hoofdcoördinatie bestand
+     - templates/home.html - Bijgewerkt voor modulaire loading
+     - project_info.txt - Documentatie update voor nieuwe structuur
 
 ## Toekomstige stappen (Must-have)
 
@@ -386,3 +431,11 @@ Alle must-have taken zijn uitgevoerd.
    - Export van log data voor analyse
    - Real-time log streaming
    - Tool performance metrics en analytics
+
+9. JavaScript testing en quality assurance
+   - Unit tests voor alle JavaScript modules
+   - Integration tests voor module communicatie
+   - End-to-end testing voor workflow scenarios
+   - Code coverage reporting
+   - ESLint/JSHint voor code quality
+   - Performance monitoring en optimalisatie
