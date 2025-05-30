@@ -1,7 +1,7 @@
 # Project Informatie: aiontwikkelhulp
 
 ## Projectoverzicht
-De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt nu configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie. Bevat nu ook workflow automatisering voor het automatisch openen en sluiten van chat windows op basis van AI responses, inclusief automatische configuratie van nieuwe chats met Claude Sonnet 4 en developer_agent preset. Nieuw: Volledig analytics systeem voor token usage tracking, kosten berekening en usage insights met real-time weergave in de chat interface. Uitgebreid met conversation enhancements voor token usage weergave en bulk delete functionaliteit. CSRF token ondersteuning geïmplementeerd voor alle API calls.
+De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt nu configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie. Bevat nu ook workflow automatisering voor het automatisch openen en sluiten van chat windows op basis van AI responses, inclusief automatische configuratie van nieuwe chats met Claude Sonnet 4 en developer_agent preset. Nieuw: Volledig analytics systeem voor token usage tracking, kosten berekening en usage insights met real-time weergave in de chat interface. Uitgebreid met conversation enhancements voor token usage weergave en bulk delete functionaliteit. CSRF token ondersteuning geïmplementeerd voor alle API calls. Recent gerefactored voor betere code organisatie met scheiding van HTML, JavaScript en CSS.
 
 ## Architectuur
 De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruikers te helpen bij het ontwikkelen van software met behulp van AI:
@@ -26,10 +26,13 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - MCP integratie (mcp_integration.py)
 
 ### Frontend Modules:
-- templates/home.html - Hoofdtemplate met chat interface, preset selector, workflow toggle, token usage display en CSRF token ondersteuning
+- templates/home.html - Minimale hoofdtemplate (4.7KB, was 62KB)
+- templates/components/chat_window.html - Herbruikbare chat window component
 - templates/conversations.html - Conversation management met token usage, bulk delete en CSRF token ondersteuning
 - templates/analytics.html - Analytics dashboard template
-- static/css/style.css - Styling voor de applicatie inclusief conversation enhancements
+- static/js/home.js - Alle JavaScript voor home pagina (51KB)
+- static/css/home.css - CSS specifiek voor home pagina (2KB)
+- static/css/style.css - Algemene applicatie styling
 - static/css/analytics.css - Styling voor analytics dashboard
 - static/js/analytics.js - JavaScript voor analytics dashboard functionaliteit
 - static/js/log-formatter.js - Log formatting functionaliteit
@@ -37,17 +40,35 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 
 ## Modules
 
+### templates/home.html
+- **Status**: Gerefactored - drastisch verkleind van 62KB naar 4.7KB (92% reductie)
+- **Pad**: /templates/home.html
+- **Functionaliteit**: Minimale hoofdtemplate voor de chat interface. Gebruikt Jinja2 macro voor chat window component. Alle JavaScript en CSS zijn verplaatst naar aparte bestanden voor betere onderhoudbaarheid en browser caching.
+- **Afhankelijkheden**: base.html, components/chat_window.html, static/js/home.js, static/css/home.css, static/js/log-formatter.js, static/css/log-formatter.css
+
+### templates/components/chat_window.html
+- **Status**: Nieuw toegevoegd tijdens refactoring
+- **Pad**: /templates/components/chat_window.html
+- **Functionaliteit**: Herbruikbare Jinja2 macro voor chat window component. Parametriseerbaar met window ID en active state. Bevat volledige chat window structuur inclusief model/preset selectors, chat/log kolommen, en input gebied.
+- **Afhankelijkheden**: Geen
+
+### static/js/home.js
+- **Status**: Nieuw toegevoegd tijdens refactoring
+- **Pad**: /static/js/home.js
+- **Functionaliteit**: Bevat alle JavaScript functionaliteit voor de home pagina (51KB). Inclusief chat window management, workflow automation, chat away functionaliteit, API communicatie, CSRF token handling, en alle event handlers. Volledig gescheiden van HTML voor betere onderhoudbaarheid.
+- **Afhankelijkheden**: log-formatter.js
+
+### static/css/home.css
+- **Status**: Nieuw toegevoegd tijdens refactoring
+- **Pad**: /static/css/home.css
+- **Functionaliteit**: Bevat alle CSS styling specifiek voor de home pagina (2KB). GitHub-style chat window styling, split column layout, responsive design, workflow status badges. Gescheiden van HTML voor browser caching.
+- **Afhankelijkheden**: style.css (voor CSS variabelen)
+
 ### templates/conversations.html
 - **Status**: Uitgebreid met token usage, bulk delete functionaliteit en CSRF token ondersteuning
 - **Pad**: /templates/conversations.html
 - **Functionaliteit**: Template voor conversation management interface. Ondersteunt conversation listing, search, rename, delete operations met real-time updates. Nieuw: Token usage weergave per gesprek (input/output tokens, kosten), bulk delete functionaliteit met checkboxes, selecteer alles/geen functionaliteit, bevestigingsmodals voor bulk acties, responsive design voor mobile devices. CSRF token ondersteuning: getCSRFToken() functie, X-CSRFToken header in alle fetch requests, proper error handling.
 - **Afhankelijkheden**: base.html, API endpoints, analytics API endpoints
-
-### templates/home.html
-- **Status**: Uitgebreid met token usage display en CSRF token ondersteuning
-- **Pad**: /templates/home.html
-- **Functionaliteit**: Hoofdtemplate voor de chat interface. Ondersteunt nu gesplitste weergave van chat en log berichten in aparte kolommen. Geïntegreerd met conversation persistence en enhanced log formatting. Nieuw: Preset selector naast model selector voor LLM configuratie, dynamisch laden van presets via API, preset parameter doorgeven aan prompt requests. Workflow toggle button voor automatische chat window management op basis van AI response patterns. Volledig geïmplementeerde workflow automation met automatische configuratie van Claude Sonnet 4 en developer_agent preset voor nieuwe workflow chats. Token usage display in chat headers en conversation analytics. CSRF token ondersteuning: getCSRFToken() functie voor alle API calls, proper error handling voor CSRF fouten.
-- **Afhankelijkheden**: base.html, static/css/style.css, static/js/log-formatter.js, static/css/log-formatter.css
 
 ### templates/base.html
 - **Status**: Actief met CSRF token ondersteuning
@@ -64,7 +85,7 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 ### static/css/style.css
 - **Status**: Uitgebreid met conversation enhancements styling
 - **Pad**: /static/css/style.css
-- **Functionaliteit**: Styling voor de applicatie inclusief GitHub-achtige thema's. Ondersteunt nu de gesplitste kolom layout voor chat en logs. Nieuw: Styling voor workflow toggle button consistent met bestaande UI. Conversation enhancements: Bulk selection styling, token usage summary styling, responsive design voor mobile devices, checkbox styling, bulk delete button animations.
+- **Functionaliteit**: Algemene styling voor de applicatie inclusief GitHub-achtige thema's. Ondersteunt nu de gesplitste kolom layout voor chat en logs. Nieuw: Styling voor workflow toggle button consistent met bestaande UI. Conversation enhancements: Bulk selection styling, token usage summary styling, responsive design voor mobile devices, checkbox styling, bulk delete button animations.
 - **Afhankelijkheden**: Geen
 
 ### analytics/token_tracker.py
@@ -254,6 +275,31 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: routes/api.py, anthropic_api
 
 ## Recente Wijzigingen
+
+### Refactor home.html: Split JavaScript, CSS en HTML naar aparte bestanden (Issue #77) - VOLTOOID
+- **Probleem**: home.html was 62KB groot met alle code door elkaar (HTML, JavaScript, CSS)
+- **Doelstelling**: Separation of concerns voor betere onderhoudbaarheid
+- **Implementatie**:
+  - **JavaScript extractie**: Alle JavaScript (51KB) verplaatst naar static/js/home.js
+  - **CSS extractie**: Alle CSS (2KB) verplaatst naar static/css/home.css
+  - **Component extractie**: Chat window HTML geëxtraheerd naar templates/components/chat_window.html als Jinja2 macro
+  - **CSRF token handling**: Via meta tag in plaats van inline template variabelen
+- **Resultaat**:
+  - home.html gereduceerd van 62KB naar 4.7KB (92% reductie!)
+  - Betere code organisatie en onderhoudbaarheid
+  - Browser caching voor statische bestanden mogelijk
+  - Herbruikbare chat window component
+  - Betere development experience met proper syntax highlighting
+- **Technische details**:
+  - Alle functionaliteit behouden zonder breaking changes
+  - Workflow automation volledig functioneel
+  - Chat away functionaliteit intact
+  - CSRF token handling via getCSRFToken() functie
+- **Bestanden gewijzigd**:
+  - templates/home.html - Minimale template met component import
+  - static/js/home.js - Nieuwe file met alle JavaScript functionaliteit
+  - static/css/home.css - Nieuwe file met alle home-specifieke CSS
+  - templates/components/chat_window.html - Nieuwe herbruikbare component
 
 ### CSRF Token Missing Error Fix (Issue #64) - VOLTOOID
 - **Probleem**: CSRF token ontbrak in bulk delete en andere API calls, resulteerde in 400 errors
