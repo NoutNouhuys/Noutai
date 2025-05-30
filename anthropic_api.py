@@ -275,6 +275,9 @@ class AnthropicAPI:
                 response = api_result
                 thinking_content = None
             
+            # Store the actual response object for consistent usage
+            actual_response = response
+            
             if include_logs:
                 log_msg = f"Prompt verzonden naar Claude (model: {model_id}"
                 if preset_name:
@@ -285,10 +288,10 @@ class AnthropicAPI:
                 emit_log(log_msg)
             
             # Handle tool usage if needed
-            if tools and hasattr(response, 'stop_reason') and response.stop_reason == "tool_use":
+            if tools and hasattr(actual_response, 'stop_reason') and actual_response.stop_reason == "tool_use":
                 logger.debug("Handling tool use")
-                response = await self.mcp_integration.handle_tool_use(
-                    response=response,
+                actual_response = await self.mcp_integration.handle_tool_use(
+                    response=actual_response,
                     messages=messages,
                     client=self.client,
                     message_params={
@@ -305,33 +308,36 @@ class AnthropicAPI:
                 )
                 
                 # After tool use, we might have new thinking content
-                if hasattr(response, 'content') and response.content:
+                if hasattr(actual_response, 'content') and actual_response.content:
                     # Re-extract thinking content from the final response
-                    thinking_content = self.client._extract_thinking_content(response)
+                    thinking_content = self.client._extract_thinking_content(actual_response)
                     logger.debug(f"Re-extracted thinking content after tool use: {thinking_content is not None}")
+                
+                # Update the response variable for consistency
+                response = actual_response
             
-            # Extract response text
-            if hasattr(response, 'content') and response.content:
-                response_text = response.content[0].text
+            # Extract response text (use actual_response to ensure we have the right object)
+            if hasattr(actual_response, 'content') and actual_response.content:
+                response_text = actual_response.content[0].text
             else:
                 logger.error("Response has no content")
                 response_text = ""
             
-            # Extract usage data from response
+            # Extract usage data from response (use actual_response)
             usage_data = {}
-            if hasattr(response, 'usage'):
+            if hasattr(actual_response, 'usage'):
                 usage_data = {
-                    'input_tokens': response.usage.input_tokens,
-                    'output_tokens': response.usage.output_tokens,
-                    'cache_creation_input_tokens': getattr(response.usage, 'cache_creation_input_tokens', 0),
-                    'cache_read_input_tokens': getattr(response.usage, 'cache_read_input_tokens', 0)
+                    'input_tokens': actual_response.usage.input_tokens,
+                    'output_tokens': actual_response.usage.output_tokens,
+                    'cache_creation_input_tokens': getattr(actual_response.usage, 'cache_creation_input_tokens', 0),
+                    'cache_read_input_tokens': getattr(actual_response.usage, 'cache_read_input_tokens', 0)
                 }
                 
                 # Record token usage
                 try:
                     conv_id = int(conversation_id) if isinstance(conversation_id, str) and conversation_id.isdigit() else conversation_id
                     request_metadata = {
-                        'model_version': getattr(response, 'model', model_id),
+                        'model_version': getattr(actual_response, 'model', model_id),
                         'request_type': 'chat',
                         'temperature': temperature,
                         'max_tokens': max_tokens,
