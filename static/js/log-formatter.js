@@ -22,6 +22,15 @@ const LogFormatter = {
             case 'error':
                 formattedContent = this.formatError(content);
                 break;
+            case 'tool_start':
+                formattedContent = this.formatToolStart(content);
+                break;
+            case 'tool_complete':
+                formattedContent = this.formatToolComplete(content);
+                break;
+            case 'tool_failed':
+                formattedContent = this.formatToolFailed(content);
+                break;
             case 'tool_use':
                 formattedContent = this.formatToolUse(content);
                 break;
@@ -43,12 +52,25 @@ const LogFormatter = {
      * Detect the type of log message
      */
     detectLogType: function(content) {
+        // Check for enhanced tool logging patterns
+        if (content.includes('▶ Starting tool:')) {
+            return 'tool_start';
+        }
+        
+        if (content.includes('✓ Tool') && content.includes('completed:')) {
+            return 'tool_complete';
+        }
+        
+        if (content.includes('✗ Tool') && content.includes('failed:')) {
+            return 'tool_failed';
+        }
+        
         // Check for JSON
         if (this.isJSON(content)) {
             return 'json';
         }
         
-        // Check for tool use patterns
+        // Check for legacy tool use patterns
         if (content.includes('Using tool:') || content.includes('Tool:')) {
             return 'tool_use';
         }
@@ -77,6 +99,90 @@ const LogFormatter = {
             // Check if it's a JSON-like structure within a larger string
             return /\{[\s\S]*\}|\[[\s\S]*\]/.test(str);
         }
+    },
+    
+    /**
+     * Format tool start messages
+     */
+    formatToolStart: function(content) {
+        const lines = content.split('\n');
+        const toolLine = lines[0];
+        const toolName = toolLine.match(/▶ Starting tool: (.+)/)?.[1] || 'Unknown';
+        
+        let formatted = '<div class="tool-start-log">';
+        formatted += `<div class="tool-header">`;
+        formatted += `<i class="fas fa-play-circle"></i> Starting ${this.escapeHtml(toolName)}`;
+        formatted += `</div>`;
+        
+        // Add parameters if present
+        if (lines.length > 1) {
+            formatted += '<div class="tool-params">';
+            lines.slice(1).forEach(line => {
+                if (line.trim()) {
+                    formatted += `<div class="param-line">${this.escapeHtml(line)}</div>`;
+                }
+            });
+            formatted += '</div>';
+        }
+        
+        formatted += '</div>';
+        return formatted;
+    },
+    
+    /**
+     * Format tool completion messages
+     */
+    formatToolComplete: function(content) {
+        const lines = content.split('\n');
+        const toolLine = lines[0];
+        const toolName = toolLine.match(/✓ Tool (.+) completed:/)?.[1] || 'Unknown';
+        
+        let formatted = '<div class="tool-complete-log">';
+        formatted += `<div class="tool-header">`;
+        formatted += `<i class="fas fa-check-circle"></i> ${this.escapeHtml(toolName)} completed`;
+        formatted += `</div>`;
+        
+        // Add result summary if present
+        if (lines.length > 1) {
+            formatted += '<div class="tool-result">';
+            lines.slice(1).forEach(line => {
+                if (line.trim()) {
+                    formatted += `<div class="result-line">${this.escapeHtml(line)}</div>`;
+                }
+            });
+            formatted += '</div>';
+        }
+        
+        formatted += '</div>';
+        return formatted;
+    },
+    
+    /**
+     * Format tool failure messages
+     */
+    formatToolFailed: function(content) {
+        const lines = content.split('\n');
+        const toolLine = lines[0];
+        const toolName = toolLine.match(/✗ Tool (.+) failed:/)?.[1] || 'Unknown';
+        
+        let formatted = '<div class="tool-failed-log">';
+        formatted += `<div class="tool-header">`;
+        formatted += `<i class="fas fa-times-circle"></i> ${this.escapeHtml(toolName)} failed`;
+        formatted += `</div>`;
+        
+        // Add error details if present
+        if (lines.length > 1) {
+            formatted += '<div class="tool-error">';
+            lines.slice(1).forEach(line => {
+                if (line.trim()) {
+                    formatted += `<div class="error-line">${this.escapeHtml(line)}</div>`;
+                }
+            });
+            formatted += '</div>';
+        }
+        
+        formatted += '</div>';
+        return formatted;
     },
     
     /**
@@ -133,7 +239,7 @@ const LogFormatter = {
     },
     
     /**
-     * Format tool use messages
+     * Format legacy tool use messages
      */
     formatToolUse: function(content) {
         const lines = content.split('\n');
