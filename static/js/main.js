@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Setup control panel buttons
     setupControlPanel();
     
+    // Setup theme toggle
+    setupThemeToggle();
+    
     // Check URL parameters to load conversations
     checkUrlParams();
     
@@ -36,6 +39,50 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     });
 });
+
+function setupThemeToggle() {
+    const themeToggle = document.getElementById('theme-toggle');
+    const html = document.documentElement;
+    
+    if (!themeToggle) {
+        console.warn('Theme toggle element not found');
+        return;
+    }
+    
+    // Load saved theme
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    html.setAttribute('data-theme', savedTheme);
+    themeToggle.checked = savedTheme === 'dark';
+    
+    // Update icon
+    updateThemeIcon(savedTheme);
+    
+    themeToggle.addEventListener('change', function(e) {
+        const theme = e.target.checked ? 'dark' : 'light';
+        html.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+        updateThemeIcon(theme);
+        
+        console.log(`Theme switched to: ${theme}`);
+    });
+    
+    console.log(`Theme toggle initialized with theme: ${savedTheme}`);
+}
+
+function updateThemeIcon(theme) {
+    const themeIcons = document.querySelectorAll('.theme-icon i');
+    themeIcons.forEach(icon => {
+        icon.className = theme === 'dark' ? 'far fa-sun' : 'far fa-moon';
+        // Update text color for non-authenticated users
+        if (theme === 'dark') {
+            icon.classList.remove('text-white');
+            icon.classList.add('text-warning');
+        } else {
+            icon.classList.remove('text-warning');
+            icon.classList.add('text-white');
+        }
+    });
+}
 
 function setupControlPanel() {
     // Add window button
