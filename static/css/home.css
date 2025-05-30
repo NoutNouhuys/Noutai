@@ -90,7 +90,7 @@
     margin-right: 4px;
 }
 
-/* Workflow tabs styling */
+/* Workflow tabs styling - IMPROVED */
 .workflow-tabs-container {
     height: 100%;
     display: flex;
@@ -99,6 +99,7 @@
 
 .workflow-tabs-container .nav-tabs {
     border-bottom: 1px solid var(--border-color);
+    background-color: var(--secondary-bg);
     flex-shrink: 0;
 }
 
@@ -112,34 +113,83 @@
     padding-top: 16px;
 }
 
+/* Tab links base styling - FIXED */
+.workflow-tabs-container .nav-link {
+    background-color: transparent;
+    color: var(--muted-text);
+    border: 1px solid transparent;
+    border-bottom: none;
+    padding: 8px 16px;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Active tab - FIXED */
+.workflow-tabs-container .nav-link.active {
+    background-color: var(--background-color);
+    color: var(--foreground-color);
+    border-color: var(--border-color) var(--border-color) var(--background-color);
+    border-bottom: 1px solid var(--background-color);
+}
+
+/* Hover state - IMPROVED */
+.workflow-tabs-container .nav-link:hover:not(.active) {
+    background-color: var(--gh-btn-hover-bg);
+    color: var(--foreground-color);
+    text-decoration: none;
+    border-color: var(--border-color) var(--border-color) transparent;
+}
+
+/* Focus state for accessibility - NEW */
+.workflow-tabs-container .nav-link:focus {
+    outline: 2px solid var(--primary-button-bg);
+    outline-offset: -2px;
+    z-index: 1;
+}
+
+/* Dark mode overrides - NEW */
+[data-theme="dark"] .workflow-tabs-container .nav-link.active {
+    background-color: var(--card-bg);
+    border-bottom-color: var(--card-bg);
+}
+
+/* Workflow active indicator - IMPROVED */
+.workflow-tabs-container .nav-link.workflow-active {
+    position: relative;
+    background-color: rgba(35, 134, 54, 0.1);
+    color: var(--token-success);
+    border-color: rgba(35, 134, 54, 0.3);
+}
+
+[data-theme="dark"] .workflow-tabs-container .nav-link.workflow-active {
+    background-color: rgba(35, 134, 54, 0.15);
+    color: var(--token-success);
+    border-color: rgba(35, 134, 54, 0.3);
+}
+
+.workflow-tabs-container .nav-link.workflow-active::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: var(--token-success);
+}
+
 /* Activity indicator animation */
 .activity-indicator {
     display: inline-block;
     animation: spin 1s linear infinite;
     margin-left: 8px;
     font-size: 12px;
+    color: var(--primary-button-bg);
 }
 
 @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
-}
-
-/* Tab styling voor actieve workflow */
-.nav-link.workflow-active {
-    background-color: var(--success-bg, #d1e7dd);
-    border-color: var(--success-border, #badbcc);
-    color: var(--success-text, #0f5132);
-}
-
-/* Tab hover effects */
-.nav-link:hover {
-    border-color: var(--border-color);
-}
-
-.nav-link.active {
-    background-color: var(--background-color);
-    border-color: var(--border-color) var(--border-color) var(--background-color);
 }
 
 /* Responsive adjustments */
@@ -159,10 +209,16 @@
     .workflow-tabs-container .nav-tabs {
         flex-wrap: nowrap;
         overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
     
     .workflow-tabs-container .nav-item {
         flex-shrink: 0;
+    }
+    
+    .workflow-tabs-container .nav-link {
+        white-space: nowrap;
+        min-width: 120px;
     }
 }
 
