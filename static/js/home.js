@@ -692,6 +692,14 @@ function addChatWindow(initialInput, isWorkflowWindow = false, workflowConfig = 
                             <!-- Chat messages will appear here -->
                         </div>
                     </div>
+                    <div class="thinking-column">
+                        <div class="column-header">
+                            <i class="fas fa-brain me-1"></i> Thinking
+                        </div>
+                        <div class="thinking-messages" id="thinking-messages-${newWindowId}">
+                            <!-- Thinking messages will appear here -->
+                        </div>
+                    </div>
                     <div class="log-column">
                         <div class="column-header">
                             <i class="fas fa-list me-1"></i> Logs
@@ -756,6 +764,7 @@ function addChatWindow(initialInput, isWorkflowWindow = false, workflowConfig = 
     });
     });
 }
+
 function removeActiveWindow() {
     const activeWindow = document.querySelector('.chat-window.active');
     if (!activeWindow) return;
@@ -857,16 +866,20 @@ function loadConversation(windowId, conversationId) {
                     }
                 }
                 
-                // Clear chat and log messages
+                // Clear chat, thinking, and log messages
                 const chatMessages = windowElement.querySelector('.chat-messages');
+                const thinkingMessages = windowElement.querySelector('.thinking-messages');
                 const logMessages = windowElement.querySelector('.log-messages');
                 chatMessages.innerHTML = '';
+                thinkingMessages.innerHTML = '';
                 logMessages.innerHTML = '';
                 
                 // Populate messages in the appropriate columns
                 messages.forEach(message => {
                     if (message.role === 'log') {
                         addLogMessage(windowId, message.content);
+                    } else if (message.role === 'thinking') {
+                        addThinkingMessage(windowId, message.content);
                     } else {
                         addMessageToChat(windowId, message.role, message.content);
                     }
@@ -874,6 +887,7 @@ function loadConversation(windowId, conversationId) {
                 
                 // Scroll to bottom
                 chatMessages.scrollTop = chatMessages.scrollHeight;
+                thinkingMessages.scrollTop = thinkingMessages.scrollHeight;
                 logMessages.scrollTop = logMessages.scrollHeight;
             } else {
                 console.error('Error loading conversation:', data.error);
@@ -895,17 +909,44 @@ function resetConversation(windowId) {
 
     const windowElement = document.querySelector(`[data-window-id="${windowId}"]`);
     const chatMessages = windowElement.querySelector('.chat-messages');
+    const thinkingMessages = windowElement.querySelector('.thinking-messages');
     const logMessages = windowElement.querySelector('.log-messages');
     const statusElement = windowElement.querySelector('.conversation-status');
     const promptInput = windowElement.querySelector('.prompt-input');
 
-    // Clear both chat and log messages
+    // Clear all message containers
     chatMessages.innerHTML = '';
+    thinkingMessages.innerHTML = '';
     logMessages.innerHTML = '';
     statusElement.textContent = 'Nieuw gesprek';
 
     // Focus on the input
     promptInput.focus();
+}
+
+// New function to add thinking messages
+function addThinkingMessage(windowId, content) {
+    const windowElement = document.querySelector(`[data-window-id="${windowId}"]`);
+    const thinkingMessages = windowElement.querySelector('.thinking-messages');
+    
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'thinking-message';
+    
+    const timestamp = new Date().toLocaleTimeString();
+    const timeSpan = document.createElement('span');
+    timeSpan.className = 'thinking-timestamp';
+    timeSpan.textContent = timestamp;
+    
+    const contentDiv = document.createElement('div');
+    contentDiv.className = 'thinking-content';
+    contentDiv.textContent = content;
+    
+    messageDiv.appendChild(timeSpan);
+    messageDiv.appendChild(contentDiv);
+    thinkingMessages.appendChild(messageDiv);
+    
+    // Scroll to bottom
+    thinkingMessages.scrollTop = thinkingMessages.scrollHeight;
 }
 
 // New function to send prompt with specific model and preset configuration
@@ -951,6 +992,11 @@ function sendPromptWithConfig(windowId, prompt, modelId, presetName) {
         addLogMessage(windowId, msg);
     });
 
+    eventSource.addEventListener('thinking', function(e) {
+        const thinkingData = JSON.parse(e.data);
+        addThinkingMessage(windowId, thinkingData);
+    });
+
     eventSource.addEventListener('final', function(e) {
         const data = JSON.parse(e.data);
 
@@ -963,6 +1009,12 @@ function sendPromptWithConfig(windowId, prompt, modelId, presetName) {
             }
             const content = data.content || data.message;
             addMessageToChat(windowId, 'assistant', content);
+            
+            // Handle thinking content if present
+            if (data.thinking) {
+                addThinkingMessage(windowId, data.thinking);
+            }
+            
             updateMcpStatus(data.active_mcp_servers);
 
             if (data.conversation_id && !windowData.conversationId) {
@@ -1077,6 +1129,11 @@ function sendPrompt(windowId, customInput = null) {
         addLogMessage(windowId, msg);
     });
 
+    eventSource.addEventListener('thinking', function(e) {
+        const thinkingData = JSON.parse(e.data);
+        addThinkingMessage(windowId, thinkingData);
+    });
+
     eventSource.addEventListener('final', function(e) {
         const data = JSON.parse(e.data);
 
@@ -1089,6 +1146,12 @@ function sendPrompt(windowId, customInput = null) {
             }
             const content = data.content || data.message;
             addMessageToChat(windowId, 'assistant', content);
+            
+            // Handle thinking content if present
+            if (data.thinking) {
+                addThinkingMessage(windowId, data.thinking);
+            }
+            
             updateMcpStatus(data.active_mcp_servers);
 
             if (data.conversation_id && !windowData.conversationId) {
