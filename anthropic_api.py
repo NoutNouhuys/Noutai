@@ -222,7 +222,7 @@ class AnthropicAPI:
         include_logs: bool,
         conversation_id: Union[str, int],
         message_id: Optional[int] = None
-    ) -> Tuple[str, Dict[str, Any]]:
+    ) -> Tuple[str, Optional[str], Dict[str, Any]]:
         """
         Internal async method to send prompt and handle tool usage.
         
@@ -240,7 +240,7 @@ class AnthropicAPI:
             message_id: Optional message ID for tracking
             
         Returns:
-            Tuple of (response text, usage data)
+            Tuple of (response text, thinking content, usage data)
         """
         # Connect to MCP server if configured
         tools = []
@@ -252,8 +252,8 @@ class AnthropicAPI:
                 tools = await self.mcp_integration.get_tools()
         
         try:
-            # Send initial message
-            response = self.client.create_message(
+            # Send initial message - now returns tuple with thinking content
+            response, thinking_content = self.client.create_message(
                 messages=messages,
                 model=model_id,
                 max_tokens=max_tokens,
@@ -291,6 +291,11 @@ class AnthropicAPI:
                     },
                     log_callback=emit_log if include_logs else None
                 )
+                
+                # After tool use, we might have new thinking content
+                if hasattr(response, 'content') and response.content:
+                    # Re-extract thinking content from the final response
+                    thinking_content = self.client._extract_thinking_content(response)
             
             response_text = response.content[0].text
             
@@ -332,8 +337,10 @@ class AnthropicAPI:
             
             if include_logs:
                 emit_log("Antwoord van Claude ontvangen")
+                if thinking_content:
+                    emit_log("Thinking content beschikbaar")
                 
-            return response_text, usage_data
+            return response_text, thinking_content, usage_data
             
         finally:
             # Disconnect from MCP server
@@ -478,8 +485,8 @@ class AnthropicAPI:
         loop = ensure_event_loop()
         
         try:
-            # Send prompt and get response with usage data
-            response_text, usage_data = loop.run_until_complete(
+            # Send prompt and get response with usage data and thinking content
+            response_text, thinking_content, usage_data = loop.run_until_complete(
                 self._send_prompt_async(
                     messages=messages,
                     model_id=model_id,
@@ -502,8 +509,10 @@ class AnthropicAPI:
                 logger.debug("Included project_info in the request")
             if preset_name:
                 logger.debug(f"Used LLM preset: {preset_name}")
+            if thinking_content:
+                logger.debug("Thinking content available in response")
             
-            return {
+            response_data = {
                 "conversation_id": conversation_id,
                 "message": response_text,
                 "model": model_id,
@@ -514,6 +523,12 @@ class AnthropicAPI:
                 "success": True,
                 "logs": logs if include_logs else [],
             }
+            
+            # Add thinking content if available
+            if thinking_content:
+                response_data["thinking"] = thinking_content
+            
+            return response_data
             
         except Exception as e:
             logger.error(f"Error in Anthropic API call: {str(e)}")
