@@ -1,7 +1,7 @@
 # Project Informatie: aiontwikkelhulp
 
 ## Projectoverzicht
-De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie. Bevat workflow automatisering voor het automatisch openen en sluiten van chat windows op basis van AI responses, inclusief automatische configuratie van nieuwe chats met Claude Sonnet 4 en developer_agent preset. Volledig analytics systeem voor token usage tracking, kosten berekening en usage insights met real-time weergave in de chat interface. Uitgebreid met conversation enhancements voor token usage weergave en bulk delete functionaliteit. CSRF token ondersteuning geïmplementeerd voor alle API calls. Volledig gerefactored voor betere code organisatie met scheiding van HTML, JavaScript en CSS. Enhanced tool logging geïmplementeerd voor gedetailleerde inzichten in tool uitvoering met visueel onderscheidbare log patterns. Workflow tabs functionaliteit geïmplementeerd voor directe toegang tot 3 verschillende workflow profielen via tabs in plaats van één enkel window, wat de gebruikservaring verbetert door directe toegang, overzicht en efficiëntie. **JavaScript volledig gerefactored naar modulaire structuur voor betere onderhoudbaarheid, testbaarheid en code organisatie.**
+De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie. Bevat workflow automatisering voor het automatisch openen en sluiten van chat windows op basis van AI responses, inclusief automatische configuratie van nieuwe chats met Claude Sonnet 4 en developer_agent preset. Volledig analytics systeem voor token usage tracking, kosten berekening en usage insights met real-time weergave in de chat interface. Uitgebreid met conversation enhancements voor token usage weergave en bulk delete functionaliteit. CSRF token ondersteuning geïmplementeerd voor alle API calls. Volledig gerefactored voor betere code organisatie met scheiding van HTML, JavaScript en CSS. Enhanced tool logging geïmplementeerd voor gedetailleerde inzichten in tool uitvoering met visueel onderscheidbare log patterns. Workflow tabs functionaliteit geïmplementeerd voor directe toegang tot 3 verschillende workflow profielen via tabs in plaats van één enkel window, wat de gebruikservaring verbetert door directe toegang, overzicht en efficiëntie. **JavaScript volledig gerefactored naar modulaire structuur voor betere onderhoudbaarheid, testbaarheid en code organisatie. Dark/light mode toggle en workflow tabs functionaliteit volledig hersteld na refactoring.**
 
 ## Architectuur
 De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruikers te helpen bij het ontwikkelen van software met behulp van AI:
@@ -30,12 +30,12 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - templates/components/chat_window.html - Herbruikbare chat window component
 - templates/conversations.html - Conversation management met token usage, bulk delete en CSRF token ondersteuning
 - templates/analytics.html - Analytics dashboard template
-- **static/js/main.js** - Hoofdcoördinatie en initialisatie (4.6KB)
+- **static/js/main.js** - Hoofdcoördinatie en initialisatie met theme toggle ondersteuning (6.0KB)
 - **static/js/modules/state.js** - Globale staat management (2.7KB)
 - **static/js/modules/formatting.js** - Berichten formatting en display (7.1KB)
 - **static/js/modules/network.js** - Backend communicatie (21.7KB)
 - **static/js/modules/windowManager.js** - Chat window beheer (17.6KB)
-- **static/js/modules/workflow.js** - Workflow automatisering (22.4KB)
+- **static/js/modules/workflow.js** - Workflow automatisering met verbeterde tabs initialisatie (25.7KB)
 - **static/js/modules/chatAway.js** - Chat Away functionaliteit (3.1KB)
 - static/css/home.css - CSS met workflow tabs styling en activity indicators (3.7KB)
 - static/css/style.css - Algemene applicatie styling
@@ -53,9 +53,9 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: base.html, components/chat_window.html, modulaire JavaScript bestanden, static/css/home.css, static/js/log-formatter.js, static/css/log-formatter.css
 
 ### static/js/main.js
-- **Status**: Nieuw - hoofdcoördinatie en initialisatie (4.6KB)
+- **Status**: Bijgewerkt - hoofdcoördinatie en initialisatie met theme toggle (6.0KB)
 - **Pad**: /static/js/main.js
-- **Functionaliteit**: Hoofdbestand voor module coördinatie en applicatie initialisatie. Bevat DOMContentLoaded event handler, setupControlPanel() functie, checkUrlParams() functie, en event listener setup voor alle control panel elementen. Coördineert tussen alle modules via de AIOntwikkelhulp namespace. Behoudt alle bestaande functionaliteit maar in een georganiseerde, modulaire structuur.
+- **Functionaliteit**: Hoofdbestand voor module coördinatie en applicatie initialisatie. Bevat DOMContentLoaded event handler, setupControlPanel() functie, checkUrlParams() functie, en event listener setup voor alle control panel elementen. **Nieuw toegevoegd: setupThemeToggle() functie voor dark/light mode switching met localStorage persistentie, updateThemeIcon() functie voor icon updates.** Coördineert tussen alle modules via de AIOntwikkelhulp namespace. Behoudt alle bestaande functionaliteit maar in een georganiseerde, modulaire structuur.
 - **Afhankelijkheden**: Alle JavaScript modules via AIOntwikkelhulp namespace
 
 ### static/js/modules/state.js
@@ -83,9 +83,9 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: State module, Network module, Workflow module (voor workflow window configuratie)
 
 ### static/js/modules/workflow.js
-- **Status**: Nieuw - workflow automatisering (22.4KB)
+- **Status**: Bijgewerkt - workflow automatisering met verbeterde tabs initialisatie (25.7KB)
 - **Pad**: /static/js/modules/workflow.js
-- **Functionaliteit**: Bevat alle workflow automatisering functionaliteit inclusief pattern detectie, tab management, en automatische window creatie. Functies: toggleWorkflow(), toggleWorkflowMode(), initializeWorkflowTabs(), monitorResponse(), autoCreateChatWindow(), autoCreateTabWindow(), configureWorkflowWindow(), showActivityIndicator(), hideActivityIndicator(). Behoudt alle workflow patterns en configuraties.
+- **Functionaliteit**: Bevat alle workflow automatisering functionaliteit inclusief pattern detectie, tab management, en automatische window creatie. Functies: toggleWorkflow(), toggleWorkflowMode(), initializeWorkflowTabs(), monitorResponse(), autoCreateChatWindow(), autoCreateTabWindow(), configureWorkflowWindow(), showActivityIndicator(), hideActivityIndicator(). **Verbeteringen: ensureTabsVisible() functie voor tab zichtbaarheid, verifyTabsCreation() voor debugging, verbeterde Bootstrap tabs initialisatie, uitgebreide logging voor tab creatie.** Behoudt alle workflow patterns en configuraties.
 - **Afhankelijkheden**: State module, WindowManager module, Network module, Formatting module
 
 ### static/js/modules/chatAway.js
