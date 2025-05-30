@@ -166,7 +166,6 @@ function toggleWorkflowMode(activate) {
 function initializeWorkflowTabs() {
     console.log('Initializing workflow tabs');
     
-    // Initialiseer een chat window in elke tab met de juiste configuratie
     const tabs = {
         'issue-tab': workflowConfig.issueCreation,
         'pr-tab': workflowConfig.prCreation,
@@ -177,12 +176,25 @@ function initializeWorkflowTabs() {
         const tabPane = document.getElementById(tabId);
         const windowId = `workflow-${tabId}`;
         
-        // Maak chat window in de tab
+        // Check if window already exists
+        if (document.querySelector(`[data-window-id="${windowId}"]`)) {
+            console.log(`Window ${windowId} already exists, skipping creation`);
+            continue;
+        }
+        
+        // Create chat window in the tab
         const chatWindow = createChatWindowElement(windowId);
         tabPane.appendChild(chatWindow);
         
-        // Initialiseer met workflow configuratie
+        // Initialize with workflow configuration
         initializeChatWindow(chatWindow);
+        
+        // Mark window as workflow window immediately
+        const windowData = chatWindows.get(windowId);
+        if (windowData) {
+            windowData.isWorkflowWindow = true;
+            windowData.workflowTabId = tabId;
+        }
         
         // Configure the window with workflow settings
         setTimeout(() => {
@@ -265,7 +277,10 @@ function createChatWindowElement(windowId) {
 
 function monitorResponse(windowId, content) {
     // Only monitor if workflow is active
-    if (!workflowActive) return;
+    if (!workflowActive) {
+        console.log('Workflow not active, skipping pattern monitoring');
+        return;
+    }
     
     console.log('Monitoring response for workflow patterns:', content);
     
@@ -273,7 +288,8 @@ function monitorResponse(windowId, content) {
     for (const [patternName, config] of Object.entries(workflowConfig)) {
         const match = content.match(config.pattern);
         if (match) {
-            console.log(`${patternName} pattern detected:`, match);
+            console.log(`✓ ${patternName} pattern detected:`, match);
+            console.log('Pattern config:', config);
             
             let prompt;
             if (patternName === 'issueCreation') {
@@ -287,10 +303,13 @@ function monitorResponse(windowId, content) {
                 prompt = `Ga Repo ${owner}/${repo}`;
             }
             
+            console.log(`Calling autoCreateChatWindow with prompt: "${prompt}"`);
             autoCreateChatWindow(prompt, windowId, config);
             return;
         }
     }
+    
+    console.log('No workflow patterns detected in response');
 }
 
 async function autoCreateChatWindow(prompt, currentWindowId, workflowConfig) {
@@ -328,22 +347,46 @@ function autoCreateTabWindow(prompt, workflowConfig) {
     console.log('Auto-creating tab window for:', workflowConfig.description);
     
     const targetTabId = workflowConfig.tabId;
-    
-    // Activeer de juiste tab
-    const tabButton = document.querySelector(`[data-bs-target="#${targetTabId}"]`);
-    if (tabButton) {
-        tabButton.click();
-    }
-    
-    // Stuur prompt naar het window in die tab
     const windowId = `workflow-${targetTabId}`;
     
-    // Show activity indicator
-    showActivityIndicator(targetTabId);
+    // Check if window exists and is ready
+    const windowData = chatWindows.get(windowId);
+    if (!windowData) {
+        console.error(`Window ${windowId} not found in chatWindows`);
+        return;
+    }
     
-    setTimeout(() => {
-        sendPromptWithConfig(windowId, prompt, workflowConfig.model, workflowConfig.preset);
-    }, 500);
+    // Check if window is not waiting for response
+    if (windowData.isWaitingForResponse) {
+        console.log(`Window ${windowId} is still waiting for response, queueing prompt`);
+        // Queue the prompt for later execution
+        windowData.queuedPrompt = prompt;
+        windowData.queuedConfig = workflowConfig;
+        return;
+    }
+    
+    // Activate the tab with proper Bootstrap API
+    const tabButton = document.querySelector(`[data-bs-target="#${targetTabId}"]`);
+    if (tabButton) {
+        // Use Bootstrap Tab API for proper activation
+        const tab = new bootstrap.Tab(tabButton);
+        tab.show();
+        
+        // Wait for tab transition to complete
+        tabButton.addEventListener('shown.bs.tab', function onTabShown() {
+            tabButton.removeEventListener('shown.bs.tab', onTabShown);
+            
+            // Show activity indicator
+            showActivityIndicator(targetTabId);
+            
+            // Send prompt with delay to ensure UI is ready
+            setTimeout(() => {
+                sendPromptWithConfig(windowId, prompt, workflowConfig.model, workflowConfig.preset);
+            }, 100);
+        });
+    } else {
+        console.error(`Tab button for ${targetTabId} not found`);
+    }
 }
 
 // Activity indicator functies
@@ -746,7 +789,9 @@ function initializeChatWindow(windowElement) {
     chatWindows.set(windowId, {
         conversationId: null,
         isWaitingForResponse: false,
-        workflowConfig: null
+        workflowConfig: null,
+        queuedPrompt: null,
+        queuedConfig: null
     });
     
     // Add click event to make this window active
@@ -1151,6 +1196,18 @@ function sendPromptWithConfig(windowId, prompt, modelId, presetName) {
             // Hide activity indicator if this is a workflow tab
             if (windowData.workflowConfig && windowData.workflowConfig.tabId) {
                 hideActivityIndicator(windowData.workflowConfig.tabId);
+            }
+
+            // Check for queued prompts after response is complete
+            if (windowData.queuedPrompt) {
+                const queuedPrompt = windowData.queuedPrompt;
+                const queuedConfig = windowData.queuedConfig;
+                windowData.queuedPrompt = null;
+                windowData.queuedConfig = null;
+                
+                setTimeout(() => {
+                    autoCreateTabWindow(queuedPrompt, queuedConfig);
+                }, 500);
             }
 
             // Monitor response for workflow patterns
