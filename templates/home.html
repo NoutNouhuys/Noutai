@@ -124,8 +124,19 @@
 {% block scripts %}
 <!-- Include the log formatter script -->
 <script src="{{ url_for('static', filename='js/log-formatter.js') }}"></script>
-<!-- Include the home page JavaScript -->
-<script src="{{ url_for('static', filename='js/home.js') }}"></script>
+
+<!-- Core modules first -->
+<script src="{{ url_for('static', filename='js/modules/state.js') }}"></script>
+<script src="{{ url_for('static', filename='js/modules/formatting.js') }}"></script>
+<script src="{{ url_for('static', filename='js/modules/network.js') }}"></script>
+
+<!-- Dependent modules -->
+<script src="{{ url_for('static', filename='js/modules/windowManager.js') }}"></script>
+<script src="{{ url_for('static', filename='js/modules/workflow.js') }}"></script>
+<script src="{{ url_for('static', filename='js/modules/chatAway.js') }}"></script>
+
+<!-- Main coordination script last -->
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
 {% endblock %}
 
 {% block styles %}
