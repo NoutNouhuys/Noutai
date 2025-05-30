@@ -1,14 +1,14 @@
 # Project Informatie: aiontwikkelhulp
 
 ## Projectoverzicht
-De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie. Bevat workflow automatisering voor het automatisch openen en sluiten van chat windows op basis van AI responses, inclusief automatische configuratie van nieuwe chats met Claude Sonnet 4 en developer_agent preset. Volledig analytics systeem voor token usage tracking, kosten berekening en usage insights met real-time weergave in de chat interface. Uitgebreid met conversation enhancements voor token usage weergave en bulk delete functionaliteit. CSRF token ondersteuning geïmplementeerd voor alle API calls. Volledig gerefactored voor betere code organisatie met scheiding van HTML, JavaScript en CSS.
+De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie. Bevat workflow automatisering voor het automatisch openen en sluiten van chat windows op basis van AI responses, inclusief automatische configuratie van nieuwe chats met Claude Sonnet 4 en developer_agent preset. Volledig analytics systeem voor token usage tracking, kosten berekening en usage insights met real-time weergave in de chat interface. Uitgebreid met conversation enhancements voor token usage weergave en bulk delete functionaliteit. CSRF token ondersteuning geïmplementeerd voor alle API calls. Volledig gerefactored voor betere code organisatie met scheiding van HTML, JavaScript en CSS. Thinking column functionaliteit toegevoegd voor transparante AI gedachtegang weergave.
 
 ## Architectuur
 De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruikers te helpen bij het ontwikkelen van software met behulp van AI:
 
 ### Core Modules:
 - Flask web-applicatie (app.py) - met analytics routes en CSRF protection
-- Anthropic API integratie (anthropic_api.py) - met token tracking integratie
+- Anthropic API integratie (anthropic_api.py) - met token tracking integratie en thinking content ondersteuning
 - MCP Connector voor tools integratie (mcp_connector.py)
 - Configuratie (config.py)
 - Repository beheer
@@ -21,17 +21,17 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 
 ### Nieuwe Modules (Refactoring):
 - Anthropic configuratie (anthropic_config.py) - met LLM settings en presets
-- Anthropic client (anthropic_client.py) - met temperature en preset ondersteuning
+- Anthropic client (anthropic_client.py) - met temperature, preset ondersteuning en thinking content extractie
 - Conversation manager (conversation_manager.py)
 - MCP integratie (mcp_integration.py)
 
 ### Frontend Modules:
 - templates/home.html - Minimale hoofdtemplate (4.7KB, was 62KB)
-- templates/components/chat_window.html - Herbruikbare chat window component
+- templates/components/chat_window.html - Herbruikbare chat window component met thinking column
 - templates/conversations.html - Conversation management met token usage, bulk delete en CSRF token ondersteuning
 - templates/analytics.html - Analytics dashboard template
-- static/js/home.js - Alle JavaScript voor home pagina (51KB)
-- static/css/home.css - CSS specifiek voor home pagina (2KB)
+- static/js/home.js - Alle JavaScript voor home pagina (54KB) met thinking message handling
+- static/css/home.css - CSS specifiek voor home pagina (2.7KB) met thinking column styling
 - static/css/style.css - Algemene applicatie styling
 - static/css/analytics.css - Styling voor analytics dashboard
 - static/js/analytics.js - JavaScript voor analytics dashboard functionaliteit
@@ -40,29 +40,47 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 
 ## Modules
 
+### templates/components/chat_window.html
+- **Status**: Uitgebreid met thinking column
+- **Pad**: /templates/components/chat_window.html
+- **Functionaliteit**: Herbruikbare Jinja2 macro voor chat window component met drie kolommen: Chat, Thinking, en Logs. Parametriseerbaar met window ID en active state. Bevat volledige chat window structuur inclusief model/preset selectors, drie-kolommen layout, en input gebied. Thinking kolom toont AI gedachtegang voor transparantie.
+- **Afhankelijkheden**: Geen
+
+### static/css/home.css
+- **Status**: Uitgebreid met thinking column styling
+- **Pad**: /static/css/home.css
+- **Functionaliteit**: Bevat alle CSS styling specifiek voor de home pagina (2.7KB). GitHub-style chat window styling, drie-kolommen layout (33.33% elk), responsive design, workflow status badges. Thinking-specifieke styling: italic tekst, speciale achtergrondkleur, border-left accent, timestamp styling. Responsive aanpassingen voor mobile met verticale stapeling.
+- **Afhankelijkheden**: style.css (voor CSS variabelen)
+
+### static/js/home.js
+- **Status**: Uitgebreid met thinking message handling
+- **Pad**: /static/js/home.js
+- **Functionaliteit**: Bevat alle JavaScript functionaliteit voor de home pagina (54KB). Inclusief chat window management, workflow automation, chat away functionaliteit, API communicatie, CSRF token handling, en alle event handlers. Nieuwe functionaliteit: addThinkingMessage() functie, thinking event listener in sendPrompt en sendPromptWithConfig, thinking kolom ondersteuning in addChatWindow, loadConversation en resetConversation. Volledig gescheiden van HTML voor betere onderhoudbaarheid.
+- **Afhankelijkheden**: log-formatter.js
+
+### anthropic_client.py
+- **Status**: Uitgebreid met thinking content extractie
+- **Pad**: /anthropic_client.py
+- **Functionaliteit**: Pure API communicatie met Claude modellen. Ondersteunt ephemeral caching van zowel system prompt als project_info. Temperature parameter ondersteuning, preset functionaliteit, parameter override capability, model-specifieke settings toepassing, en LLM settings validatie. Nieuwe functionaliteit: _extract_thinking_content() methode voor het extraheren van thinking content uit API responses, ondersteuning voor zowel 'thinking' type content blocks als <thinking></thinking> markers in tekst, tuple return van (response, thinking_content) in create_message().
+- **Afhankelijkheden**: anthropic_config.py
+
+### anthropic_api.py
+- **Status**: Uitgebreid met thinking content doorgifte
+- **Pad**: /anthropic_api.py
+- **Functionaliteit**: High-level API voor interactie met Anthropic Claude modellen. Coördineert tussen client, conversation management, MCP integratie, en token tracking. Ondersteunt conditionele inclusie van project_info in cache. Token usage recording, conversation analytics, real-time usage tracking. Nieuwe functionaliteit: thinking content handling in _send_prompt_async(), thinking content doorgifte in response data, logging van thinking content beschikbaarheid, tuple unpacking van client responses.
+- **Afhankelijkheden**: anthropic_config.py, anthropic_client.py, conversation_manager.py, mcp_integration.py, repositories, analytics/token_tracker.py
+
+### routes/api.py
+- **Status**: Uitgebreid met thinking event ondersteuning
+- **Pad**: /routes/api.py
+- **Functionaliteit**: API endpoints voor conversation management inclusief pagination, search, bulk operations, CRUD operaties met database persistence. Geïntegreerd met ConversationManager voor robuuste data handling. LLM settings API endpoints, temperature en preset ondersteuning in prompt endpoints. Token usage endpoints. Enhanced conversations endpoint met include_usage parameter voor token data. Volledige CSRF protection via Flask-WTF. Nieuwe functionaliteit: thinking event streaming in send_prompt_stream(), thinking content opslag in database als separate message met role 'thinking', thinking content in metadata van assistant messages, thinking event yield in event_stream().
+- **Afhankelijkheden**: anthropic_api.py, ConversationManager, ConversationRepository, AnalyticsRepository, Flask app context, Flask-WTF CSRF
+
 ### templates/home.html
 - **Status**: Gerefactored - drastisch verkleind van 62KB naar 4.7KB (92% reductie)
 - **Pad**: /templates/home.html
-- **Functionaliteit**: Minimale hoofdtemplate voor de chat interface. Gebruikt Jinja2 macro voor chat window component. Alle JavaScript en CSS zijn verplaatst naar aparte bestanden voor betere onderhoudbaarheid en browser caching. Bevat workflow automation toggle voor automatisch openen/sluiten van chat windows op basis van AI responses.
+- **Functionaliteit**: Minimale hoofdtemplate voor de chat interface. Gebruikt Jinja2 macro voor chat window component met thinking column ondersteuning. Alle JavaScript en CSS zijn verplaatst naar aparte bestanden voor betere onderhoudbaarheid en browser caching. Bevat workflow automation toggle voor automatisch openen/sluiten van chat windows op basis van AI responses.
 - **Afhankelijkheden**: base.html, components/chat_window.html, static/js/home.js, static/css/home.css, static/js/log-formatter.js, static/css/log-formatter.css
-
-### templates/components/chat_window.html
-- **Status**: Nieuw toegevoegd tijdens refactoring
-- **Pad**: /templates/components/chat_window.html
-- **Functionaliteit**: Herbruikbare Jinja2 macro voor chat window component. Parametriseerbaar met window ID en active state. Bevat volledige chat window structuur inclusief model/preset selectors, chat/log kolommen, en input gebied.
-- **Afhankelijkheden**: Geen
-
-### static/js/home.js
-- **Status**: Nieuw toegevoegd tijdens refactoring
-- **Pad**: /static/js/home.js
-- **Functionaliteit**: Bevat alle JavaScript functionaliteit voor de home pagina (51KB). Inclusief chat window management, workflow automation (automatisch openen/sluiten van windows op basis van AI responses), chat away functionaliteit, API communicatie, CSRF token handling, en alle event handlers. Volledig gescheiden van HTML voor betere onderhoudbaarheid. Bevat preset selector functionaliteit en automatische configuratie van nieuwe workflow chats met Claude Sonnet 4 en developer_agent preset.
-- **Afhankelijkheden**: log-formatter.js
-
-### static/css/home.css
-- **Status**: Nieuw toegevoegd tijdens refactoring
-- **Pad**: /static/css/home.css
-- **Functionaliteit**: Bevat alle CSS styling specifiek voor de home pagina (2KB). GitHub-style chat window styling, split column layout, responsive design, workflow status badges. Gescheiden van HTML voor browser caching.
-- **Afhankelijkheden**: style.css (voor CSS variabelen)
 
 ### templates/conversations.html
 - **Status**: Uitgebreid met token usage, bulk delete functionaliteit en CSRF token ondersteuning
@@ -75,12 +93,6 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Pad**: /templates/base.html
 - **Functionaliteit**: Basis template met navigatie, thema switching en CSRF token meta tag. Bevat `<meta name="csrf-token" content="{{ csrf_token() }}">` voor frontend toegang tot CSRF token.
 - **Afhankelijkheden**: Flask-WTF CSRF token functionaliteit
-
-### routes/api.py
-- **Status**: Uitgebreid met token usage endpoints, enhanced conversations API en CSRF protection
-- **Pad**: /routes/api.py
-- **Functionaliteit**: API endpoints voor conversation management inclusief pagination, search, bulk operations, CRUD operaties met database persistence. Geïntegreerd met ConversationManager voor robuuste data handling. Bugfix toegepast voor thread context issue in send_prompt_stream functie. LLM settings API endpoints, temperature en preset ondersteuning in prompt endpoints. Token usage endpoints: GET /api/analytics/conversations/<id>/usage voor conversation-specifieke usage data, GET /api/analytics/users/<id>/usage voor user usage summaries. Enhanced conversations endpoint met include_usage parameter voor token data. Volledige CSRF protection via Flask-WTF voor alle POST/PUT/DELETE endpoints met proper error handling.
-- **Afhankelijkheden**: anthropic_api.py, ConversationManager, ConversationRepository, AnalyticsRepository, Flask app context, Flask-WTF CSRF
 
 ### static/css/style.css
 - **Status**: Uitgebreid met conversation enhancements styling
@@ -142,23 +154,11 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Functionaliteit**: JavaScript voor analytics dashboard functionaliteit. Ondersteunt data loading, Chart.js visualisaties, period selection, error handling, en data formatting.
 - **Afhankelijkheden**: Chart.js library
 
-### anthropic_api.py
-- **Status**: Uitgebreid met token tracking integratie
-- **Pad**: /anthropic_api.py
-- **Functionaliteit**: High-level API voor interactie met Anthropic Claude modellen. Coördineert tussen client, conversation management, MCP integratie, en token tracking. Ondersteunt conditionele inclusie van project_info in cache. Token usage recording, conversation analytics, real-time usage tracking.
-- **Afhankelijkheden**: anthropic_config.py, anthropic_client.py, conversation_manager.py, mcp_integration.py, repositories, analytics/token_tracker.py
-
 ### anthropic_config.py
 - **Status**: Uitgebreid met LLM settings en presets
 - **Pad**: /anthropic_config.py
 - **Functionaliteit**: Centralized Anthropic-specifieke configuratie met lazy loading en validatie. Ondersteunt lazy loading van project_info.txt. Temperature property (default 0.2), LLM presets (developer_agent, creative_writing, analysis, balanced), settings validatie, model-specifieke instellingen, en environment variable ondersteuning. Bevat Claude 4 Sonnet model configuratie.
 - **Afhankelijkheden**: Geen directe afhankelijkheden
-
-### anthropic_client.py
-- **Status**: Uitgebreid met LLM settings ondersteuning
-- **Pad**: /anthropic_client.py
-- **Functionaliteit**: Pure API communicatie met Claude modellen. Ondersteunt ephemeral caching van zowel system prompt als project_info. Temperature parameter ondersteuning, preset functionaliteit, parameter override capability, model-specifieke settings toepassing, en LLM settings validatie.
-- **Afhankelijkheden**: anthropic_config.py
 
 ### conversation_manager.py
 - **Status**: Volledig geïntegreerd met database
