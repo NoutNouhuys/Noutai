@@ -286,6 +286,50 @@
      - static/js/log-formatter.js - Nieuwe log pattern detectie en formatting
      - static/css/log-formatter.css - Styling voor enhanced tool logging
      - project_info.txt - Documentatie update
+19. [✓] Implementeer workflow tabs voor 3 verschillende profielen (Issue #90) - VOLTOOID
+   - Doelstelling: Vervang één enkel window met 3 tabs voor directe toegang tot verschillende workflow profielen
+   - UI Structuur:
+     - [✓] Bootstrap tabs toegevoegd voor 3 workflow profielen:
+       - Issue Creation (Claude Sonnet 4 + developer_agent)
+       - PR Creation (Claude Haiku 3.5 + developer_agent)  
+       - PR Processed (Claude Opus 4 + creative_writing)
+     - [✓] Activity indicators (🔄) per tab die draaien tijdens actieve workflows
+     - [✓] Workflow tabs container die alleen zichtbaar is in workflow mode
+     - [✓] Behoud van reguliere chat windows container voor non-workflow mode
+   - JavaScript Functionaliteit:
+     - [✓] `initializeWorkflowTabs()` functie voor het initialiseren van tabs met chat windows
+     - [✓] `toggleWorkflowMode()` functie voor schakelen tussen tabs en reguliere windows
+     - [✓] `autoCreateTabWindow()` functie voor tab-based workflow automatisering
+     - [✓] `showActivityIndicator()` en `hideActivityIndicator()` functies
+     - [✓] Tab switching integratie met workflow pattern detection
+     - [✓] Automatische tab activering wanneer workflow patterns worden gedetecteerd
+   - Workflow Integratie:
+     - [✓] Workflow automatisering activeert nu de juiste tab in plaats van nieuwe windows
+     - [✓] Prompts worden uitgevoerd in de correcte tab met juiste model/preset configuratie
+     - [✓] Activity indicators tonen welke tab actief bezig is
+     - [✓] Meerdere tabs kunnen tegelijk actief zijn
+   - CSS Styling:
+     - [✓] Workflow tabs container styling met flexbox layout
+     - [✓] Activity indicator animatie met spin effect
+     - [✓] Tab styling voor actieve workflow met success kleuren
+     - [✓] Responsive design voor kleinere schermen (scrollbare tabs)
+   - Functionaliteit Behoud:
+     - [✓] Tab switching beïnvloedt lopende chats niet
+     - [✓] Alle bestaande chat functionaliteit blijft werken binnen elke tab
+     - [✓] Chat away functionaliteit werkt nog steeds (optioneel binnen tabs)
+     - [✓] Reguliere window mode blijft volledig functioneel
+   - Acceptatiecriteria:
+     - [✓] 3 tabs zichtbaar voor verschillende workflow profielen
+     - [✓] Elke tab bevat een volledig functionele chat window
+     - [✓] Gebruikers kunnen vrij tussen tabs schakelen
+     - [✓] Workflow automatisering activeert de juiste tab automatisch
+     - [✓] Activity indicators verschijnen bij actieve tabs
+     - [✓] Interface is intuïtief en consistent met bestaande design
+   - Bestanden gewijzigd:
+     - templates/home.html - Workflow tabs UI structuur
+     - static/js/home.js - Tab-based workflow functionaliteit (59KB)
+     - static/css/home.css - Workflow tabs styling (3.7KB)
+     - project_info.txt - Documentatie update
 
 ## Toekomstige stappen (Must-have)
 

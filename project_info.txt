@@ -1,7 +1,7 @@
 # Project Informatie: aiontwikkelhulp
 
 ## Projectoverzicht
-De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie. Bevat workflow automatisering voor het automatisch openen en sluiten van chat windows op basis van AI responses, inclusief automatische configuratie van nieuwe chats met Claude Sonnet 4 en developer_agent preset. Volledig analytics systeem voor token usage tracking, kosten berekening en usage insights met real-time weergave in de chat interface. Uitgebreid met conversation enhancements voor token usage weergave en bulk delete functionaliteit. CSRF token ondersteuning geïmplementeerd voor alle API calls. Volledig gerefactored voor betere code organisatie met scheiding van HTML, JavaScript en CSS. Enhanced tool logging geïmplementeerd voor gedetailleerde inzichten in tool uitvoering met visueel onderscheidbare log patterns.
+De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie. Bevat workflow automatisering voor het automatisch openen en sluiten van chat windows op basis van AI responses, inclusief automatische configuratie van nieuwe chats met Claude Sonnet 4 en developer_agent preset. Volledig analytics systeem voor token usage tracking, kosten berekening en usage insights met real-time weergave in de chat interface. Uitgebreid met conversation enhancements voor token usage weergave en bulk delete functionaliteit. CSRF token ondersteuning geïmplementeerd voor alle API calls. Volledig gerefactored voor betere code organisatie met scheiding van HTML, JavaScript en CSS. Enhanced tool logging geïmplementeerd voor gedetailleerde inzichten in tool uitvoering met visueel onderscheidbare log patterns. Workflow tabs functionaliteit geïmplementeerd voor directe toegang tot 3 verschillende workflow profielen via tabs in plaats van één enkel window, wat de gebruikservaring verbetert door directe toegang, overzicht en efficiëntie.
 
 ## Architectuur
 De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruikers te helpen bij het ontwikkelen van software met behulp van AI:
@@ -26,12 +26,12 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - MCP integratie (mcp_integration.py) - met enhanced tool logging
 
 ### Frontend Modules:
-- templates/home.html - Minimale hoofdtemplate (4.7KB, was 62KB)
+- templates/home.html - Hoofdtemplate met workflow tabs functionaliteit (6.8KB)
 - templates/components/chat_window.html - Herbruikbare chat window component
 - templates/conversations.html - Conversation management met token usage, bulk delete en CSRF token ondersteuning
 - templates/analytics.html - Analytics dashboard template
-- static/js/home.js - Alle JavaScript voor home pagina (51KB)
-- static/css/home.css - CSS specifiek voor home pagina (2KB)
+- static/js/home.js - JavaScript met workflow tabs en tab-based workflow automatisering (59KB)
+- static/css/home.css - CSS met workflow tabs styling en activity indicators (3.7KB)
 - static/css/style.css - Algemene applicatie styling
 - static/css/analytics.css - Styling voor analytics dashboard
 - static/js/analytics.js - JavaScript voor analytics dashboard functionaliteit
@@ -39,6 +39,24 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - static/css/log-formatter.css - Styling voor geformatteerde logs met enhanced tool logging patterns
 
 ## Modules
+
+### templates/home.html
+- **Status**: Uitgebreid met workflow tabs functionaliteit (6.8KB)
+- **Pad**: /templates/home.html
+- **Functionaliteit**: Hoofdtemplate voor de chat interface met workflow tabs ondersteuning. Bevat Bootstrap tabs voor 3 workflow profielen (Issue Creation, PR Creation, PR Processed) met activity indicators. Ondersteunt zowel workflow tabs mode als reguliere chat windows mode. Gebruikt Jinja2 macro voor chat window component. Bevat workflow automation toggle voor automatisch openen/sluiten van chat windows op basis van AI responses.
+- **Afhankelijkheden**: base.html, components/chat_window.html, static/js/home.js, static/css/home.css, static/js/log-formatter.js, static/css/log-formatter.css
+
+### static/js/home.js
+- **Status**: Uitgebreid met workflow tabs en tab-based workflow automatisering (59KB)
+- **Pad**: /static/js/home.js
+- **Functionaliteit**: Bevat alle JavaScript functionaliteit voor de home pagina inclusief workflow tabs management. Nieuwe functies: initializeWorkflowTabs(), toggleWorkflowMode(), autoCreateTabWindow(), showActivityIndicator(), hideActivityIndicator(). Tab-based workflow automatisering die automatisch de juiste tab activeert en prompts stuurt naar de correcte workflow window. Ondersteunt 3 workflow profielen met specifieke model/preset configuraties. Behoudt alle bestaande functionaliteit voor reguliere chat windows.
+- **Afhankelijkheden**: log-formatter.js
+
+### static/css/home.css
+- **Status**: Uitgebreid met workflow tabs styling en activity indicators (3.7KB)
+- **Pad**: /static/css/home.css
+- **Functionaliteit**: CSS styling voor workflow tabs container, activity indicator animatie, tab styling voor actieve workflow, responsive design voor kleinere schermen. Nieuwe styling: .workflow-tabs-container, .activity-indicator met spin animatie, .nav-link.workflow-active, responsive tabs voor mobile. Behoudt alle bestaande GitHub-style chat window styling.
+- **Afhankelijkheden**: style.css (voor CSS variabelen)
 
 ### mcp_integration.py
 - **Status**: Uitgebreid met enhanced tool logging
@@ -77,29 +95,11 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
   - Backwards compatibility met bestaande log types
 - **Afhankelijkheden**: Gebruikt CSS variabelen uit style.css
 
-### templates/home.html
-- **Status**: Gerefactored - drastisch verkleind van 62KB naar 4.7KB (92% reductie)
-- **Pad**: /templates/home.html
-- **Functionaliteit**: Minimale hoofdtemplate voor de chat interface. Gebruikt Jinja2 macro voor chat window component. Alle JavaScript en CSS zijn verplaatst naar aparte bestanden voor betere onderhoudbaarheid en browser caching. Bevat workflow automation toggle voor automatisch openen/sluiten van chat windows op basis van AI responses.
-- **Afhankelijkheden**: base.html, components/chat_window.html, static/js/home.js, static/css/home.css, static/js/log-formatter.js, static/css/log-formatter.css
-
 ### templates/components/chat_window.html
 - **Status**: Nieuw toegevoegd tijdens refactoring
 - **Pad**: /templates/components/chat_window.html
 - **Functionaliteit**: Herbruikbare Jinja2 macro voor chat window component. Parametriseerbaar met window ID en active state. Bevat volledige chat window structuur inclusief model/preset selectors, chat/log kolommen, en input gebied.
 - **Afhankelijkheden**: Geen
-
-### static/js/home.js
-- **Status**: Nieuw toegevoegd tijdens refactoring
-- **Pad**: /static/js/home.js
-- **Functionaliteit**: Bevat alle JavaScript functionaliteit voor de home pagina (51KB). Inclusief chat window management, workflow automation (automatisch openen/sluiten van windows op basis van AI responses), chat away functionaliteit, API communicatie, CSRF token handling, en alle event handlers. Volledig gescheiden van HTML voor betere onderhoudbaarheid. Bevat preset selector functionaliteit en automatische configuratie van nieuwe workflow chats met Claude Sonnet 4 en developer_agent preset.
-- **Afhankelijkheden**: log-formatter.js
-
-### static/css/home.css
-- **Status**: Nieuw toegevoegd tijdens refactoring
-- **Pad**: /static/css/home.css
-- **Functionaliteit**: Bevat alle CSS styling specifiek voor de home pagina (2KB). GitHub-style chat window styling, split column layout, responsive design, workflow status badges. Gescheiden van HTML voor browser caching.
-- **Afhankelijkheden**: style.css (voor CSS variabelen)
 
 ### templates/conversations.html
 - **Status**: Uitgebreid met token usage, bulk delete functionaliteit en CSRF token ondersteuning
