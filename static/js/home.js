@@ -33,9 +33,9 @@ function getAPIHeaders(includeContentType = true) {
 
 // Workflow patterns
 const workflowPatterns = {
-    issueCreation: /Ik heb issue (\d+) aangemaakt voor Repo ([^\/]+)\/([^\s]+)/i,
-    prCreation: /Ik heb Pull Request (\d+) aangemaakt voor Repo ([^\/]+)\/([^\s]+)/i,
-    prProcessed: /Ik heb Pull Request (\d+) verwerkt en bijbehorende branche(?: ([^\s]+))? verwijderd voor Repo ([^\/]+)\/([^\s.]+)\.?/i
+    issueCreation: /Ik heb issue #?(\d+) aangemaakt voor Repo ([^\/]+)\/([^\s]+)/i,
+    prCreation: /Ik heb Pull Request #?(\d+) aangemaakt voor Repo ([^\/]+)\/([^\s]+)/i,
+    prProcessed: /Ik heb Pull Request #?(\d+) verwerkt en bijbehorende branche(?:([^\\s]+))? verwijderd voor Repo ([^\/]+)\/([^\s.]+)\.?/i
 };
 
 // Workflow configuration with model and preset settings per pattern
