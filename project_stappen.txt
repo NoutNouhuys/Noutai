@@ -250,6 +250,48 @@
      - static/js/home.js - Nieuwe file met alle JavaScript
      - static/css/home.css - Nieuwe file met alle CSS
      - templates/components/chat_window.html - Nieuwe component
+18. [✓] Toevoegen van "Thinking" kolom in chat window voor zichtbare AI gedachtegang (Issue #82) - VOLTOOID
+   - Doel: Transparantie in AI denkproces voor betere gebruikerservaring en debugging
+   - Frontend implementatie:
+     - [✓] Chat window layout uitgebreid van 2 naar 3 kolommen (Chat, Thinking, Logs)
+     - [✓] Elke kolom krijgt 33.33% breedte voor gelijke verdeling
+     - [✓] Thinking kolom met brain icoon en speciale styling (italic, accent border)
+     - [✓] Responsive design: verticale stapeling op mobile devices
+     - [✓] addThinkingMessage() functie voor thinking content weergave
+     - [✓] Thinking event listener in sendPrompt en sendPromptWithConfig
+     - [✓] Thinking kolom ondersteuning in alle chat window functies
+   - Backend implementatie:
+     - [✓] AnthropicClient uitgebreid met _extract_thinking_content() methode
+     - [✓] Ondersteuning voor 'thinking' type content blocks en <thinking></thinking> markers
+     - [✓] Tuple return (response, thinking_content) in create_message()
+     - [✓] AnthropicAPI aangepast voor thinking content doorgifte
+     - [✓] Thinking content logging en debugging ondersteuning
+   - API uitbreiding:
+     - [✓] Thinking event streaming in send_prompt_stream endpoint
+     - [✓] Thinking content opslag in database als separate message (role: 'thinking')
+     - [✓] Thinking content in metadata van assistant messages
+     - [✓] Thinking event yield in SSE event stream
+   - Database integratie:
+     - [✓] Thinking messages worden opgeslagen met role 'thinking'
+     - [✓] Thinking content wordt toegevoegd aan assistant message metadata
+     - [✓] Conversation loading ondersteunt thinking messages
+   - UI/UX features:
+     - [✓] Thinking messages met timestamp en speciale styling
+     - [✓] Automatisch scrollen naar beneden bij nieuwe thinking content
+     - [✓] Visuele onderscheiding van thinking content (italic, border-left accent)
+     - [✓] Fallback voor modellen zonder thinking content (lege kolom)
+   - Backwards compatibility:
+     - [✓] Bestaande functionaliteit blijft intact
+     - [✓] Graceful handling van responses zonder thinking content
+     - [✓] Alle bestaande chat functies werken met nieuwe layout
+   - Bestanden gewijzigd:
+     - [✓] templates/components/chat_window.html - Thinking kolom toegevoegd
+     - [✓] static/css/home.css - Drie-kolommen layout en thinking styling
+     - [✓] static/js/home.js - Thinking message handling en event listeners
+     - [✓] anthropic_client.py - Thinking content extractie
+     - [✓] anthropic_api.py - Thinking content doorgifte
+     - [✓] routes/api.py - Thinking event streaming en database opslag
+     - [✓] project_info.txt - Documentatie update
 
 ## Toekomstige stappen (Must-have)
 
@@ -299,3 +341,9 @@ Alle must-have taken zijn uitgevoerd.
    - Model performance comparison metrics
    - Custom reporting en data export
    - Integration met external analytics platforms
+
+8. Thinking column enhancements
+   - Collapsible thinking sections voor lange content
+   - Thinking content search en filtering
+   - Export thinking content voor analysis
+   - Thinking pattern analysis en insights
