@@ -3,7 +3,7 @@ Anthropic API client module.
 Handles pure API communication with Claude models.
 """
 import logging
-from typing import Dict, List, Optional, Any, Protocol
+from typing import Dict, List, Optional, Any, Protocol, Tuple
 import anthropic
 from anthropic_config import AnthropicConfig
 
@@ -49,7 +49,7 @@ class AnthropicClient:
         tools: Optional[List[Dict[str, Any]]] = None,
         preset_name: Optional[str] = None,
         **kwargs
-    ) -> anthropic.types.Message:
+    ) -> Tuple[anthropic.types.Message, Optional[str]]:
         """
         Create a message using the Anthropic API.
         
@@ -65,7 +65,7 @@ class AnthropicClient:
             **kwargs: Additional parameters for the API
             
         Returns:
-            Message response from the API
+            Tuple of (Message response from the API, thinking content if available)
         """
         model = model or self.config.default_model
         
@@ -134,10 +134,56 @@ class AnthropicClient:
         try:
             response = self.client.messages.create(**params)
             logger.info(f"Successfully received response from Anthropic API")
-            return response
+            
+            # Extract thinking content if available
+            thinking_content = self._extract_thinking_content(response)
+            
+            return response, thinking_content
         except Exception as e:
             logger.error(f"Error calling Anthropic API: {str(e)}")
             raise
+    
+    def _extract_thinking_content(self, response: anthropic.types.Message) -> Optional[str]:
+        """
+        Extract thinking content from the API response.
+        
+        Args:
+            response: The API response message
+            
+        Returns:
+            Thinking content if available, None otherwise
+        """
+        try:
+            # Check if response has content blocks
+            if not hasattr(response, 'content') or not response.content:
+                return None
+            
+            # Look for thinking content in the content blocks
+            for content_block in response.content:
+                if hasattr(content_block, 'type'):
+                    # Check for thinking type content block
+                    if content_block.type == 'thinking':
+                        if hasattr(content_block, 'text'):
+                            logger.debug("Found thinking content in response")
+                            return content_block.text
+                    # Some models might include thinking in text blocks with special markers
+                    elif content_block.type == 'text' and hasattr(content_block, 'text'):
+                        text = content_block.text
+                        # Look for thinking markers in the text
+                        if '<thinking>' in text and '</thinking>' in text:
+                            start = text.find('<thinking>') + len('<thinking>')
+                            end = text.find('</thinking>')
+                            if start < end:
+                                thinking_text = text[start:end].strip()
+                                logger.debug("Found thinking content in text block with markers")
+                                return thinking_text
+            
+            logger.debug("No thinking content found in response")
+            return None
+            
+        except Exception as e:
+            logger.warning(f"Error extracting thinking content: {e}")
+            return None
     
     def get_available_models(self) -> List[Dict[str, Any]]:
         """
