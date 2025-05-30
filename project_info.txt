@@ -1,7 +1,7 @@
 # Project Informatie: aiontwikkelhulp
 
 ## Projectoverzicht
-De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt nu configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie. Bevat nu ook workflow automatisering voor het automatisch openen en sluiten van chat windows op basis van AI responses, inclusief automatische configuratie van nieuwe chats met Claude Sonnet 4 en developer_agent preset. Nieuw: Volledig analytics systeem voor token usage tracking, kosten berekening en usage insights met real-time weergave in de chat interface. Uitgebreid met conversation enhancements voor token usage weergave en bulk delete functionaliteit. CSRF token ondersteuning geïmplementeerd voor alle API calls. Recent gerefactored voor betere code organisatie met scheiding van HTML, JavaScript en CSS.
+De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie. Bevat workflow automatisering voor het automatisch openen en sluiten van chat windows op basis van AI responses, inclusief automatische configuratie van nieuwe chats met Claude Sonnet 4 en developer_agent preset. Volledig analytics systeem voor token usage tracking, kosten berekening en usage insights met real-time weergave in de chat interface. Uitgebreid met conversation enhancements voor token usage weergave en bulk delete functionaliteit. CSRF token ondersteuning geïmplementeerd voor alle API calls. Volledig gerefactored voor betere code organisatie met scheiding van HTML, JavaScript en CSS.
 
 ## Architectuur
 De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruikers te helpen bij het ontwikkelen van software met behulp van AI:
@@ -43,7 +43,7 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 ### templates/home.html
 - **Status**: Gerefactored - drastisch verkleind van 62KB naar 4.7KB (92% reductie)
 - **Pad**: /templates/home.html
-- **Functionaliteit**: Minimale hoofdtemplate voor de chat interface. Gebruikt Jinja2 macro voor chat window component. Alle JavaScript en CSS zijn verplaatst naar aparte bestanden voor betere onderhoudbaarheid en browser caching.
+- **Functionaliteit**: Minimale hoofdtemplate voor de chat interface. Gebruikt Jinja2 macro voor chat window component. Alle JavaScript en CSS zijn verplaatst naar aparte bestanden voor betere onderhoudbaarheid en browser caching. Bevat workflow automation toggle voor automatisch openen/sluiten van chat windows op basis van AI responses.
 - **Afhankelijkheden**: base.html, components/chat_window.html, static/js/home.js, static/css/home.css, static/js/log-formatter.js, static/css/log-formatter.css
 
 ### templates/components/chat_window.html
@@ -55,7 +55,7 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 ### static/js/home.js
 - **Status**: Nieuw toegevoegd tijdens refactoring
 - **Pad**: /static/js/home.js
-- **Functionaliteit**: Bevat alle JavaScript functionaliteit voor de home pagina (51KB). Inclusief chat window management, workflow automation, chat away functionaliteit, API communicatie, CSRF token handling, en alle event handlers. Volledig gescheiden van HTML voor betere onderhoudbaarheid.
+- **Functionaliteit**: Bevat alle JavaScript functionaliteit voor de home pagina (51KB). Inclusief chat window management, workflow automation (automatisch openen/sluiten van windows op basis van AI responses), chat away functionaliteit, API communicatie, CSRF token handling, en alle event handlers. Volledig gescheiden van HTML voor betere onderhoudbaarheid. Bevat preset selector functionaliteit en automatische configuratie van nieuwe workflow chats met Claude Sonnet 4 en developer_agent preset.
 - **Afhankelijkheden**: log-formatter.js
 
 ### static/css/home.css
@@ -67,7 +67,7 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 ### templates/conversations.html
 - **Status**: Uitgebreid met token usage, bulk delete functionaliteit en CSRF token ondersteuning
 - **Pad**: /templates/conversations.html
-- **Functionaliteit**: Template voor conversation management interface. Ondersteunt conversation listing, search, rename, delete operations met real-time updates. Nieuw: Token usage weergave per gesprek (input/output tokens, kosten), bulk delete functionaliteit met checkboxes, selecteer alles/geen functionaliteit, bevestigingsmodals voor bulk acties, responsive design voor mobile devices. CSRF token ondersteuning: getCSRFToken() functie, X-CSRFToken header in alle fetch requests, proper error handling.
+- **Functionaliteit**: Template voor conversation management interface. Ondersteunt conversation listing, search, rename, delete operations met real-time updates. Token usage weergave per gesprek (input/output tokens, kosten), bulk delete functionaliteit met checkboxes, selecteer alles/geen functionaliteit, bevestigingsmodals voor bulk acties, responsive design voor mobile devices. Volledige CSRF token ondersteuning: getCSRFToken() functie, X-CSRFToken header in alle fetch requests, proper error handling voor alle API calls.
 - **Afhankelijkheden**: base.html, API endpoints, analytics API endpoints
 
 ### templates/base.html
@@ -79,65 +79,65 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 ### routes/api.py
 - **Status**: Uitgebreid met token usage endpoints, enhanced conversations API en CSRF protection
 - **Pad**: /routes/api.py
-- **Functionaliteit**: API endpoints voor conversation management inclusief pagination, search, bulk operations, CRUD operaties met database persistence. Geïntegreerd met ConversationManager voor robuuste data handling. Bugfix toegepast voor thread context issue in send_prompt_stream functie. Nieuw: LLM settings API endpoints, temperature en preset ondersteuning in prompt endpoints. Token usage endpoints: GET /api/analytics/conversations/<id>/usage voor conversation-specifieke usage data, GET /api/analytics/users/<id>/usage voor user usage summaries. Enhanced conversations endpoint met include_usage parameter voor token data. CSRF protection via Flask-WTF voor alle POST/PUT/DELETE endpoints.
+- **Functionaliteit**: API endpoints voor conversation management inclusief pagination, search, bulk operations, CRUD operaties met database persistence. Geïntegreerd met ConversationManager voor robuuste data handling. Bugfix toegepast voor thread context issue in send_prompt_stream functie. LLM settings API endpoints, temperature en preset ondersteuning in prompt endpoints. Token usage endpoints: GET /api/analytics/conversations/<id>/usage voor conversation-specifieke usage data, GET /api/analytics/users/<id>/usage voor user usage summaries. Enhanced conversations endpoint met include_usage parameter voor token data. Volledige CSRF protection via Flask-WTF voor alle POST/PUT/DELETE endpoints met proper error handling.
 - **Afhankelijkheden**: anthropic_api.py, ConversationManager, ConversationRepository, AnalyticsRepository, Flask app context, Flask-WTF CSRF
 
 ### static/css/style.css
 - **Status**: Uitgebreid met conversation enhancements styling
 - **Pad**: /static/css/style.css
-- **Functionaliteit**: Algemene styling voor de applicatie inclusief GitHub-achtige thema's. Ondersteunt nu de gesplitste kolom layout voor chat en logs. Nieuw: Styling voor workflow toggle button consistent met bestaande UI. Conversation enhancements: Bulk selection styling, token usage summary styling, responsive design voor mobile devices, checkbox styling, bulk delete button animations.
+- **Functionaliteit**: Algemene styling voor de applicatie inclusief GitHub-achtige thema's. Ondersteunt de gesplitste kolom layout voor chat en logs. Styling voor workflow toggle button consistent met bestaande UI. Conversation enhancements: Bulk selection styling, token usage summary styling, responsive design voor mobile devices, checkbox styling, bulk delete button animations.
 - **Afhankelijkheden**: Geen
 
 ### analytics/token_tracker.py
-- **Status**: Nieuw toegevoegd
+- **Status**: Actief
 - **Pad**: /analytics/token_tracker.py
 - **Functionaliteit**: Tracks token usage en berekent kosten voor AI model interacties. Ondersteunt recording van usage data, conversation analytics, usage trends, cost estimates, model statistics, en cleanup van oude records.
 - **Afhankelijkheden**: models/token_usage.py, analytics/cost_calculator.py, database.py
 
 ### analytics/cost_calculator.py
-- **Status**: Nieuw toegevoegd
+- **Status**: Actief
 - **Pad**: /analytics/cost_calculator.py
 - **Functionaliteit**: Berekent kosten voor token usage op basis van model pricing. Ondersteunt alle Claude modellen inclusief Claude 4 Sonnet, cache pricing, cost projections, efficiency metrics, en model recommendations.
 - **Afhankelijkheden**: Geen directe afhankelijkheden
 
 ### analytics/analytics_service.py
-- **Status**: Nieuw toegevoegd
+- **Status**: Actief
 - **Pad**: /analytics/analytics_service.py
 - **Functionaliteit**: Service voor analytics data aggregatie en insights. Biedt dashboard data, conversation analytics, cost analysis, usage patterns, model comparison, en automated insights generation.
 - **Afhankelijkheden**: analytics/token_tracker.py, analytics/cost_calculator.py, repositories/analytics_repository.py
 
 ### repositories/analytics_repository.py
-- **Status**: Nieuw toegevoegd
+- **Status**: Actief
 - **Pad**: /repositories/analytics_repository.py
 - **Functionaliteit**: Repository voor analytics en token usage data access. Ondersteunt CRUD operaties, aggregaties, trends analysis, top conversations, model breakdowns, en data cleanup.
 - **Afhankelijkheden**: models/token_usage.py, models/conversation.py, database.py
 
 ### models/token_usage.py
-- **Status**: Nieuw toegevoegd
+- **Status**: Actief
 - **Pad**: /models/token_usage.py
 - **Functionaliteit**: Database model voor token usage tracking. Ondersteunt input/output tokens, cache tokens, cost calculations, metadata storage, en relationships met conversations en messages.
 - **Afhankelijkheden**: database.py (SQLAlchemy)
 
 ### routes/analytics.py
-- **Status**: Nieuw toegevoegd
+- **Status**: Actief
 - **Pad**: /routes/analytics.py
 - **Functionaliteit**: API endpoints voor analytics data. Ondersteunt dashboard data, token usage, costs, trends, model analytics, conversation analytics, cost estimates, pricing info, data export, en cleanup.
 - **Afhankelijkheden**: analytics/analytics_service.py, analytics/token_tracker.py, analytics/cost_calculator.py
 
 ### templates/analytics.html
-- **Status**: Nieuw toegevoegd
+- **Status**: Actief
 - **Pad**: /templates/analytics.html
 - **Functionaliteit**: Analytics dashboard template met summary cards, charts, model breakdown, top conversations, en insights. Ondersteunt periode selectie en real-time data loading.
 - **Afhankelijkheden**: base.html, static/css/analytics.css, static/js/analytics.js
 
 ### static/css/analytics.css
-- **Status**: Nieuw toegevoegd
+- **Status**: Actief
 - **Pad**: /static/css/analytics.css
 - **Functionaliteit**: Styling voor analytics dashboard inclusief responsive design, dark mode support, charts styling, breakdown tables, en insights display.
 - **Afhankelijkheden**: Gebruikt CSS variabelen uit style.css
 
 ### static/js/analytics.js
-- **Status**: Nieuw toegevoegd
+- **Status**: Actief
 - **Pad**: /static/js/analytics.js
 - **Functionaliteit**: JavaScript voor analytics dashboard functionaliteit. Ondersteunt data loading, Chart.js visualisaties, period selection, error handling, en data formatting.
 - **Afhankelijkheden**: Chart.js library
@@ -145,19 +145,19 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 ### anthropic_api.py
 - **Status**: Uitgebreid met token tracking integratie
 - **Pad**: /anthropic_api.py
-- **Functionaliteit**: High-level API voor interactie met Anthropic Claude modellen. Coördineert tussen client, conversation management, MCP integratie, en token tracking. Ondersteunt conditionele inclusie van project_info in cache. Nieuw: Token usage recording, conversation analytics, real-time usage tracking.
+- **Functionaliteit**: High-level API voor interactie met Anthropic Claude modellen. Coördineert tussen client, conversation management, MCP integratie, en token tracking. Ondersteunt conditionele inclusie van project_info in cache. Token usage recording, conversation analytics, real-time usage tracking.
 - **Afhankelijkheden**: anthropic_config.py, anthropic_client.py, conversation_manager.py, mcp_integration.py, repositories, analytics/token_tracker.py
 
 ### anthropic_config.py
 - **Status**: Uitgebreid met LLM settings en presets
 - **Pad**: /anthropic_config.py
-- **Functionaliteit**: Centralized Anthropic-specifieke configuratie met lazy loading en validatie. Ondersteunt nu ook lazy loading van project_info.txt. Nieuw: Temperature property (default 0.2), LLM presets (developer_agent, creative_writing, analysis, balanced), settings validatie, model-specifieke instellingen, en environment variable ondersteuning. Bevat Claude 4 Sonnet model configuratie.
+- **Functionaliteit**: Centralized Anthropic-specifieke configuratie met lazy loading en validatie. Ondersteunt lazy loading van project_info.txt. Temperature property (default 0.2), LLM presets (developer_agent, creative_writing, analysis, balanced), settings validatie, model-specifieke instellingen, en environment variable ondersteuning. Bevat Claude 4 Sonnet model configuratie.
 - **Afhankelijkheden**: Geen directe afhankelijkheden
 
 ### anthropic_client.py
 - **Status**: Uitgebreid met LLM settings ondersteuning
 - **Pad**: /anthropic_client.py
-- **Functionaliteit**: Pure API communicatie met Claude modellen. Ondersteunt ephemeral caching van zowel system prompt als project_info. Nieuw: Temperature parameter ondersteuning, preset functionaliteit, parameter override capability, model-specifieke settings toepassing, en LLM settings validatie.
+- **Functionaliteit**: Pure API communicatie met Claude modellen. Ondersteunt ephemeral caching van zowel system prompt als project_info. Temperature parameter ondersteuning, preset functionaliteit, parameter override capability, model-specifieke settings toepassing, en LLM settings validatie.
 - **Afhankelijkheden**: anthropic_config.py
 
 ### conversation_manager.py
@@ -167,7 +167,7 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: repositories (ConversationRepository voor database operaties)
 
 ### mcp_integration.py
-- **Status**: Nieuw toegevoegd
+- **Status**: Actief
 - **Pad**: /mcp_integration.py
 - **Functionaliteit**: Beheert MCP server connecties en tool gebruik.
 - **Afhankelijkheden**: mcp_connector.py, anthropic_config.py
@@ -187,23 +187,23 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 ### app.py
 - **Status**: Uitgebreid met analytics routes en CSRF protection
 - **Pad**: /app.py
-- **Functionaliteit**: Flask web-applicatie die de gebruikersinterface biedt. Nieuw: Analytics route registratie en analytics pagina endpoint. CSRF protection via Flask-WTF CSRFProtect() voor alle formulieren en API calls.
+- **Functionaliteit**: Flask web-applicatie die de gebruikersinterface biedt. Analytics route registratie en analytics pagina endpoint. CSRF protection via Flask-WTF CSRFProtect() voor alle formulieren en API calls.
 - **Afhankelijkheden**: anthropic_api.py, config.py, routes/analytics.py, Flask-WTF
 
 ### database.py
 - **Status**: Uitgebreid met TokenUsage model
 - **Pad**: /database.py
-- **Functionaliteit**: Database configuratie en session management voor SQLAlchemy. Nieuw: TokenUsage model import voor analytics functionaliteit.
+- **Functionaliteit**: Database configuratie en session management voor SQLAlchemy. TokenUsage model import voor analytics functionaliteit.
 - **Afhankelijkheden**: Flask-SQLAlchemy, models/token_usage.py
 
 ### static/js/log-formatter.js
-- **Status**: Nieuw toegevoegd
+- **Status**: Actief
 - **Pad**: /static/js/log-formatter.js
 - **Functionaliteit**: JavaScript module voor het formatteren van log berichten. Detecteert log types (JSON, tool use, results, errors) en past passende formatting toe. Ondersteunt collapsible logs voor lange content.
 - **Afhankelijkheden**: Geen
 
 ### static/css/log-formatter.css
-- **Status**: Nieuw toegevoegd
+- **Status**: Actief
 - **Pad**: /static/css/log-formatter.css
 - **Functionaliteit**: CSS styling voor geformatteerde log berichten. Bevat kleurcodering voor verschillende log types, JSON syntax highlighting, en responsive design.
 - **Afhankelijkheden**: Gebruikt CSS variabelen uit style.css
@@ -245,7 +245,7 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: anthropic_config.py
 
 ### tests/test_anthropic_config_llm_settings.py
-- **Status**: Nieuw toegevoegd
+- **Status**: Actief
 - **Pad**: /tests/test_anthropic_config_llm_settings.py
 - **Functionaliteit**: Unit tests voor AnthropicConfig LLM settings functionaliteit, inclusief temperature validatie, presets, model-specifieke instellingen, en environment variable loading.
 - **Afhankelijkheden**: anthropic_config.py
@@ -253,7 +253,7 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 ### tests/test_anthropic_client.py
 - **Status**: Uitgebreid met LLM settings tests
 - **Pad**: /tests/test_anthropic_client.py
-- **Functionaliteit**: Unit tests voor AnthropicClient module, inclusief tests voor project_info caching. Nieuw: Tests voor temperature parameters, preset functionaliteit, parameter overrides, model-specifieke settings, en validatie.
+- **Functionaliteit**: Unit tests voor AnthropicClient module, inclusief tests voor project_info caching. Tests voor temperature parameters, preset functionaliteit, parameter overrides, model-specifieke settings, en validatie.
 - **Afhankelijkheden**: anthropic_client.py, anthropic_config.py
 
 ### tests/test_conversation_manager.py
@@ -263,288 +263,13 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: conversation_manager.py
 
 ### tests/test_api_conversation_persistence.py
-- **Status**: Nieuw toegevoegd
+- **Status**: Actief
 - **Pad**: /tests/test_api_conversation_persistence.py
 - **Functionaliteit**: API tests voor conversation persistence endpoints inclusief pagination, search, bulk operations, authentication, authorization.
 - **Afhankelijkheden**: routes/api.py, ConversationManager, ConversationRepository
 
 ### tests/test_api_llm_settings.py
-- **Status**: Nieuw toegevoegd
+- **Status**: Actief
 - **Pad**: /tests/test_api_llm_settings.py
 - **Functionaliteit**: API tests voor LLM settings endpoints inclusief GET/PUT settings, presets, defaults, validation, en prompt endpoint integratie met LLM parameters.
 - **Afhankelijkheden**: routes/api.py, anthropic_api
-
-## Recente Wijzigingen
-
-### Refactor home.html: Split JavaScript, CSS en HTML naar aparte bestanden (Issue #77) - VOLTOOID
-- **Probleem**: home.html was 62KB groot met alle code door elkaar (HTML, JavaScript, CSS)
-- **Doelstelling**: Separation of concerns voor betere onderhoudbaarheid
-- **Implementatie**:
-  - **JavaScript extractie**: Alle JavaScript (51KB) verplaatst naar static/js/home.js
-  - **CSS extractie**: Alle CSS (2KB) verplaatst naar static/css/home.css
-  - **Component extractie**: Chat window HTML geëxtraheerd naar templates/components/chat_window.html als Jinja2 macro
-  - **CSRF token handling**: Via meta tag in plaats van inline template variabelen
-- **Resultaat**:
-  - home.html gereduceerd van 62KB naar 4.7KB (92% reductie!)
-  - Betere code organisatie en onderhoudbaarheid
-  - Browser caching voor statische bestanden mogelijk
-  - Herbruikbare chat window component
-  - Betere development experience met proper syntax highlighting
-- **Technische details**:
-  - Alle functionaliteit behouden zonder breaking changes
-  - Workflow automation volledig functioneel
-  - Chat away functionaliteit intact
-  - CSRF token handling via getCSRFToken() functie
-- **Bestanden gewijzigd**:
-  - templates/home.html - Minimale template met component import
-  - static/js/home.js - Nieuwe file met alle JavaScript functionaliteit
-  - static/css/home.css - Nieuwe file met alle home-specifieke CSS
-  - templates/components/chat_window.html - Nieuwe herbruikbare component
-
-### CSRF Token Missing Error Fix (Issue #64) - VOLTOOID
-- **Probleem**: CSRF token ontbrak in bulk delete en andere API calls, resulteerde in 400 errors
-- **Oplossing**:
-  - **Frontend Implementatie**:
-    - `getCSRFToken()` functie toegevoegd om token uit meta tag te lezen
-    - `getAPIHeaders()` functie voor consistent header management
-    - X-CSRFToken header toegevoegd aan alle fetch requests (POST/PUT/DELETE)
-    - Error handling voor CSRF token gerelateerde fouten
-  - **Templates Bijgewerkt**:
-    - `templates/conversations.html` - CSRF token ondersteuning in bulk delete, rename, delete functionaliteit
-    - `templates/home.html` - CSRF token ondersteuning in chat functionaliteit
-    - `templates/base.html` - Bevat al CSRF token meta tag via `{{ csrf_token() }}`
-  - **Backend Configuratie**:
-    - `app.py` - CSRF protection via Flask-WTF CSRFProtect() al actief
-    - `routes/api.py` - Alle endpoints beschermd door CSRF protection
-- **Resultaat**: Alle API calls werken nu correct zonder CSRF fouten
-- **Bestanden gewijzigd**:
-  - templates/conversations.html - CSRF token functies en headers
-  - templates/home.html - CSRF token functies en headers
-  - project_info.txt - Documentatie update
-
-### Implementatie van Token Usage Weergave en Bulk Delete Functionaliteit (Issue #62) - VOLTOOID
-- **Frontend Uitbreiding**:
-  - Token usage weergave per gesprek in conversations lijst (input/output tokens, kosten)
-  - Token usage summary in conversation detail view met real-time data
-  - Bulk delete functionaliteit met checkboxes voor elke conversation
-  - "Selecteer alles" / "Deselecteer alles" functionaliteit
-  - Bulk delete knop alleen zichtbaar bij selecties
-  - Bevestigingsmodal toont aantal geselecteerde gesprekken
-  - Succesvolle bulk delete met feedback en UI update
-- **API Uitbreiding**:
-  - GET /api/analytics/conversations/<id>/usage endpoint voor conversation-specifieke token data
-  - GET /api/analytics/users/<id>/usage endpoint voor user usage summaries
-  - Enhanced conversations endpoint met include_usage parameter voor automatische token data
-  - Bestaande bulk delete endpoint gebruikt voor bulk operations
-- **UI/UX Verbeteringen**:
-  - Token count en cost display per conversation in lijst
-  - Gedetailleerde token usage in conversation detail view
-  - Real-time token data uit analytics systeem
-  - Responsive design voor mobile devices
-  - Consistent styling met bestaande GitHub-achtige UI
-  - Checkbox selectie per conversation met visuele feedback
-  - Bulk actions alleen zichtbaar wanneer relevant
-- **Technical Implementation**:
-  - Integratie met bestaande analytics infrastructure
-  - Gebruik van AnalyticsRepository voor token data
-  - Error handling voor ontbrekende token data
-  - Efficient data loading met Promise.all voor parallelle requests
-  - State management voor bulk selection
-  - LocalStorage voor UI state persistence
-- **Bestanden gewijzigd**:
-  - templates/conversations.html - Token usage display en bulk delete UI
-  - routes/api.py - Token usage endpoints en enhanced conversations API
-  - static/css/style.css - Styling voor nieuwe functionaliteit
-  - project_info.txt - Documentatie update
-
-### Implementatie van Analytics en Token Usage Tracking (Issue #56) - VOLTOOID
-- **Backend Modules**:
-  - `analytics/token_tracker.py` - Token usage tracking en berekeningen met conversation analytics, trends, en cleanup
-  - `analytics/cost_calculator.py` - Kosten berekening op basis van actuele model pricing inclusief cache costs
-  - `analytics/analytics_service.py` - Service voor analytics data aggregatie met insights generation
-  - `models/token_usage.py` - Database model voor token usage opslag met cost calculations
-  - `repositories/analytics_repository.py` - CRUD operaties voor analytics data met aggregaties en trends
-- **API Endpoints**:
-  - `routes/analytics.py` - Volledige API voor analytics data inclusief dashboard, costs, trends, model comparison
-  - GET /api/analytics/dashboard - Comprehensive dashboard data
-  - GET /api/analytics/token-usage - Token usage data per user/conversation
-  - GET /api/analytics/costs - Cost analysis en projections
-  - GET /api/analytics/trends - Usage patterns en trends
-  - GET /api/analytics/models - Model usage en comparison
-  - GET /api/analytics/conversations/top - Top conversations by usage
-  - POST /api/analytics/estimate-cost - Cost estimation voor requests
-- **Frontend Implementation**:
-  - `templates/analytics.html` - Analytics dashboard pagina met charts en insights
-  - `static/js/analytics.js` - JavaScript voor analytics visualisatie met Chart.js
-  - `static/css/analytics.css` - Responsive styling voor analytics componenten
-  - Token usage display in chat interface headers
-  - Conversation analytics in chat input area
-  - Analytics link in navigation
-- **Database Integration**:
-  - TokenUsage model toegevoegd aan database.py
-  - Automatic token usage recording in anthropic_api.py
-  - Real-time cost calculations en display
-- **Features**:
-  - Real-time token usage tracking per message
-  - Comprehensive cost calculations inclusief cache costs
-  - Usage trends en patterns analysis
-  - Model efficiency comparison
-  - Automated insights generation
-  - Export functionaliteit voor analytics data
-  - Cleanup van oude records
-- **UI/UX**:
-  - Token count en cost display in chat headers
-  - Conversation totals in input area
-  - Analytics dashboard met period selection
-  - Charts voor usage en cost trends
-  - Model en preset breakdown tables
-  - Top conversations lijst
-  - Automated insights met recommendations
-
-### Implementatie van Workflow Toggle Automation (Issue #60) - VOLTOOID
-- **UI Uitbreiding**:
-  - Workflow toggle button toegevoegd naast chat away toggle
-  - Toggle state wordt opgeslagen in localStorage voor persistentie
-  - Visuele indicatie van workflow mode status
-  - Consistent styling met bestaande UI elementen
-- **JavaScript Functionaliteit**:
-  - `toggleWorkflow()` functie voor het aan/uitzetten van workflow mode
-  - `monitorResponse()` functie die AI responses analyseert voor patterns
-  - `autoCreateChatWindow()` functie voor automatisch openen nieuwe windows
-  - `autoCloseWindow()` functie voor automatisch sluiten huidige window
-  - Pattern matching met regex voor drie scenario's
-  - `configureWorkflowWindow()` functie voor automatische model/preset configuratie
-- **Workflow Patterns**:
-  - Issue Creation: "Ik heb issue [nummer] aangemaakt voor Repo [owner]/[repo]"
-  - PR Creation: "Ik heb Pull Request [nummer] aangemaakt voor Repo [owner]/[repo]"
-  - PR Processed: "Ik heb Pull Request [nummer] verwerkt en bijbehorende branche [branche] verwijderd voor Repo [owner]/[repo]"
-- **Automatische Configuratie**:
-  - Nieuwe workflow chats worden automatisch geconfigureerd met Claude Sonnet 4 (claude-sonnet-4-20250514)
-  - Developer_agent preset wordt automatisch geselecteerd voor optimale code development
-  - Configuratie gebeurt zowel bij handmatige nieuwe vensters als bij automatische workflow vensters
-  - Fallback mechanisme voor wanneer modellen/presets nog niet geladen zijn
-- **State Management**:
-  - Workflow state opgeslagen in localStorage
-  - State wordt hersteld bij page reload
-  - Workflow functionaliteit alleen actief wanneer toggle "aan" staat
-  - Automatische configuratie alleen bij workflow mode
-- **Bestanden gewijzigd**:
-  - templates/home.html - Workflow toggle UI, automatisering logic en configuratie functionaliteit
-
-### Implementatie van Preset Selector UI (Issue #48)
-- **Frontend Uitbreiding**:
-  - Preset selector toegevoegd naast model selector in chat interface
-  - Dynamisch laden van presets via `/api/llm-settings/presets` endpoint
-  - Preset beschrijvingen getoond als tooltips voor gebruikersgeleiding
-  - Responsive design voor extra selector element
-- **JavaScript Functionaliteit**:
-  - `populatePresetSelect()` functie voor het vullen van preset dropdown
-  - Global presets cache voor performance optimalisatie
-  - Preset parameter wordt meegestuurd in prompt requests
-  - Ondersteuning voor preset selectie in nieuwe chat vensters
-- **UI/UX Verbeteringen**:
-  - Consistent styling met bestaande UI elementen
-  - Optionele preset selectie (standaard = geen preset)
-  - Visuele indicatie van geselecteerde preset
-  - Behoud van bestaande functionaliteit
-- **Integratie**:
-  - Preset selector werkt voor zowel nieuwe als bestaande conversations
-  - Chat away functionaliteit behoudt preset instellingen
-  - Error handling voor preset-gerelateerde fouten
-- **Bestanden gewijzigd**:
-  - templates/home.html - Preset selector UI en JavaScript functionaliteit
-
-### Implementatie van LLM Settings (Issue #46)
-- **Backend Configuratie**: 
-  - AnthropicConfig uitgebreid met temperature property (default 0.2)
-  - LLM presets toegevoegd (developer_agent, creative_writing, analysis, balanced)
-  - Settings validatie (temperature 0.0-1.0, max_tokens > 0)
-  - Environment variable ondersteuning (ANTHROPIC_TEMPERATURE, ANTHROPIC_MAX_TOKENS)
-- **API Integratie**:
-  - AnthropicClient ondersteunt temperature en preset parameters
-  - Parameter override functionaliteit voor runtime aanpassingen
-  - Model-specifieke settings toepassing met token limits
-  - Ephemeral caching voor project info en system prompts
-- **API Endpoints**:
-  - GET /api/llm-settings - Ophalen huidige instellingen
-  - PUT /api/llm-settings - Runtime settings update
-  - GET /api/llm-settings/defaults - Standaard instellingen
-  - GET /api/llm-settings/presets - Beschikbare presets
-  - Prompt endpoints uitgebreid met temperature/preset parameters
-- **Validatie & Error Handling**:
-  - Client-side en server-side validatie van temperature (0.0-1.0)
-  - Max tokens validatie met model limits
-  - Comprehensive error handling en logging
-- **Testing**:
-  - Unit tests voor AnthropicConfig LLM settings
-  - Uitgebreide AnthropicClient tests met LLM parameters
-  - API tests voor alle nieuwe endpoints en validatie
-- **Presets Configuratie**:
-  - Developer Agent: temperature 0.2, optimaal voor code generatie
-  - Creative Writing: temperature 0.8, hogere creativiteit
-  - Analysis: temperature 0.1, deterministische analyse
-  - Balanced: temperature 0.5, algemeen gebruik
-
-### Implementatie van Log Formatting (Issue #41)
-- **UI Verbetering**: Log berichten worden nu automatisch geformatteerd voor betere leesbaarheid
-- **Log Type Detectie**: Automatische detectie van verschillende log types:
-  - JSON data met syntax highlighting
-  - Tool gebruik met duidelijke headers
-  - Result berichten met gestructureerde weergave
-  - Error berichten met rode accenten
-- **Collapsible Logs**: Lange log berichten kunnen in- en uitgeklapt worden
-- **Kleurcodering**: Verschillende kleuren voor verschillende onderdelen van logs
-- **Dark Mode Support**: Volledig geïntegreerd met het bestaande thema systeem
-- **Bestanden toegevoegd**:
-  - static/js/log-formatter.js - JavaScript module voor log formatting
-  - static/css/log-formatter.css - Styling voor geformatteerde logs
-- **Bestanden gewijzigd**:
-  - templates/home.html - Integratie van log formatter
-
-### Bugfix: AttributeError in send_prompt_stream (Issue #42)
-- **Probleem**: Thread context had geen toegang tot current_user.id, wat resulteerde in AttributeError
-- **Oplossing**: 
-  - User ID wordt nu vastgelegd voordat de thread start
-  - Flask app context wordt doorgegeven aan de worker functie
-  - Worker functie accepteert nu app en user_id als parameters
-- **Impact**: Streaming endpoints werken nu correct met database persistence in thread context
-- **Bestanden gewijzigd**: routes/api.py
-
-### Implementatie van Conversation Persistence (Issue #39)
-- **Database Integratie**: Volledig geïntegreerde ConversationManager met database backend
-- **API Uitbreiding**: Nieuwe endpoints voor conversation management:
-  - GET /api/conversations (met pagination)
-  - GET /api/conversations/search (search functionaliteit)
-  - POST /api/conversations (create met metadata)
-  - PUT/PATCH /api/conversations/<id> (update titel/status)
-  - DELETE /api/conversations/<id> (soft/hard delete)
-  - DELETE /api/conversations/bulk (bulk delete operaties)
-- **Persistence Features**:
-  - Lazy loading met pagination voor grote conversation lijsten
-  - Conversation search op titel en content
-  - Conversation metadata (titel, laatste update, model)
-  - Soft delete functionaliteit voor data behoud
-  - Bulk operations voor conversation management
-- **Error Handling**: Robuuste foutafhandeling en logging
-- **Testing**: Uitgebreide unit tests voor nieuwe functionaliteit
-- **Backwards Compatibility**: Behoud van bestaande in-memory functionaliteit
-
-### Implementatie van gesplitste chat/log kolommen (Issue #36)
-- **UI Verbetering**: Chat en log berichten worden nu in aparte kolommen weergegeven (70/30 verdeling)
-- **JavaScript aanpassingen**: Nieuwe `addLogMessage()` functie voor het toevoegen van logs aan de juiste kolom
-- **CSS uitbreiding**: Nieuwe styles voor de gesplitste kolom layout met responsive design
-- **Functionaliteit behoud**: Chat away werkt alleen met chat berichten, logs worden niet doorgestuurd
-
-### Implementatie van project_info.txt caching (Issue #35)
-- **Configuratie uitbreiding**: Toevoeging van lazy loading voor project_info.txt in AnthropicConfig
-- **Cache ondersteuning**: AnthropicClient ondersteunt nu ephemeral caching van project_info naast system prompt
-- **Conditionele inclusie**: AnthropicAPI bepaalt automatisch wanneer project_info moet worden meegestuurd op basis van de prompt inhoud
-- **Performance verbetering**: Verminderde API latency voor ontwikkel-gerelateerde vragen door project informatie te cachen
-- **Testing**: Uitgebreide unit tests voor nieuwe caching functionaliteit
-
-### Refactoring van config.py en anthropic_api.py (Issue #30)
-- **Configuratie Management**: Implementatie van lazy loading voor configuratiebestanden, centralisatie van Anthropic configuratie in aparte module
-- **Code Duplicatie**: Verwijdering van dubbele configuratie logic, consolidatie van API key validatie
-- **Architectuur Verbetering**: Splitsing van AnthropicAPI in kleinere, gefocuste componenten met duidelijke verantwoordelijkheden
-- **Backwards Compatibility**: Behoud van bestaande interfaces voor minimale impact op bestaande code
-- **Testing**: Toevoeging van unit tests voor nieuwe modules
