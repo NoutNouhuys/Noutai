@@ -1,7 +1,7 @@
 # Project Informatie: aiontwikkelhulp
 
 ## Projectoverzicht
-De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie. Bevat workflow automatisering voor het automatisch openen en sluiten van chat windows op basis van AI responses, inclusief automatische configuratie van nieuwe chats met Claude Sonnet 4 en developer_agent preset. Volledig analytics systeem voor token usage tracking, kosten berekening en usage insights met real-time weergave in de chat interface. Uitgebreid met conversation enhancements voor token usage weergave en bulk delete functionaliteit. CSRF token ondersteuning geïmplementeerd voor alle API calls. Volledig gerefactored voor betere code organisatie met scheiding van HTML, JavaScript en CSS.
+De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie. Bevat workflow automatisering voor het automatisch openen en sluiten van chat windows op basis van AI responses, inclusief automatische configuratie van nieuwe chats met Claude Sonnet 4 en developer_agent preset. Volledig analytics systeem voor token usage tracking, kosten berekening en usage insights met real-time weergave in de chat interface. Uitgebreid met conversation enhancements voor token usage weergave en bulk delete functionaliteit. CSRF token ondersteuning geïmplementeerd voor alle API calls. Volledig gerefactored voor betere code organisatie met scheiding van HTML, JavaScript en CSS. Enhanced tool logging geïmplementeerd voor gedetailleerde inzichten in tool uitvoering met visueel onderscheidbare log patterns.
 
 ## Architectuur
 De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruikers te helpen bij het ontwikkelen van software met behulp van AI:
@@ -23,7 +23,7 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - Anthropic configuratie (anthropic_config.py) - met LLM settings en presets
 - Anthropic client (anthropic_client.py) - met temperature en preset ondersteuning
 - Conversation manager (conversation_manager.py)
-- MCP integratie (mcp_integration.py)
+- MCP integratie (mcp_integration.py) - met enhanced tool logging
 
 ### Frontend Modules:
 - templates/home.html - Minimale hoofdtemplate (4.7KB, was 62KB)
@@ -35,10 +35,47 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - static/css/style.css - Algemene applicatie styling
 - static/css/analytics.css - Styling voor analytics dashboard
 - static/js/analytics.js - JavaScript voor analytics dashboard functionaliteit
-- static/js/log-formatter.js - Log formatting functionaliteit
-- static/css/log-formatter.css - Styling voor geformatteerde logs
+- static/js/log-formatter.js - Log formatting functionaliteit met enhanced tool logging support
+- static/css/log-formatter.css - Styling voor geformatteerde logs met enhanced tool logging patterns
 
 ## Modules
+
+### mcp_integration.py
+- **Status**: Uitgebreid met enhanced tool logging
+- **Pad**: /mcp_integration.py
+- **Functionaliteit**: Beheert MCP server connecties en tool gebruik met gedetailleerde logging. Enhanced tool logging implementatie met:
+  - Tool start logging: Toont tool naam + geformatteerde parameters per tool type
+  - Tool completion logging: Beknopte resultaat samenvatting met tool-specifieke informatie
+  - Tool failure logging: Duidelijke error informatie met context
+  - Tool-specifieke parameter formatting voor betere leesbaarheid
+  - Result summarization voor verschillende tool types (file operations, GitHub operations, etc.)
+  - Visual indicators (▶ voor start, ✓ voor success, ✗ voor failure)
+- **Afhankelijkheden**: mcp_connector.py, anthropic_config.py
+
+### static/js/log-formatter.js
+- **Status**: Uitgebreid met enhanced tool logging patterns
+- **Pad**: /static/js/log-formatter.js
+- **Functionaliteit**: JavaScript module voor het formatteren van log berichten met enhanced tool logging support. Detecteert nieuwe log patterns:
+  - tool_start: ▶ Starting tool patterns
+  - tool_complete: ✓ Tool completed patterns  
+  - tool_failed: ✗ Tool failed patterns
+  - Behoudt backwards compatibility met legacy tool_use patterns
+  - Formatteert parameters en resultaten in leesbare structuur
+  - Ondersteunt collapsible logs voor lange content
+- **Afhankelijkheden**: Geen
+
+### static/css/log-formatter.css
+- **Status**: Uitgebreid met enhanced tool logging styling
+- **Pad**: /static/css/log-formatter.css
+- **Functionaliteit**: CSS styling voor geformatteerde log berichten met enhanced tool logging patterns:
+  - tool-start-log: Blauwe styling met pulse animatie
+  - tool-complete-log: Groene styling met success pulse animatie
+  - tool-failed-log: Rode styling met shake animatie
+  - Visual hierarchy met icons en parameter indentation
+  - Dark mode ondersteuning voor alle nieuwe patterns
+  - Responsive design voor mobile devices
+  - Backwards compatibility met bestaande log types
+- **Afhankelijkheden**: Gebruikt CSS variabelen uit style.css
 
 ### templates/home.html
 - **Status**: Gerefactored - drastisch verkleind van 62KB naar 4.7KB (92% reductie)
@@ -166,12 +203,6 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Functionaliteit**: Beheert conversatie staat en geschiedenis met robuuste database persistentie. Ondersteunt pagination, search, metadata beheer, soft delete. Behoudt backwards compatibility met in-memory storage.
 - **Afhankelijkheden**: repositories (ConversationRepository voor database operaties)
 
-### mcp_integration.py
-- **Status**: Actief
-- **Pad**: /mcp_integration.py
-- **Functionaliteit**: Beheert MCP server connecties en tool gebruik.
-- **Afhankelijkheden**: mcp_connector.py, anthropic_config.py
-
 ### config.py
 - **Status**: Gerefactored
 - **Pad**: /config.py
@@ -195,18 +226,6 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Pad**: /database.py
 - **Functionaliteit**: Database configuratie en session management voor SQLAlchemy. TokenUsage model import voor analytics functionaliteit.
 - **Afhankelijkheden**: Flask-SQLAlchemy, models/token_usage.py
-
-### static/js/log-formatter.js
-- **Status**: Actief
-- **Pad**: /static/js/log-formatter.js
-- **Functionaliteit**: JavaScript module voor het formatteren van log berichten. Detecteert log types (JSON, tool use, results, errors) en past passende formatting toe. Ondersteunt collapsible logs voor lange content.
-- **Afhankelijkheden**: Geen
-
-### static/css/log-formatter.css
-- **Status**: Actief
-- **Pad**: /static/css/log-formatter.css
-- **Functionaliteit**: CSS styling voor geformatteerde log berichten. Bevat kleurcodering voor verschillende log types, JSON syntax highlighting, en responsive design.
-- **Afhankelijkheden**: Gebruikt CSS variabelen uit style.css
 
 ### werkwijze/werkwijze.txt
 - **Status**: Actief
