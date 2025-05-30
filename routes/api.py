@@ -820,18 +820,34 @@ def send_prompt():
                 # Save assistant response - Check for both 'content' and 'message' fields
                 response_content = response.get('content') or response.get('message')
                 if response.get('success', False) and response_content:
+                    message_data = {
+                        'role': 'assistant',
+                        'content': response_content,
+                        'metadata': {
+                            'model': model_id,
+                            'temperature': response.get('temperature'),
+                            'max_tokens': response.get('max_tokens'),
+                            'preset_name': response.get('preset_name'),
+                            'token_count': response.get('token_count', 0)
+                        }
+                    }
+                    
+                    # Add thinking content to metadata if available
+                    if response.get('thinking'):
+                        message_data['metadata']['thinking_content'] = response.get('thinking')
+                    
+                    ConversationRepository.save_message(
+                        conversation_id=conversation_id,
+                        message_data=message_data
+                    )
+                    
+                # Save thinking content as separate message if available
+                if response.get('thinking'):
                     ConversationRepository.save_message(
                         conversation_id=conversation_id,
                         message_data={
-                            'role': 'assistant',
-                            'content': response_content,
-                            'metadata': {
-                                'model': model_id,
-                                'temperature': response.get('temperature'),
-                                'max_tokens': response.get('max_tokens'),
-                                'preset_name': response.get('preset_name'),
-                                'token_count': response.get('token_count', 0)
-                            }
+                            'role': 'thinking',
+                            'content': response.get('thinking')
                         }
                     )
         # If no conversation_id, create a new conversation if the response was successful
@@ -858,20 +874,36 @@ def send_prompt():
                         }
                     )
                     
+                    message_data = {
+                        'role': 'assistant',
+                        'content': response_content,
+                        'metadata': {
+                            'model': model_id,
+                            'temperature': response.get('temperature'),
+                            'max_tokens': response.get('max_tokens'),
+                            'preset_name': response.get('preset_name'),
+                            'token_count': response.get('token_count', 0)
+                        }
+                    }
+                    
+                    # Add thinking content to metadata if available
+                    if response.get('thinking'):
+                        message_data['metadata']['thinking_content'] = response.get('thinking')
+                    
                     ConversationRepository.save_message(
                         conversation_id=conversation.id,
-                        message_data={
-                            'role': 'assistant',
-                            'content': response_content,
-                            'metadata': {
-                                'model': model_id,
-                                'temperature': response.get('temperature'),
-                                'max_tokens': response.get('max_tokens'),
-                                'preset_name': response.get('preset_name'),
-                                'token_count': response.get('token_count', 0)
-                            }
-                        }
+                        message_data=message_data
                     )
+                    
+                    # Save thinking content as separate message if available
+                    if response.get('thinking'):
+                        ConversationRepository.save_message(
+                            conversation_id=conversation.id,
+                            message_data={
+                                'role': 'thinking',
+                                'content': response.get('thinking')
+                            }
+                        )
                     
                     # Add conversation_id to the response
                     response['conversation_id'] = conversation.id
@@ -892,7 +924,7 @@ def send_prompt():
 @login_required
 @check_lynxx_domain
 def send_prompt_stream():
-    """Stream logs and the final response from Claude via Server-Sent Events."""
+    """Stream logs, thinking content, and the final response from Claude via Server-Sent Events."""
     prompt = request.args.get('prompt')
     if not prompt:
         return jsonify({"success": False, "error": "Prompt is required"}), 400
@@ -971,6 +1003,114 @@ def send_prompt_stream():
                         preset_name=preset_name,
                         log_callback=callback,
                     )
+                    
+                    # Handle database storage for streaming responses
+                    if result.get('success', False):
+                        # Save user message if conversation exists
+                        if conversation_id:
+                            conversation = ConversationRepository.get_conversation(conversation_id)
+                            if conversation and conversation.user_id == user_id:
+                                # Save user message
+                                ConversationRepository.save_message(
+                                    conversation_id=conversation_id,
+                                    message_data={
+                                        'role': 'user',
+                                        'content': prompt
+                                    }
+                                )
+                                
+                                # Save assistant response
+                                response_content = result.get('content') or result.get('message')
+                                if response_content:
+                                    message_data = {
+                                        'role': 'assistant',
+                                        'content': response_content,
+                                        'metadata': {
+                                            'model': model_id,
+                                            'temperature': result.get('temperature'),
+                                            'max_tokens': result.get('max_tokens'),
+                                            'preset_name': result.get('preset_name'),
+                                            'token_count': result.get('token_count', 0)
+                                        }
+                                    }
+                                    
+                                    # Add thinking content to metadata if available
+                                    if result.get('thinking'):
+                                        message_data['metadata']['thinking_content'] = result.get('thinking')
+                                    
+                                    ConversationRepository.save_message(
+                                        conversation_id=conversation_id,
+                                        message_data=message_data
+                                    )
+                                    
+                                # Save thinking content as separate message if available
+                                if result.get('thinking'):
+                                    ConversationRepository.save_message(
+                                        conversation_id=conversation_id,
+                                        message_data={
+                                            'role': 'thinking',
+                                            'content': result.get('thinking')
+                                        }
+                                    )
+                        
+                        # Create new conversation if none exists
+                        elif not conversation_id:
+                            response_content = result.get('content') or result.get('message')
+                            if response_content:
+                                conversation = ConversationRepository.save_conversation(
+                                    user_id=user_id,
+                                    conversation_data={
+                                        'title': prompt[:50] + ('...' if len(prompt) > 50 else ''),
+                                        'model': model_id
+                                    }
+                                )
+                                
+                                if conversation:
+                                    # Save user message
+                                    ConversationRepository.save_message(
+                                        conversation_id=conversation.id,
+                                        message_data={
+                                            'role': 'user',
+                                            'content': prompt
+                                        }
+                                    )
+                                    
+                                    # Save assistant response
+                                    message_data = {
+                                        'role': 'assistant',
+                                        'content': response_content,
+                                        'metadata': {
+                                            'model': model_id,
+                                            'temperature': result.get('temperature'),
+                                            'max_tokens': result.get('max_tokens'),
+                                            'preset_name': result.get('preset_name'),
+                                            'token_count': result.get('token_count', 0)
+                                        }
+                                    }
+                                    
+                                    # Add thinking content to metadata if available
+                                    if result.get('thinking'):
+                                        message_data['metadata']['thinking_content'] = result.get('thinking')
+                                    
+                                    ConversationRepository.save_message(
+                                        conversation_id=conversation.id,
+                                        message_data=message_data
+                                    )
+                                    
+                                    # Save thinking content as separate message if available
+                                    if result.get('thinking'):
+                                        ConversationRepository.save_message(
+                                            conversation_id=conversation.id,
+                                            message_data={
+                                                'role': 'thinking',
+                                                'content': result.get('thinking')
+                                            }
+                                        )
+                                    
+                                    # Add conversation_id to result
+                                    result['conversation_id'] = conversation.id
+                                    result['title'] = conversation.title
+                    
                 finally:
                     # Restore original conversation manager
                     anthropic_api.conversation_manager = original_conv_manager
@@ -982,9 +1122,15 @@ def send_prompt_stream():
         while True:
             item = q.get()
             if item['type'] == 'log':
-                yield f"event: log\ndata: {json.dumps(item['data'])}\n\n"  # Enkele backslashes!
+                yield f"event: log\ndata: {json.dumps(item['data'])}\n\n"
+            elif item['type'] == 'thinking':
+                yield f"event: thinking\ndata: {json.dumps(item['data'])}\n\n"
             elif item['type'] == 'final':
-                yield f"event: final\ndata: {json.dumps(item['data'])}\n\n"  # Enkele backslashes!
+                # Send thinking event if thinking content is available
+                if item['data'].get('thinking'):
+                    yield f"event: thinking\ndata: {json.dumps(item['data']['thinking'])}\n\n"
+                
+                yield f"event: final\ndata: {json.dumps(item['data'])}\n\n"
                 break
 
     return Response(event_stream(), mimetype='text/event-stream')
