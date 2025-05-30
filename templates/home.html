@@ -67,6 +67,43 @@
             <strong>Actieve MCP-servers:</strong> <span id="mcp-servers-list">Geen</span>
         </div>
 
+        <!-- Workflow Tabs Container -->
+        <div id="workflow-tabs-container" class="workflow-tabs-container d-none">
+            <ul class="nav nav-tabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" id="issue-tab-btn" data-bs-toggle="tab" data-bs-target="#issue-tab" type="button" role="tab">
+                        Issue Creation
+                        <span class="activity-indicator" style="display: none;">🔄</span>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="pr-tab-btn" data-bs-toggle="tab" data-bs-target="#pr-tab" type="button" role="tab">
+                        PR Creation
+                        <span class="activity-indicator" style="display: none;">🔄</span>
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="processed-tab-btn" data-bs-toggle="tab" data-bs-target="#processed-tab" type="button" role="tab">
+                        PR Processed
+                        <span class="activity-indicator" style="display: none;">🔄</span>
+                    </button>
+                </li>
+            </ul>
+            
+            <div class="tab-content">
+                <div class="tab-pane fade show active" id="issue-tab" role="tabpanel">
+                    <!-- Chat window voor issue creation workflow wordt hier dynamisch toegevoegd -->
+                </div>
+                <div class="tab-pane fade" id="pr-tab" role="tabpanel">
+                    <!-- Chat window voor PR creation workflow wordt hier dynamisch toegevoegd -->
+                </div>
+                <div class="tab-pane fade" id="processed-tab" role="tabpanel">
+                    <!-- Chat window voor PR processed workflow wordt hier dynamisch toegevoegd -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Regular Chat Windows Container (voor non-workflow mode) -->
         <div id="chat-windows-container" class="chat-windows-container layout-single">
             {{ chat_window('window-1', True) }}
         </div>
