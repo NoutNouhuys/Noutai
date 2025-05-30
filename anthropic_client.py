@@ -154,31 +154,49 @@ class AnthropicClient:
             Thinking content if available, None otherwise
         """
         try:
+            logger.debug(f"Extracting thinking content from response type: {type(response)}")
+            
             # Check if response has content blocks
             if not hasattr(response, 'content') or not response.content:
+                logger.debug("Response has no content attribute or content is empty")
                 return None
             
+            logger.debug(f"Response content blocks: {len(response.content)}")
+            
             # Look for thinking content in the content blocks
-            for content_block in response.content:
+            for i, content_block in enumerate(response.content):
+                logger.debug(f"Content block {i}: type={getattr(content_block, 'type', 'unknown')}")
+                
                 if hasattr(content_block, 'type'):
                     # Check for thinking type content block
                     if content_block.type == 'thinking':
                         if hasattr(content_block, 'text'):
-                            logger.debug("Found thinking content in response")
+                            logger.debug("Found thinking content in dedicated thinking block")
                             return content_block.text
+                        else:
+                            logger.debug("Thinking block found but has no text attribute")
+                    
                     # Some models might include thinking in text blocks with special markers
                     elif content_block.type == 'text' and hasattr(content_block, 'text'):
                         text = content_block.text
+                        logger.debug(f"Checking text block {i} for thinking markers (length: {len(text)})")
+                        
                         # Look for thinking markers in the text
                         if '<thinking>' in text and '</thinking>' in text:
                             start = text.find('<thinking>') + len('<thinking>')
                             end = text.find('</thinking>')
                             if start < end:
                                 thinking_text = text[start:end].strip()
-                                logger.debug("Found thinking content in text block with markers")
+                                logger.debug(f"Found thinking content in text block with markers (length: {len(thinking_text)})")
                                 return thinking_text
+                            else:
+                                logger.debug("Found thinking markers but invalid positions")
+                        else:
+                            logger.debug("No thinking markers found in text block")
+                else:
+                    logger.debug(f"Content block {i} has no type attribute")
             
-            logger.debug("No thinking content found in response")
+            logger.debug("No thinking content found in any content blocks")
             return None
             
         except Exception as e:
