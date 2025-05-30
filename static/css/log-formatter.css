@@ -18,6 +18,14 @@
     --log-plain-bg: #f6f8fa;
     --log-toggle-bg: #f6f8fa;
     --log-toggle-hover: #eaeef2;
+    
+    /* Enhanced tool logging colors */
+    --log-tool-start-bg: #e6f3ff;
+    --log-tool-start-border: #0969da;
+    --log-tool-complete-bg: #e6ffe6;
+    --log-tool-complete-border: #1a7f37;
+    --log-tool-failed-bg: #ffe6e6;
+    --log-tool-failed-border: #cf222e;
 }
 
 [data-theme="dark"] {
@@ -37,6 +45,14 @@
     --log-plain-bg: #161b22;
     --log-toggle-bg: #21262d;
     --log-toggle-hover: #30363d;
+    
+    /* Enhanced tool logging colors - dark mode */
+    --log-tool-start-bg: #0d2d4a;
+    --log-tool-start-border: #58a6ff;
+    --log-tool-complete-bg: #0d2818;
+    --log-tool-complete-border: #3fb950;
+    --log-tool-failed-bg: #2d0d0d;
+    --log-tool-failed-border: #f85149;
 }
 
 /* Enhanced log message container */
@@ -55,6 +71,156 @@
     color: var(--foreground-color);
     white-space: normal;
     word-break: break-word;
+}
+
+/* Enhanced Tool Start Logging */
+.tool-start-log {
+    background-color: var(--log-tool-start-bg);
+    border-left: 3px solid var(--log-tool-start-border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 4px 0;
+}
+
+.tool-start-log .tool-header {
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 8px 12px;
+    font-weight: 600;
+    color: var(--log-tool-start-border);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+}
+
+[data-theme="dark"] .tool-start-log .tool-header {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tool-start-log .tool-header i {
+    margin-right: 8px;
+    font-size: 14px;
+}
+
+.tool-start-log .tool-params {
+    padding: 8px 12px;
+}
+
+.tool-start-log .param-line {
+    font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+    font-size: 12px;
+    color: var(--text-secondary);
+    padding: 2px 0;
+    padding-left: 16px;
+    position: relative;
+}
+
+.tool-start-log .param-line:before {
+    content: "•";
+    position: absolute;
+    left: 4px;
+    color: var(--log-tool-start-border);
+    font-weight: bold;
+}
+
+/* Enhanced Tool Complete Logging */
+.tool-complete-log {
+    background-color: var(--log-tool-complete-bg);
+    border-left: 3px solid var(--log-tool-complete-border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 4px 0;
+}
+
+.tool-complete-log .tool-header {
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 8px 12px;
+    font-weight: 600;
+    color: var(--log-tool-complete-border);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+}
+
+[data-theme="dark"] .tool-complete-log .tool-header {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tool-complete-log .tool-header i {
+    margin-right: 8px;
+    font-size: 14px;
+}
+
+.tool-complete-log .tool-result {
+    padding: 8px 12px;
+}
+
+.tool-complete-log .result-line {
+    font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+    font-size: 12px;
+    color: var(--text-secondary);
+    padding: 2px 0;
+    padding-left: 16px;
+    position: relative;
+}
+
+.tool-complete-log .result-line:before {
+    content: "✓";
+    position: absolute;
+    left: 4px;
+    color: var(--log-tool-complete-border);
+    font-weight: bold;
+}
+
+/* Enhanced Tool Failed Logging */
+.tool-failed-log {
+    background-color: var(--log-tool-failed-bg);
+    border-left: 3px solid var(--log-tool-failed-border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin: 4px 0;
+}
+
+.tool-failed-log .tool-header {
+    background-color: rgba(0, 0, 0, 0.05);
+    padding: 8px 12px;
+    font-weight: 600;
+    color: var(--log-tool-failed-border);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+}
+
+[data-theme="dark"] .tool-failed-log .tool-header {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tool-failed-log .tool-header i {
+    margin-right: 8px;
+    font-size: 14px;
+}
+
+.tool-failed-log .tool-error {
+    padding: 8px 12px;
+}
+
+.tool-failed-log .error-line {
+    font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+    font-size: 12px;
+    color: var(--text-secondary);
+    padding: 2px 0;
+    padding-left: 16px;
+    position: relative;
+}
+
+.tool-failed-log .error-line:before {
+    content: "✗";
+    position: absolute;
+    left: 4px;
+    color: var(--log-tool-failed-border);
+    font-weight: bold;
 }
 
 /* JSON formatting */
@@ -92,7 +258,7 @@
     font-style: italic;
 }
 
-/* Tool use log formatting */
+/* Legacy tool use log formatting */
 .tool-use-log {
     background-color: var(--log-tool-bg);
     border-radius: 6px;
@@ -272,6 +438,57 @@
     }
 }
 
+/* Pulse animation for tool start */
+.tool-start-log {
+    animation: slideIn 0.3s ease-out, pulse 2s ease-in-out;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(9, 105, 218, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(9, 105, 218, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(9, 105, 218, 0);
+    }
+}
+
+/* Success animation for tool complete */
+.tool-complete-log {
+    animation: slideIn 0.3s ease-out, successPulse 1.5s ease-in-out;
+}
+
+@keyframes successPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(26, 127, 55, 0.4);
+    }
+    70% {
+        box-shadow: 0 0 0 8px rgba(26, 127, 55, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(26, 127, 55, 0);
+    }
+}
+
+/* Error animation for tool failed */
+.tool-failed-log {
+    animation: slideIn 0.3s ease-out, errorShake 0.5s ease-in-out;
+}
+
+@keyframes errorShake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    25% {
+        transform: translateX(-5px);
+    }
+    75% {
+        transform: translateX(5px);
+    }
+}
+
 /* Scrollbar styling for log messages */
 .log-messages::-webkit-scrollbar {
     width: 8px;
@@ -296,7 +513,10 @@
     .json-content,
     .tool-params,
     .error-body,
-    .plain-log {
+    .plain-log,
+    .param-line,
+    .result-line,
+    .error-line {
         font-size: 11px;
     }
     
@@ -306,5 +526,17 @@
     
     .log-full-content {
         padding: 10px;
+    }
+    
+    .tool-start-log .tool-header,
+    .tool-complete-log .tool-header,
+    .tool-failed-log .tool-header {
+        padding: 6px 10px;
+    }
+    
+    .tool-start-log .tool-params,
+    .tool-complete-log .tool-result,
+    .tool-failed-log .tool-error {
+        padding: 6px 10px;
     }
 }
