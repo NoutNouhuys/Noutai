@@ -252,8 +252,9 @@ class AnthropicAPI:
                 tools = await self.mcp_integration.get_tools()
         
         try:
-            # Send initial message - now returns tuple with thinking content
-            response, thinking_content = self.client.create_message(
+            # Send initial message - returns tuple (response, thinking_content)
+            logger.debug("Calling client.create_message - expecting tuple return")
+            api_result = self.client.create_message(
                 messages=messages,
                 model=model_id,
                 max_tokens=max_tokens,
@@ -263,6 +264,16 @@ class AnthropicAPI:
                 preset_name=preset_name,
                 tools=tools
             )
+            
+            # Unpack the tuple returned by client.create_message
+            if isinstance(api_result, tuple) and len(api_result) == 2:
+                response, thinking_content = api_result
+                logger.debug(f"Successfully unpacked tuple: response type={type(response)}, thinking_content available={thinking_content is not None}")
+            else:
+                # Fallback for backwards compatibility
+                logger.warning(f"Expected tuple from client.create_message, got {type(api_result)}")
+                response = api_result
+                thinking_content = None
             
             if include_logs:
                 log_msg = f"Prompt verzonden naar Claude (model: {model_id}"
@@ -274,7 +285,8 @@ class AnthropicAPI:
                 emit_log(log_msg)
             
             # Handle tool usage if needed
-            if tools and response.stop_reason == "tool_use":
+            if tools and hasattr(response, 'stop_reason') and response.stop_reason == "tool_use":
+                logger.debug("Handling tool use")
                 response = await self.mcp_integration.handle_tool_use(
                     response=response,
                     messages=messages,
@@ -296,8 +308,14 @@ class AnthropicAPI:
                 if hasattr(response, 'content') and response.content:
                     # Re-extract thinking content from the final response
                     thinking_content = self.client._extract_thinking_content(response)
+                    logger.debug(f"Re-extracted thinking content after tool use: {thinking_content is not None}")
             
-            response_text = response.content[0].text
+            # Extract response text
+            if hasattr(response, 'content') and response.content:
+                response_text = response.content[0].text
+            else:
+                logger.error("Response has no content")
+                response_text = ""
             
             # Extract usage data from response
             usage_data = {}
@@ -339,6 +357,7 @@ class AnthropicAPI:
                 emit_log("Antwoord van Claude ontvangen")
                 if thinking_content:
                     emit_log("Thinking content beschikbaar")
+                    logger.debug(f"Thinking content length: {len(thinking_content) if thinking_content else 0}")
                 
             return response_text, thinking_content, usage_data
             
@@ -527,6 +546,7 @@ class AnthropicAPI:
             # Add thinking content if available
             if thinking_content:
                 response_data["thinking"] = thinking_content
+                logger.debug(f"Added thinking content to response: {len(thinking_content)} characters")
             
             return response_data
             
