@@ -35,7 +35,7 @@ function getAPIHeaders(includeContentType = true) {
 const workflowPatterns = {
     issueCreation: /Ik heb issue #?(\d+) aangemaakt voor Repo ([^\/]+)\/([^\s]+)/i,
     prCreation: /Ik heb Pull Request #?(\d+) aangemaakt voor Repo ([^\/]+)\/([^\s]+)/i,
-    prProcessed: /Ik heb Pull Request #?(\d+) verwerkt en bijbehorende branche(?:([^\\s]+))? verwijderd voor Repo ([^\/]+)\/([^\s.]+)\.?/i
+    prProcessed: /Ik heb Pull Request #?(\d+) verwerkt en bijbehorende branche(?:([^\s]+))? verwijderd voor Repo ([^\/]+)\/([^\s.]+)\.?/i
 };
 
 // Workflow configuration with model and preset settings per pattern
@@ -278,18 +278,20 @@ function createChatWindowElement(windowId) {
 function monitorResponse(windowId, content) {
     // Only monitor if workflow is active
     if (!workflowActive) {
-        console.log('Workflow not active, skipping pattern monitoring');
+        console.log('[Workflow Monitor] Workflow not active, skipping pattern monitoring');
         return;
     }
     
-    console.log('Monitoring response for workflow patterns:', content);
+    console.log(`[Workflow Monitor] Checking response from window ${windowId}`);
+    console.log('[Workflow Monitor] Content:', content.substring(0, 100) + '...');
     
     // Check each workflow pattern and use the appropriate configuration
     for (const [patternName, config] of Object.entries(workflowConfig)) {
         const match = content.match(config.pattern);
         if (match) {
-            console.log(`✓ ${patternName} pattern detected:`, match);
-            console.log('Pattern config:', config);
+            console.log(`[Workflow Monitor] ✓ Pattern "${patternName}" matched`);
+            console.log('[Workflow Monitor] Match details:', match);
+            console.log('[Workflow Monitor] Pattern config:', config);
             
             let prompt;
             if (patternName === 'issueCreation') {
@@ -303,18 +305,18 @@ function monitorResponse(windowId, content) {
                 prompt = `Ga Repo ${owner}/${repo}`;
             }
             
-            console.log(`Calling autoCreateChatWindow with prompt: "${prompt}"`);
+            console.log(`[Workflow Monitor] Calling autoCreateChatWindow with prompt: "${prompt}"`);
             autoCreateChatWindow(prompt, windowId, config);
             return;
         }
     }
     
-    console.log('No workflow patterns detected in response');
+    console.log('[Workflow Monitor] No workflow patterns detected in response');
 }
 
 async function autoCreateChatWindow(prompt, currentWindowId, workflowConfig) {
-    console.log('Auto-creating new chat window with prompt:', prompt);
-    console.log('Using workflow config:', workflowConfig);
+    console.log('[Workflow] Auto-creating new chat window with prompt:', prompt);
+    console.log('[Workflow] Using workflow config:', workflowConfig);
 
     // Add a small delay to ensure the current response is fully processed
     setTimeout(async () => {
@@ -338,13 +340,13 @@ async function autoCreateChatWindow(prompt, currentWindowId, workflowConfig) {
                 }, 1500);
             }
         } catch (error) {
-            console.error('Error configuring workflow window:', error);
+            console.error('[Workflow] Error configuring workflow window:', error);
         }
     }, 1000);
 }
 
 function autoCreateTabWindow(prompt, workflowConfig) {
-    console.log('Auto-creating tab window for:', workflowConfig.description);
+    console.log('[Tab Workflow] Auto-creating tab window for:', workflowConfig.description);
     
     const targetTabId = workflowConfig.tabId;
     const windowId = `workflow-${targetTabId}`;
@@ -352,40 +354,103 @@ function autoCreateTabWindow(prompt, workflowConfig) {
     // Check if window exists and is ready
     const windowData = chatWindows.get(windowId);
     if (!windowData) {
-        console.error(`Window ${windowId} not found in chatWindows`);
+        console.error(`[Tab Workflow] Window ${windowId} not found in chatWindows`);
         return;
     }
     
     // Check if window is not waiting for response
     if (windowData.isWaitingForResponse) {
-        console.log(`Window ${windowId} is still waiting for response, queueing prompt`);
-        // Queue the prompt for later execution
+        console.log(`[Tab Workflow] Window ${windowId} is still waiting for response, queueing prompt`);
         windowData.queuedPrompt = prompt;
         windowData.queuedConfig = workflowConfig;
         return;
     }
     
-    // Activate the tab with proper Bootstrap API
+    // Get the tab button
     const tabButton = document.querySelector(`[data-bs-target="#${targetTabId}"]`);
-    if (tabButton) {
-        // Use Bootstrap Tab API for proper activation
-        const tab = new bootstrap.Tab(tabButton);
-        tab.show();
+    if (!tabButton) {
+        console.error(`[Tab Workflow] Tab button for ${targetTabId} not found`);
+        return;
+    }
+    
+    // Check if tab is already active
+    const isTabActive = tabButton.classList.contains('active');
+    
+    if (isTabActive) {
+        // Tab is already active, send prompt immediately
+        console.log('[Tab Workflow] Tab already active, sending prompt directly');
+        showActivityIndicator(targetTabId);
+        sendPromptWithRetry(windowId, prompt, workflowConfig.model, workflowConfig.preset);
+    } else {
+        // Need to switch tabs first
+        console.log('[Tab Workflow] Switching to tab before sending prompt');
         
-        // Wait for tab transition to complete
-        tabButton.addEventListener('shown.bs.tab', function onTabShown() {
-            tabButton.removeEventListener('shown.bs.tab', onTabShown);
+        // Create promise to handle tab switch completion
+        const tabSwitchPromise = new Promise((resolve) => {
+            const onTabShown = function() {
+                tabButton.removeEventListener('shown.bs.tab', onTabShown);
+                console.log('[Tab Workflow] Tab switch event fired');
+                resolve();
+            };
+            tabButton.addEventListener('shown.bs.tab', onTabShown);
             
-            // Show activity indicator
+            // Activate the tab
+            const tab = new bootstrap.Tab(tabButton);
+            tab.show();
+            
+            // Timeout fallback in case event doesn't fire
+            setTimeout(() => {
+                console.log('[Tab Workflow] Tab switch timeout fallback triggered');
+                resolve();
+            }, 500);
+        });
+        
+        // Wait for tab switch and then send prompt
+        tabSwitchPromise.then(() => {
+            console.log('[Tab Workflow] Tab switch complete, sending prompt');
             showActivityIndicator(targetTabId);
             
-            // Send prompt with delay to ensure UI is ready
+            // Additional delay to ensure DOM is ready
             setTimeout(() => {
-                sendPromptWithConfig(windowId, prompt, workflowConfig.model, workflowConfig.preset);
-            }, 100);
+                sendPromptWithRetry(windowId, prompt, workflowConfig.model, workflowConfig.preset);
+            }, 200);
         });
-    } else {
-        console.error(`Tab button for ${targetTabId} not found`);
+    }
+}
+
+// Retry mechanisme voor het versturen van prompts
+async function sendPromptWithRetry(windowId, prompt, modelId, presetName, maxRetries = 3) {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            console.log(`[Send Prompt] Attempt ${attempt} of ${maxRetries}`);
+            
+            const windowElement = document.querySelector(`[data-window-id="${windowId}"]`);
+            if (!windowElement) {
+                throw new Error(`Window element not found for ${windowId}`);
+            }
+            
+            // Check if window is visible
+            const isVisible = windowElement.offsetParent !== null;
+            if (!isVisible) {
+                throw new Error(`Window ${windowId} is not visible`);
+            }
+            
+            // Send the prompt
+            await sendPromptWithConfig(windowId, prompt, modelId, presetName);
+            console.log(`[Send Prompt] Success on attempt ${attempt}`);
+            break;
+            
+        } catch (error) {
+            console.error(`[Send Prompt] Attempt ${attempt} failed:`, error);
+            
+            if (attempt < maxRetries) {
+                console.log(`[Send Prompt] Retrying in 1 second...`);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            } else {
+                console.error('[Send Prompt] All attempts failed');
+                throw error;
+            }
+        }
     }
 }
 
@@ -394,6 +459,7 @@ function showActivityIndicator(tabId) {
     const indicator = document.querySelector(`[data-bs-target="#${tabId}"] .activity-indicator`);
     if (indicator) {
         indicator.style.display = 'inline';
+        console.log(`[Activity] Showing indicator for tab ${tabId}`);
     }
 }
 
@@ -401,15 +467,16 @@ function hideActivityIndicator(tabId) {
     const indicator = document.querySelector(`[data-bs-target="#${tabId}"] .activity-indicator`);
     if (indicator) {
         indicator.style.display = 'none';
+        console.log(`[Activity] Hiding indicator for tab ${tabId}`);
     }
 }
 
 function configureWorkflowWindow(windowElement, config = null) {
-    console.log('Configuring window for workflow mode');
+    console.log('[Workflow Config] Configuring window for workflow mode');
     
     return new Promise((resolve, reject) => {
         if (config) {
-            console.log('Workflow configuration:', {
+            console.log('[Workflow Config] Workflow configuration:', {
                 model: config.model,
                 preset: config.preset,
                 description: config.description
@@ -438,8 +505,8 @@ function configureWorkflowWindow(windowElement, config = null) {
             `Workflow configuratie ontvangen: model ${modelId}, preset ${presetId || 'geen'}`
         );
         
-        console.log(`Applying workflow config: ${description}`);
-        console.log(`Target model: ${modelId}, Target preset: ${presetId}`);
+        console.log(`[Workflow Config] Applying workflow config: ${description}`);
+        console.log(`[Workflow Config] Target model: ${modelId}, Target preset: ${presetId}`);
         
         // Show workflow status badge
         const workflowStatus = windowElement.querySelector('.workflow-status');
@@ -460,7 +527,7 @@ function configureWorkflowWindow(windowElement, config = null) {
         
         const checkCompletion = () => {
             if (modelsLoaded && presetsLoaded) {
-                console.log('✓ Both models and presets loaded, configuration complete');
+                console.log('[Workflow Config] ✓ Both models and presets loaded, configuration complete');
                 addLogMessage(
                     windowId,
                     `Model gebruikt: ${modelSelect.value}, preset: ${presetSelect.value || 'geen'}`
@@ -483,7 +550,7 @@ function configureWorkflowWindow(windowElement, config = null) {
                     for (let i = 0; i < modelSelect.options.length; i++) {
                         if (modelSelect.options[i].value === modelId) {
                             modelSelect.selectedIndex = i;
-                            console.log(`✓ Model set to: ${modelId}`);
+                            console.log(`[Workflow Config] ✓ Model set to: ${modelId}`);
                             modelSet = true;
                             break;
                         }
@@ -494,7 +561,7 @@ function configureWorkflowWindow(windowElement, config = null) {
                         for (let i = 0; i < modelSelect.options.length; i++) {
                             if (modelSelect.options[i].value === FALLBACK_MODEL_ID) {
                                 modelSelect.selectedIndex = i;
-                                console.warn(`⚠ Model ${modelId} not found, using fallback: ${FALLBACK_MODEL_ID}`);
+                                console.warn(`[Workflow Config] ⚠ Model ${modelId} not found, using fallback: ${FALLBACK_MODEL_ID}`);
                                 addLogMessage(windowId, 
                                     `Waarschuwing: Model ${modelId} niet beschikbaar, teruggevallen op ${FALLBACK_MODEL_ID}`);
                                 break;
@@ -525,7 +592,7 @@ function configureWorkflowWindow(windowElement, config = null) {
                     for (let i = 0; i < presetSelect.options.length; i++) {
                         if (presetSelect.options[i].value === presetId) {
                             presetSelect.selectedIndex = i;
-                            console.log(`✓ Preset set to: ${presetId}`);
+                            console.log(`[Workflow Config] ✓ Preset set to: ${presetId}`);
                             presetSet = true;
                             break;
                         }
@@ -536,7 +603,7 @@ function configureWorkflowWindow(windowElement, config = null) {
                         for (let i = 0; i < presetSelect.options.length; i++) {
                             if (presetSelect.options[i].value === FALLBACK_PRESET_ID) {
                                 presetSelect.selectedIndex = i;
-                                console.warn(`⚠ Preset ${presetId} not found, using fallback: ${FALLBACK_PRESET_ID}`);
+                                console.warn(`[Workflow Config] ⚠ Preset ${presetId} not found, using fallback: ${FALLBACK_PRESET_ID}`);
                                 addLogMessage(windowId, 
                                     `Waarschuwing: Preset ${presetId} niet beschikbaar, teruggevallen op ${FALLBACK_PRESET_ID}`);
                                 break;
@@ -546,7 +613,7 @@ function configureWorkflowWindow(windowElement, config = null) {
                         if (!presetSet) {
                             // Use no preset (default)
                             presetSelect.selectedIndex = 0;
-                            console.warn(`⚠ Preset ${presetId} and fallback not found, using default`);
+                            console.warn(`[Workflow Config] ⚠ Preset ${presetId} and fallback not found, using default`);
                             addLogMessage(windowId, 
                                 `Waarschuwing: Preset ${presetId} niet beschikbaar, geen preset gebruikt`);
                         }
@@ -568,7 +635,7 @@ function configureWorkflowWindow(windowElement, config = null) {
         // Set a timeout to prevent hanging
         setTimeout(() => {
             if (!modelsLoaded || !presetsLoaded) {
-                console.warn('⚠ Configuration timeout, proceeding with current settings');
+                console.warn('[Workflow Config] ⚠ Configuration timeout, proceeding with current settings');
                 reject(new Error('Configuration timeout'));
             }
         }, 5000);
@@ -1147,7 +1214,7 @@ function sendPromptWithConfig(windowId, prompt, modelId, presetName) {
     const loadingId = 'loading-' + Date.now();
     addLoadingMessage(windowId, loadingId);
     
-    console.log(`Sending prompt with configured model: ${modelId}, preset: ${presetName || 'none'}`);
+    console.log(`[Send Config] Sending prompt with configured model: ${modelId}, preset: ${presetName || 'none'}`);
     
     // Set waiting flag
     windowData.isWaitingForResponse = true;
@@ -1200,14 +1267,17 @@ function sendPromptWithConfig(windowId, prompt, modelId, presetName) {
 
             // Check for queued prompts after response is complete
             if (windowData.queuedPrompt) {
+                console.log('[Queue] Processing queued prompt for window', windowId);
                 const queuedPrompt = windowData.queuedPrompt;
                 const queuedConfig = windowData.queuedConfig;
                 windowData.queuedPrompt = null;
                 windowData.queuedConfig = null;
                 
+                // Process with delay to ensure UI is ready
                 setTimeout(() => {
+                    console.log('[Queue] Executing queued workflow action');
                     autoCreateTabWindow(queuedPrompt, queuedConfig);
-                }, 500);
+                }, 1000); // Increased delay
             }
 
             // Monitor response for workflow patterns
@@ -1231,7 +1301,7 @@ function sendPromptWithConfig(windowId, prompt, modelId, presetName) {
         removeLoadingMessage(windowId, loadingId);
         windowData.isWaitingForResponse = false;
         addErrorMessage(windowId, 'Er is een fout opgetreden bij het verwerken van je vraag.');
-        console.error('Error sending prompt:', err);
+        console.error('[Send Config] Error sending prompt:', err);
         
         // Hide activity indicator on error
         if (windowData.workflowConfig && windowData.workflowConfig.tabId) {
