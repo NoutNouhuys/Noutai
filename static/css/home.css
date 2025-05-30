@@ -90,6 +90,58 @@
     margin-right: 4px;
 }
 
+/* Workflow tabs styling */
+.workflow-tabs-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.workflow-tabs-container .nav-tabs {
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.workflow-tabs-container .tab-content {
+    flex: 1;
+    overflow: hidden;
+}
+
+.workflow-tabs-container .tab-pane {
+    height: 100%;
+    padding-top: 16px;
+}
+
+/* Activity indicator animation */
+.activity-indicator {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+    margin-left: 8px;
+    font-size: 12px;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Tab styling voor actieve workflow */
+.nav-link.workflow-active {
+    background-color: var(--success-bg, #d1e7dd);
+    border-color: var(--success-border, #badbcc);
+    color: var(--success-text, #0f5132);
+}
+
+/* Tab hover effects */
+.nav-link:hover {
+    border-color: var(--border-color);
+}
+
+.nav-link.active {
+    background-color: var(--background-color);
+    border-color: var(--border-color) var(--border-color) var(--background-color);
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .chat-window-content {
@@ -102,6 +154,16 @@
         flex: 1 1 auto;
         height: 300px;
     }
+    
+    /* Make tabs scrollable on small screens */
+    .workflow-tabs-container .nav-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+    }
+    
+    .workflow-tabs-container .nav-item {
+        flex-shrink: 0;
+    }
 }
 
 /* Welcome screen adjustments */
@@ -113,4 +175,20 @@
 .welcome h2 {
     font-weight: 600;
     color: var(--foreground-color);
+}
+
+/* Ensure proper height for workflow tabs */
+.workflow-tabs-container {
+    min-height: 600px;
+}
+
+/* Tab content styling */
+.tab-pane .chat-window {
+    height: 100%;
+    border: none;
+}
+
+.tab-pane .chat-window .card {
+    height: 100%;
+    border: 1px solid var(--border-color);
 }
