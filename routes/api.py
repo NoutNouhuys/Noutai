@@ -1127,8 +1127,12 @@ def send_prompt_stream():
                 yield f"event: thinking\ndata: {json.dumps(item['data'])}\n\n"
             elif item['type'] == 'final':
                 # Send thinking event if thinking content is available
-                if item['data'].get('thinking'):
-                    yield f"event: thinking\ndata: {json.dumps(item['data']['thinking'])}\n\n"
+                thinking_content = item['data'].get('thinking')
+                if thinking_content:
+                    current_app.logger.debug(f"Sending thinking event with content length: {len(thinking_content)}")
+                    yield f"event: thinking\ndata: {json.dumps(thinking_content)}\n\n"
+                else:
+                    current_app.logger.debug("No thinking content found in final result")
                 
                 yield f"event: final\ndata: {json.dumps(item['data'])}\n\n"
                 break
