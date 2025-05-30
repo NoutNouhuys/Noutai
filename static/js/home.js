@@ -8,6 +8,7 @@ let lastConversationId = null;
 
 // Workflow state
 let workflowActive = false;
+let workflowTabsInitialized = false;
 
 // Global presets cache
 let availablePresets = {};
@@ -44,21 +45,24 @@ const workflowConfig = {
         action: "Ga naar Repo [owner]/[repo] en pak issue [nummer] op",
         model: "claude-sonnet-4-20250514",
         preset: "developer_agent",
-        description: "Issue Creation - Developer Agent met Claude Sonnet 4"
+        description: "Issue Creation - Developer Agent met Claude Sonnet 4",
+        tabId: "issue-tab"
     },
     prCreation: {
         pattern: workflowPatterns.prCreation,
         action: "Ga naar Repo [owner]/[repo] en merge Pull Request [nummer] en delete de bijbehorende branche",
         model: "claude-3-5-haiku-20241022",
         preset: "developer_agent",
-        description: "PR Creation - Developer Agent met Claude Haiku 3.5"
+        description: "PR Creation - Developer Agent met Claude Haiku 3.5",
+        tabId: "pr-tab"
     },
     prProcessed: {
         pattern: workflowPatterns.prProcessed,
         action: "Ga Repo [owner]/[repo]",
         model: "claude-opus-4-20250514",
         preset: "creative_writing",        
-        description: "PR Processed - Developer Agent met Claude Opus 4"
+        description: "PR Processed - Developer Agent met Claude Opus 4",
+        tabId: "processed-tab"
     }
 };
 
@@ -110,6 +114,11 @@ function loadWorkflowState() {
         if (workflowToggle) {
             workflowToggle.checked = workflowActive;
         }
+        
+        // Initialize workflow tabs if workflow is active
+        if (workflowActive) {
+            toggleWorkflowMode(true);
+        }
     }
 }
 
@@ -122,11 +131,136 @@ function toggleWorkflow() {
     workflowActive = workflowToggle.checked;
     saveWorkflowState();
     
-    if (workflowActive) {
-        console.log('Workflow mode activated');
+    toggleWorkflowMode(workflowActive);
+}
+
+function toggleWorkflowMode(activate) {
+    const workflowTabsContainer = document.getElementById('workflow-tabs-container');
+    const chatWindowsContainer = document.getElementById('chat-windows-container');
+    
+    if (activate) {
+        console.log('Workflow mode activated - switching to tabs');
+        
+        // Hide regular chat windows container
+        chatWindowsContainer.classList.add('d-none');
+        
+        // Show workflow tabs container
+        workflowTabsContainer.classList.remove('d-none');
+        
+        // Initialize workflow tabs if not already done
+        if (!workflowTabsInitialized) {
+            initializeWorkflowTabs();
+            workflowTabsInitialized = true;
+        }
     } else {
-        console.log('Workflow mode deactivated');
+        console.log('Workflow mode deactivated - switching to regular windows');
+        
+        // Show regular chat windows container
+        chatWindowsContainer.classList.remove('d-none');
+        
+        // Hide workflow tabs container
+        workflowTabsContainer.classList.add('d-none');
     }
+}
+
+function initializeWorkflowTabs() {
+    console.log('Initializing workflow tabs');
+    
+    // Initialiseer een chat window in elke tab met de juiste configuratie
+    const tabs = {
+        'issue-tab': workflowConfig.issueCreation,
+        'pr-tab': workflowConfig.prCreation,
+        'processed-tab': workflowConfig.prProcessed
+    };
+    
+    for (const [tabId, config] of Object.entries(tabs)) {
+        const tabPane = document.getElementById(tabId);
+        const windowId = `workflow-${tabId}`;
+        
+        // Maak chat window in de tab
+        const chatWindow = createChatWindowElement(windowId);
+        tabPane.appendChild(chatWindow);
+        
+        // Initialiseer met workflow configuratie
+        initializeChatWindow(chatWindow);
+        
+        // Configure the window with workflow settings
+        setTimeout(() => {
+            configureWorkflowWindow(chatWindow, config);
+        }, 500);
+    }
+}
+
+function createChatWindowElement(windowId) {
+    const newWindow = document.createElement('div');
+    newWindow.className = 'chat-window';
+    newWindow.setAttribute('data-window-id', windowId);
+
+    newWindow.innerHTML = `
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-3">
+                    <div>
+                        <label for="model-select-${windowId}" class="form-label mb-0">Model:</label>
+                        <select id="model-select-${windowId}" class="model-select form-select form-select-sm d-inline-block">
+                            <option selected disabled>Modellen laden...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="preset-select-${windowId}" class="form-label mb-0">Preset:</label>
+                        <select id="preset-select-${windowId}" 
+                                class="preset-select form-select form-select-sm d-inline-block"
+                                style="width: auto;"
+                                title="Selecteer een LLM preset voor specifieke use cases">
+                            <option value="">Standaard</option>
+                            <!-- Presets worden dynamisch geladen -->
+                        </select>
+                    </div>
+                    <div id="workflow-status-${windowId}" class="workflow-status">
+                        <span class="badge bg-info">
+                            <i class="fas fa-cog"></i> Workflow
+                        </span>
+                    </div>
+                </div>
+                <div>
+                    <button class="new-chat-btn btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-plus"></i> Nieuw gesprek
+                    </button>
+                </div>
+            </div>
+            <div class="card-body d-flex flex-column">
+                <div class="chat-window-content flex-grow-1">
+                    <div class="chat-column">
+                        <div class="column-header">
+                            <i class="fas fa-comments me-1"></i> Chat
+                        </div>
+                        <div class="chat-messages" id="chat-messages-${windowId}">
+                            <!-- Chat messages will appear here -->
+                        </div>
+                    </div>
+                    <div class="log-column">
+                        <div class="column-header">
+                            <i class="fas fa-list me-1"></i> Logs
+                        </div>
+                        <div class="log-messages" id="log-messages-${windowId}">
+                            <!-- Log messages will appear here -->
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-input mt-3">
+                    <div class="input-group">
+                        <textarea class="prompt-input form-control" id="input-${windowId}" placeholder="Stel je vraag aan Claude..." rows="3"></textarea>
+                        <button class="send-prompt btn btn-primary" id="send-${windowId}">
+                            <i class="fas fa-paper-plane"></i> Versturen
+                        </button>
+                    </div>
+                    <div class="form-text text-end conversation-status">Nieuw gesprek</div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    return newWindow;
 }
 
 function monitorResponse(windowId, content) {
@@ -166,24 +300,65 @@ async function autoCreateChatWindow(prompt, currentWindowId, workflowConfig) {
     // Add a small delay to ensure the current response is fully processed
     setTimeout(async () => {
         try {
-            // Create and configure a new workflow window
-            const newWindow = await addChatWindow('', true, workflowConfig);
-            const newWindowId = newWindow.getAttribute('data-window-id');
+            if (workflowActive && workflowConfig.tabId) {
+                // Use tab-based workflow
+                autoCreateTabWindow(prompt, workflowConfig);
+            } else {
+                // Use regular window workflow
+                const newWindow = await addChatWindow('', true, workflowConfig);
+                const newWindowId = newWindow.getAttribute('data-window-id');
 
-            // Wait for configuration to complete before sending prompt
-            setTimeout(() => {
-                // Send the prompt with the configured model and preset
-                sendPromptWithConfig(newWindowId, prompt, workflowConfig.model, workflowConfig.preset);
-            }, 1000);
+                // Wait for configuration to complete before sending prompt
+                setTimeout(() => {
+                    sendPromptWithConfig(newWindowId, prompt, workflowConfig.model, workflowConfig.preset);
+                }, 1000);
 
-            // Close the current window after a short delay
-            setTimeout(() => {
-                autoCloseWindow(currentWindowId);
-            }, 1500);
+                // Close the current window after a short delay
+                setTimeout(() => {
+                    autoCloseWindow(currentWindowId);
+                }, 1500);
+            }
         } catch (error) {
             console.error('Error configuring workflow window:', error);
         }
     }, 1000);
+}
+
+function autoCreateTabWindow(prompt, workflowConfig) {
+    console.log('Auto-creating tab window for:', workflowConfig.description);
+    
+    const targetTabId = workflowConfig.tabId;
+    
+    // Activeer de juiste tab
+    const tabButton = document.querySelector(`[data-bs-target="#${targetTabId}"]`);
+    if (tabButton) {
+        tabButton.click();
+    }
+    
+    // Stuur prompt naar het window in die tab
+    const windowId = `workflow-${targetTabId}`;
+    
+    // Show activity indicator
+    showActivityIndicator(targetTabId);
+    
+    setTimeout(() => {
+        sendPromptWithConfig(windowId, prompt, workflowConfig.model, workflowConfig.preset);
+    }, 500);
+}
+
+// Activity indicator functies
+function showActivityIndicator(tabId) {
+    const indicator = document.querySelector(`[data-bs-target="#${tabId}"] .activity-indicator`);
+    if (indicator) {
+        indicator.style.display = 'inline';
+    }
+}
+
+function hideActivityIndicator(tabId) {
+    const indicator = document.querySelector(`[data-bs-target="#${tabId}"] .activity-indicator`);
+    if (indicator) {
+        indicator.style.display = 'none';
+    }
 }
 
 function configureWorkflowWindow(windowElement, config = null) {
@@ -210,7 +385,8 @@ function configureWorkflowWindow(windowElement, config = null) {
             windowData.workflowConfig = {
                 model: modelId,
                 preset: presetId,
-                description: description
+                description: description,
+                tabId: config ? config.tabId : null
             };
         }
 
@@ -972,6 +1148,11 @@ function sendPromptWithConfig(windowId, prompt, modelId, presetName) {
                 statusElement.textContent = `Gesprek: ${data.title || 'Onbenoemd gesprek'}`;
             }
 
+            // Hide activity indicator if this is a workflow tab
+            if (windowData.workflowConfig && windowData.workflowConfig.tabId) {
+                hideActivityIndicator(windowData.workflowConfig.tabId);
+            }
+
             // Monitor response for workflow patterns
             monitorResponse(windowId, content);
 
@@ -980,6 +1161,11 @@ function sendPromptWithConfig(windowId, prompt, modelId, presetName) {
             }
         } else {
             addErrorMessage(windowId, data.error || 'Er is een fout opgetreden.');
+            
+            // Hide activity indicator on error
+            if (windowData.workflowConfig && windowData.workflowConfig.tabId) {
+                hideActivityIndicator(windowData.workflowConfig.tabId);
+            }
         }
         eventSource.close();
     });
@@ -989,6 +1175,12 @@ function sendPromptWithConfig(windowId, prompt, modelId, presetName) {
         windowData.isWaitingForResponse = false;
         addErrorMessage(windowId, 'Er is een fout opgetreden bij het verwerken van je vraag.');
         console.error('Error sending prompt:', err);
+        
+        // Hide activity indicator on error
+        if (windowData.workflowConfig && windowData.workflowConfig.tabId) {
+            hideActivityIndicator(windowData.workflowConfig.tabId);
+        }
+        
         eventSource.close();
     });
 }
