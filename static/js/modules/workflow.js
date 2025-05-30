@@ -5,9 +5,9 @@ AIOntwikkelhulp.Workflow = (function() {
     
     // Workflow patterns
     const workflowPatterns = {
-        issueCreation: /Ik heb issue #?(\d+) aangemaakt voor Repo ([^\/]+)\/([^\s]+)/i,
-        prCreation: /Ik heb Pull Request #?(\d+) aangemaakt voor Repo ([^\/]+)\/([^\s]+)/i,
-        prProcessed: /Ik heb Pull Request #?(\d+) verwerkt en bijbehorende branche(?:([^\s]+))? verwijderd voor Repo ([^\/]+)\/([^\s.]+)\.?/i
+        issueCreation: /Ik heb issue #?(\\d+) aangemaakt voor Repo ([^\\/]+)\\/([^\\s]+)/i,
+        prCreation: /Ik heb Pull Request #?(\\d+) aangemaakt voor Repo ([^\\/]+)\\/([^\\s]+)/i,
+        prProcessed: /Ik heb Pull Request #?(\\d+) verwerkt en bijbehorende branche(?:([^\\s]+))? verwijderd voor Repo ([^\\/]+)\\/([^\\s.]+)\\.?/i
     };
 
     // Workflow configuration with model and preset settings per pattern
@@ -79,8 +79,13 @@ AIOntwikkelhulp.Workflow = (function() {
             
             // Initialize workflow tabs if not already done
             if (!AIOntwikkelhulp.State.getWorkflowTabsInitialized()) {
+                console.log('Initializing workflow tabs for the first time');
                 initializeWorkflowTabs();
                 AIOntwikkelhulp.State.setWorkflowTabsInitialized(true);
+            } else {
+                console.log('Workflow tabs already initialized, ensuring visibility');
+                // Ensure all tabs are visible
+                ensureTabsVisible();
             }
         } else {
             console.log('Workflow mode deactivated - switching to regular windows');
@@ -93,6 +98,34 @@ AIOntwikkelhulp.Workflow = (function() {
         }
     }
 
+    function ensureTabsVisible() {
+        const tabButtons = document.querySelectorAll('#workflow-tabs-container .nav-link');
+        const tabPanes = document.querySelectorAll('#workflow-tabs-container .tab-pane');
+        
+        console.log(`Found ${tabButtons.length} tab buttons and ${tabPanes.length} tab panes`);
+        
+        // Ensure all tab buttons are visible
+        tabButtons.forEach((button, index) => {
+            button.style.display = '';
+            console.log(`Tab button ${index + 1}: ${button.textContent.trim()}`);
+        });
+        
+        // Ensure all tab panes are present
+        tabPanes.forEach((pane, index) => {
+            pane.style.display = '';
+            console.log(`Tab pane ${index + 1}: ${pane.id}`);
+        });
+        
+        // Re-initialize Bootstrap tabs if needed
+        if (typeof bootstrap !== 'undefined') {
+            tabButtons.forEach(button => {
+                if (!button._bsTab) {
+                    new bootstrap.Tab(button);
+                }
+            });
+        }
+    }
+
     function initializeWorkflowTabs() {
         console.log('Initializing workflow tabs');
         
@@ -102,15 +135,26 @@ AIOntwikkelhulp.Workflow = (function() {
             'processed-tab': workflowConfig.prProcessed
         };
         
+        // First, ensure all tab buttons and panes are visible
+        ensureTabsVisible();
+        
+        // Then create chat windows for each tab
         for (const [tabId, config] of Object.entries(tabs)) {
             const tabPane = document.getElementById(tabId);
             const windowId = `workflow-${tabId}`;
             
+            if (!tabPane) {
+                console.error(`Tab pane ${tabId} not found in DOM`);
+                continue;
+            }
+            
             // Check if window already exists
-            if (document.querySelector(`[data-window-id="${windowId}"]`)) {
+            if (document.querySelector(`[data-window-id=\"${windowId}\"]`)) {
                 console.log(`Window ${windowId} already exists, skipping creation`);
                 continue;
             }
+            
+            console.log(`Creating chat window for tab: ${tabId}`);
             
             // Create chat window in the tab
             const chatWindow = AIOntwikkelhulp.WindowManager.createChatWindowElement(windowId);
@@ -124,6 +168,7 @@ AIOntwikkelhulp.Workflow = (function() {
             if (windowData) {
                 windowData.isWorkflowWindow = true;
                 windowData.workflowTabId = tabId;
+                console.log(`Marked window ${windowId} as workflow window for tab ${tabId}`);
             }
             
             // Configure the window with workflow settings
@@ -131,6 +176,37 @@ AIOntwikkelhulp.Workflow = (function() {
                 configureWorkflowWindow(chatWindow, config);
             }, 500);
         }
+        
+        // Verify all tabs are created and visible
+        setTimeout(() => {
+            verifyTabsCreation();
+        }, 1000);
+    }
+    
+    function verifyTabsCreation() {
+        const tabButtons = document.querySelectorAll('#workflow-tabs-container .nav-link');
+        const tabPanes = document.querySelectorAll('#workflow-tabs-container .tab-pane');
+        const chatWindows = document.querySelectorAll('#workflow-tabs-container .chat-window');
+        
+        console.log('=== Workflow Tabs Verification ===');
+        console.log(`Tab buttons found: ${tabButtons.length}`);
+        console.log(`Tab panes found: ${tabPanes.length}`);
+        console.log(`Chat windows in tabs: ${chatWindows.length}`);
+        
+        tabButtons.forEach((button, index) => {
+            const isVisible = button.offsetParent !== null;
+            console.log(`Tab ${index + 1} (${button.textContent.trim()}): ${isVisible ? 'VISIBLE' : 'HIDDEN'}`);
+        });
+        
+        if (tabButtons.length < 3) {
+            console.error('ERROR: Not all tab buttons are present!');
+        }
+        
+        if (chatWindows.length < 3) {
+            console.error('ERROR: Not all chat windows are created in tabs!');
+        }
+        
+        console.log('=== End Verification ===');
     }
     
     function monitorResponse(windowId, content) {
@@ -225,7 +301,7 @@ AIOntwikkelhulp.Workflow = (function() {
         }
         
         // Get the tab button
-        const tabButton = document.querySelector(`[data-bs-target="#${targetTabId}"]`);
+        const tabButton = document.querySelector(`[data-bs-target=\"#${targetTabId}\"]`);
         if (!tabButton) {
             console.error(`[Tab Workflow] Tab button for ${targetTabId} not found`);
             return;
@@ -253,8 +329,13 @@ AIOntwikkelhulp.Workflow = (function() {
                 tabButton.addEventListener('shown.bs.tab', onTabShown);
                 
                 // Activate the tab
-                const tab = new bootstrap.Tab(tabButton);
-                tab.show();
+                if (typeof bootstrap !== 'undefined') {
+                    const tab = new bootstrap.Tab(tabButton);
+                    tab.show();
+                } else {
+                    // Fallback if Bootstrap is not available
+                    tabButton.click();
+                }
                 
                 // Timeout fallback in case event doesn't fire
                 setTimeout(() => {
@@ -278,7 +359,7 @@ AIOntwikkelhulp.Workflow = (function() {
 
     // Activity indicator functies
     function showActivityIndicator(tabId) {
-        const indicator = document.querySelector(`[data-bs-target="#${tabId}"] .activity-indicator`);
+        const indicator = document.querySelector(`[data-bs-target=\"#${tabId}\"] .activity-indicator`);
         if (indicator) {
             indicator.style.display = 'inline';
             console.log(`[Activity] Showing indicator for tab ${tabId}`);
@@ -286,7 +367,7 @@ AIOntwikkelhulp.Workflow = (function() {
     }
 
     function hideActivityIndicator(tabId) {
-        const indicator = document.querySelector(`[data-bs-target="#${tabId}"] .activity-indicator`);
+        const indicator = document.querySelector(`[data-bs-target=\"#${tabId}\"] .activity-indicator`);
         if (indicator) {
             indicator.style.display = 'none';
             console.log(`[Activity] Hiding indicator for tab ${tabId}`);
@@ -467,7 +548,7 @@ AIOntwikkelhulp.Workflow = (function() {
     function autoCloseWindow(windowId) {
         console.log('Auto-closing window:', windowId);
         
-        const windowElement = document.querySelector(`[data-window-id="${windowId}"]`);
+        const windowElement = document.querySelector(`[data-window-id=\"${windowId}\"]`);
         if (!windowElement) return;
         
         // Make sure we're not closing the last window
