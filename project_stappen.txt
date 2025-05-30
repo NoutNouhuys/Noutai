@@ -250,6 +250,42 @@
      - static/js/home.js - Nieuwe file met alle JavaScript
      - static/css/home.css - Nieuwe file met alle CSS
      - templates/components/chat_window.html - Nieuwe component
+18. [✓] Verbeter logging details voor tool uitvoering (Issue #88) - VOLTOOID
+   - Probleem: Generieke logging zoals "Tool get_file_contents executed successfully" geeft onvoldoende inzicht
+   - Doelstelling: Gedetailleerde logging voor debugging, transparantie en monitoring
+   - Implementatie:
+     - [✓] Enhanced tool logging in mcp_integration.py:
+       - Tool start logging met geformatteerde parameters per tool type
+       - Tool completion logging met beknopte resultaat samenvatting
+       - Tool failure logging met duidelijke error informatie
+       - Tool-specifieke parameter formatting voor betere leesbaarheid
+       - Result summarization voor verschillende tool types
+     - [✓] Frontend log formatter uitbreiding in log-formatter.js:
+       - Detectie van nieuwe log patterns (tool_start, tool_complete, tool_failed)
+       - Formattering van enhanced tool logging patterns
+       - Backwards compatibility met legacy tool_use patterns
+     - [✓] CSS styling uitbreiding in log-formatter.css:
+       - Visual styling voor tool-start-log, tool-complete-log, tool-failed-log
+       - Animaties (pulse voor start, success pulse voor complete, shake voor failed)
+       - Dark mode ondersteuning voor alle nieuwe patterns
+       - Visual hierarchy met icons en parameter indentation
+   - Features:
+     - [✓] Visual indicators: ▶ voor start, ✓ voor success, ✗ voor failure
+     - [✓] Tool-specifieke parameter formatting (GitHub operations, file operations, etc.)
+     - [✓] Intelligent result summarization met tool-specifieke informatie
+     - [✓] Visueel onderscheidbare log types met kleurcodering
+     - [✓] Responsive design en mobile support
+     - [✓] Performance optimalisatie (grote resultaten worden samengevat)
+   - Resultaat:
+     - [✓] Veel gedetailleerdere logging voor developers en gebruikers
+     - [✓] Betere debugging mogelijkheden
+     - [✓] Transparantie in tool uitvoering
+     - [✓] Visueel aantrekkelijke en informatieve log weergave
+   - Bestanden gewijzigd:
+     - mcp_integration.py - Enhanced tool logging implementatie
+     - static/js/log-formatter.js - Nieuwe log pattern detectie en formatting
+     - static/css/log-formatter.css - Styling voor enhanced tool logging
+     - project_info.txt - Documentatie update
 
 ## Toekomstige stappen (Must-have)
 
@@ -299,3 +335,10 @@ Alle must-have taken zijn uitgevoerd.
    - Model performance comparison metrics
    - Custom reporting en data export
    - Integration met external analytics platforms
+
+8. Enhanced tool logging features
+   - Configureerbare log levels (minimal, normal, detailed, debug)
+   - Log filtering en search functionaliteit
+   - Export van log data voor analyse
+   - Real-time log streaming
+   - Tool performance metrics en analytics
