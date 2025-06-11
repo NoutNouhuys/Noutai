@@ -1,5 +1,32 @@
 # Instructies voor ontwikkelproces (volg deze nauwkeurig op)
 
+## 0. Repository Summary (nieuwe stap)
+
+0.1 Bij het commando 'ga' of 'ga' met een repository:
+
+0.1.1 Controleer of er .py bestanden aanwezig zijn in de repository
+* 0.1.1.1 Gebruik search_code om te zoeken naar Python bestanden
+* 0.1.1.2 Als er geen .py bestanden zijn, sla deze stap over en ga naar Stap 1
+
+0.1.2 Als er .py bestanden zijn, controleer of `repository_summary.txt` bestaat:
+* 0.1.2.1 Als het bestaat, ga naar Stap 1
+* 0.1.2.2 Als het niet bestaat, maak `repository_summary.txt` aan
+
+0.1.3 Vul `repository_summary.txt` met:
+* 0.1.3.1 Repository naam en beschrijving
+* 0.1.3.2 Uitgebreide project structuur (directory tree)
+* 0.1.3.3 Voor elk Python bestand:
+  - Bestandsnaam en pad
+  - Doel en functionaliteit van het bestand
+  - Belangrijke classes en functies met korte beschrijving
+  - Dependencies en imports
+  - Relatie tot andere bestanden in het project
+* 0.1.3.4 Overzicht van gebruikte frameworks en libraries
+* 0.1.3.5 Entry points en hoe de applicatie gestart wordt
+* 0.1.3.6 Configuratie bestanden en hun rol
+
+0.1.4 Commit en push `repository_summary.txt`
+
 ## 1. Controleer project\_info.txt
 
 1.1 Als `project_info.txt` bestaat, lees altijd dit bestand eerst en ga naar Stap 2.
