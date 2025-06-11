@@ -1,7 +1,7 @@
 # Project Informatie: aiontwikkelhulp
 
 ## Projectoverzicht
-De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie. Bevat workflow automatisering voor het automatisch openen en sluiten van chat windows op basis van AI responses, inclusief automatische configuratie van nieuwe chats met Claude Sonnet 4 en developer_agent preset. Volledig analytics systeem voor token usage tracking, kosten berekening en usage insights met real-time weergave in de chat interface. Uitgebreid met conversation enhancements voor token usage weergave en bulk delete functionaliteit. CSRF token ondersteuning geïmplementeerd voor alle API calls. Volledig gerefactored voor betere code organisatie met scheiding van HTML, JavaScript en CSS. Enhanced tool logging geïmplementeerd voor gedetailleerde inzichten in tool uitvoering met visueel onderscheidbare log patterns. Workflow tabs functionaliteit geïmplementeerd voor directe toegang tot 3 verschillende workflow profielen via tabs in plaats van één enkel window, wat de gebruikservaring verbetert door directe toegang, overzicht en efficiëntie. Tab kleurstelling verbeterd voor optimale leesbaarheid in zowel light als dark mode met WCAG AA compliance.
+De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie. Bevat workflow automatisering voor het automatisch openen en sluiten van chat windows op basis van AI responses, inclusief automatische configuratie van nieuwe chats met Claude Sonnet 4 en developer_agent preset. Volledig analytics systeem voor token usage tracking, kosten berekening en usage insights met real-time weergave in de chat interface. Uitgebreid met conversation enhancements voor token usage weergave en bulk delete functionaliteit. CSRF token ondersteuning geïmplementeerd voor alle API calls. Volledig gerefactored voor betere code organisatie met scheiding van HTML, JavaScript en CSS. Enhanced tool logging geïmplementeerd voor gedetailleerde inzichten in tool uitvoering met visueel onderscheidbare log patterns. Workflow tabs functionaliteit geïmplementeerd voor directe toegang tot 3 verschillende workflow profielen via tabs in plaats van één enkel window, wat de gebruikservaring verbetert door directe toegang, overzicht en efficiëntie. Tab kleurstelling verbeterd voor optimale leesbaarheid in zowel light als dark mode met WCAG AA compliance. Repository summary generatie toegevoegd aan werkwijze voor automatische documentatie van Python projecten.
 
 ## Architectuur
 De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruikers te helpen bij het ontwikkelen van software met behulp van AI:
@@ -39,6 +39,18 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - static/css/log-formatter.css - Styling voor geformatteerde logs met enhanced tool logging patterns
 
 ## Modules
+
+### werkwijze/werkwijze.txt
+- **Status**: Uitgebreid met repository summary stap
+- **Pad**: /werkwijze/werkwijze.txt
+- **Functionaliteit**: Bevat instructies voor het AI-model over hoe repository-ontwikkeling moet verlopen. Nieuwe stap 0 toegevoegd voor automatische generatie van repository_summary.txt wanneer Python bestanden aanwezig zijn. Deze stap zorgt voor uitgebreide documentatie van de project structuur, Python modules, dependencies, en entry points.
+- **Afhankelijkheden**: Wordt gebruikt door anthropic_config.py (lazy loaded)
+
+### repository_summary.txt
+- **Status**: Nieuw toegevoegd
+- **Pad**: /repository_summary.txt
+- **Functionaliteit**: Automatisch gegenereerde uitgebreide documentatie van de repository structuur. Bevat project overzicht, directory tree, gedetailleerde beschrijvingen van alle Python modules inclusief hun doel, belangrijke functies/classes, dependencies en relaties. Ook configuratie bestanden, entry points, en belangrijke features worden gedocumenteerd.
+- **Afhankelijkheden**: Geen (wordt gegenereerd op basis van repository inhoud)
 
 ### static/css/home.css
 - **Status**: Verbeterd met professionele tab kleurstelling en WCAG AA compliance (5.4KB)
@@ -235,12 +247,6 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Pad**: /database.py
 - **Functionaliteit**: Database configuratie en session management voor SQLAlchemy. TokenUsage model import voor analytics functionaliteit.
 - **Afhankelijkheden**: Flask-SQLAlchemy, models/token_usage.py
-
-### werkwijze/werkwijze.txt
-- **Status**: Actief
-- **Pad**: /werkwijze/werkwijze.txt
-- **Functionaliteit**: Bevat instructies voor het AI-model over hoe repository-ontwikkeling moet verlopen.
-- **Afhankelijkheden**: Wordt gebruikt door anthropic_config.py (lazy loaded)
 
 ### system_prompt.txt
 - **Status**: Actief
