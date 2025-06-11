@@ -6,6 +6,7 @@ import logging
 import asyncio
 from typing import Dict, List, Optional, Tuple, Union, Any
 from flask import current_app
+from pathlib import Path
 
 from anthropic_config import AnthropicConfig
 from anthropic_client import AnthropicClient
@@ -13,6 +14,7 @@ from conversation_manager import ConversationManager
 from mcp_integration import MCPIntegration
 from repositories.conversation_repository import ConversationRepository
 from analytics.token_tracker import TokenTracker
+from repository_analyzer import RepositoryAnalyzer, generate_repository_summary
 
 # Setup logger
 logger = logging.getLogger(__name__)
@@ -209,6 +211,49 @@ class AnthropicAPI:
             logger.error(f"Error getting conversation analytics: {e}")
             return {'error': str(e)}
     
+    def generate_repository_summary(self, repo_path: str = ".") -> str:
+        """
+        Generate a summary of the repository structure and contents.
+        
+        Args:
+            repo_path: Path to the repository root
+            
+        Returns:
+            Repository summary as a string
+        """
+        try:
+            logger.info(f"Generating repository summary for: {repo_path}")
+            return generate_repository_summary(repo_path)
+        except Exception as e:
+            logger.error(f"Error generating repository summary: {e}")
+            raise
+    
+    def check_and_generate_repository_summary(self, repo_path: str = ".") -> Optional[str]:
+        """
+        Check if repository_summary.txt exists and generate it if needed.
+        
+        Args:
+            repo_path: Path to the repository root
+            
+        Returns:
+            Path to the summary file if generated, None if already exists
+        """
+        summary_path = Path(repo_path) / "repository_summary.txt"
+        
+        if not summary_path.exists():
+            logger.info("repository_summary.txt not found, generating...")
+            summary_content = self.generate_repository_summary(repo_path)
+            
+            # Write the summary to file
+            with open(summary_path, 'w', encoding='utf-8') as f:
+                f.write(summary_content)
+            
+            logger.info(f"Generated repository_summary.txt at {summary_path}")
+            return str(summary_path)
+        else:
+            logger.info("repository_summary.txt already exists")
+            return None
+    
     async def _send_prompt_async(
         self,
         messages: List[Dict[str, Any]],
@@ -372,8 +417,8 @@ class AnthropicAPI:
         preset_name: Optional[str] = None,
         include_logs: bool = True,
         log_callback: Optional[callable] = None,
-        repo_path: Optional[str] = None,  # Kept for backwards compatibility
-        include_project_info: Optional[bool] = None,  # New parameter
+        repo_path: Optional[str] = None,
+        include_project_info: Optional[bool] = None,
     ) -> Dict[str, Any]:
         """
         Send a prompt to Claude and return the response.
@@ -388,12 +433,18 @@ class AnthropicAPI:
             preset_name: Optional LLM preset name to use
             include_logs: Whether to capture log messages
             log_callback: Optional callback for log messages
-            repo_path: Path to repository (kept for backwards compatibility)
+            repo_path: Path to repository (used for repository summary generation)
             include_project_info: Whether to include project info (auto-detected if None)
             
         Returns:
             Dictionary with response data and metadata
         """
+        # Check if this is a development-related prompt and handle repository summary
+        if self._should_include_project_info(prompt) and repo_path:
+            summary_path = self.check_and_generate_repository_summary(repo_path)
+            if summary_path and log_callback:
+                log_callback(f"Generated repository_summary.txt at {summary_path}")
+        
         # Setup parameters
         model_id = model_id or self.default_model
         system_prompt = system_prompt or self.system_prompt
