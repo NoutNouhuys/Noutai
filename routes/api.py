@@ -719,6 +719,7 @@ def send_prompt():
         temperature: (Optional) Temperature for response generation (0.0-1.0)
         max_tokens: (Optional) Maximum tokens for response
         preset_name: (Optional) LLM preset name to use
+        repo_path: (Optional) Path to repository for context
         
     Returns:
         JSON response with Claude's reply and metadata
@@ -741,6 +742,7 @@ def send_prompt():
         temperature = data.get('temperature')
         max_tokens = data.get('max_tokens')
         preset_name = data.get('preset_name')
+        repo_path = data.get('repo_path', '.')  # Default to current directory
         
         # Validate model_id
         if not _validate_model_id(model_id):
@@ -787,7 +789,7 @@ def send_prompt():
         anthropic_api.conversation_manager = conv_manager
         
         try:
-            # Call the Anthropic API
+            # Call the Anthropic API with repo_path
             response = anthropic_api.send_prompt(
                 prompt=prompt,
                 model_id=model_id,
@@ -795,7 +797,8 @@ def send_prompt():
                 system_prompt=system_prompt,
                 temperature=temperature,
                 max_tokens=max_tokens,
-                preset_name=preset_name
+                preset_name=preset_name,
+                repo_path=repo_path
             )
         finally:
             # Restore original conversation manager
@@ -903,6 +906,7 @@ def send_prompt_stream():
     temperature = request.args.get('temperature')
     max_tokens = request.args.get('max_tokens')
     preset_name = request.args.get('preset_name')
+    repo_path = request.args.get('repo_path', '.')  # Default to current directory
     
     # Validate model_id
     if not _validate_model_id(model_id):
@@ -970,6 +974,7 @@ def send_prompt_stream():
                         max_tokens=max_tokens,
                         preset_name=preset_name,
                         log_callback=callback,
+                        repo_path=repo_path
                     )
                 finally:
                     # Restore original conversation manager
