@@ -1,0 +1,309 @@
+# Repository Summary: Noutai (AI Ontwikkelhulp)
+
+## Repository Informatie
+- **Naam**: Noutai
+- **Beschrijving**: Een geavanceerde AI-ontwikkelhulp tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen.
+- **Hoofddoel**: Gestructureerde AI-gestuurde ontwikkeling volgens een vooraf gedefinieerde werkwijze met uitgebreide analytics, workflow automatisering en configureerbare LLM instellingen.
+
+## Project Structuur
+
+```
+Noutai/
+├── app.py                          # Flask applicatie entry point
+├── anthropic_api.py                # High-level API voor Anthropic Claude integratie
+├── anthropic_client.py             # Low-level client voor directe API communicatie
+├── anthropic_config.py             # Configuratie management voor Anthropic
+├── auth.py                         # Authenticatie en autorisatie
+├── config.py                       # Algemene applicatie configuratie
+├── conversation_manager.py         # Conversatie staat en geschiedenis beheer
+├── database.py                     # Database configuratie en session management
+├── mcp_connector.py                # MCP server communicatie
+├── mcp_integration.py              # MCP tools integratie met enhanced logging
+├── user.py                         # User management
+├── analytics/                      # Analytics modules
+│   ├── __init__.py
+│   ├── analytics_service.py        # Analytics data aggregatie en insights
+│   ├── cost_calculator.py          # Kosten berekening voor token usage
+│   └── token_tracker.py            # Token usage monitoring en recording
+├── models/                         # Database modellen
+│   ├── __init__.py
+│   ├── conversation.py             # Conversation en Message modellen
+│   └── token_usage.py              # Token usage tracking model
+├── repositories/                   # Data access layer
+│   ├── __init__.py
+│   ├── analytics_repository.py     # Analytics data operaties
+│   └── conversation_repository.py  # Conversation CRUD operaties
+├── routes/                         # API routes
+│   ├── __init__.py
+│   ├── analytics.py                # Analytics API endpoints
+│   └── api.py                      # Hoofd API endpoints
+├── static/                         # Frontend assets
+│   ├── css/
+│   │   ├── analytics.css           # Analytics dashboard styling
+│   │   ├── home.css                # Home page en workflow tabs styling
+│   │   ├── log-formatter.css       # Log formatting styling
+│   │   └── style.css               # Algemene applicatie styling
+│   └── js/
+│       ├── analytics.js            # Analytics dashboard functionaliteit
+│       ├── home.js                 # Home page en workflow automatisering
+│       └── log-formatter.js        # Log formatting functionaliteit
+├── templates/                      # HTML templates
+│   ├── analytics.html              # Analytics dashboard
+│   ├── base.html                   # Basis template met navigatie
+│   ├── conversations.html          # Conversation management interface
+│   ├── home.html                   # Hoofdpagina met chat interface
+│   └── components/
+│       └── chat_window.html        # Herbruikbare chat window component
+├── tests/                          # Unit en integratie tests
+│   ├── __init__.py
+│   ├── test_anthropic_api.py
+│   ├── test_anthropic_client.py
+│   ├── test_anthropic_config.py
+│   ├── test_anthropic_config_llm_settings.py
+│   ├── test_api_conversation_persistence.py
+│   ├── test_api_llm_settings.py
+│   ├── test_auth.py
+│   ├── test_config.py
+│   ├── test_conversation_manager.py
+│   ├── test_database.py
+│   ├── test_prompt_cache_control.py
+│   ├── test_tool_deduplication.py
+│   └── test_werkwijze_repo.py
+├── werkwijze/                      # Werkwijze instructies
+│   └── werkwijze.txt               # AI ontwikkelproces instructies
+├── migrations/                     # Database migraties
+│   ├── env.py
+│   └── rename_metadata_field.py
+├── project_info.txt                # Project documentatie
+├── project_stappen.txt             # Ontwikkelstappen tracking
+├── repository_summary.txt          # Dit bestand
+├── requirements.txt                # Python dependencies
+├── start.txt                       # Project start instructies
+└── system_prompt.txt               # AI system prompt
+
+```
+
+## Core Python Modules
+
+### app.py
+- **Doel**: Flask applicatie entry point en configuratie
+- **Belangrijke functies**:
+  - `create_app()`: Factory functie voor Flask app creatie met configuratie
+  - `configure_logging()`: Logging setup voor verschillende modules
+  - `configure_security()`: Security features zoals CSRF protection
+  - `register_routes()`: Route registratie voor alle endpoints
+- **Dependencies**: Flask, Flask-WTF, config, auth, routes, database
+- **Entry point**: Kan direct uitgevoerd worden met `python app.py`
+
+### anthropic_api.py
+- **Doel**: High-level API voor interactie met Anthropic Claude modellen
+- **Belangrijke classes**:
+  - `AnthropicAPI`: Hoofdklasse die client, conversation management en MCP integratie coördineert
+- **Belangrijke functies**:
+  - `send_prompt()`: Hoofdfunctie voor het verzenden van prompts naar Claude
+  - `get_conversation_analytics()`: Analytics data voor conversations
+  - `update_runtime_settings()`: Runtime LLM settings aanpassen
+  - `_send_prompt_async()`: Async implementatie voor prompt handling
+- **Dependencies**: anthropic_config, anthropic_client, conversation_manager, mcp_integration, token_tracker
+- **Relatie**: Centrale module die alle AI-gerelateerde functionaliteit samenbrengt
+
+### anthropic_client.py
+- **Doel**: Pure API communicatie met Claude modellen
+- **Belangrijke functies**:
+  - `create_message()`: Direct API calls naar Anthropic
+  - `get_available_models()`: Lijst van beschikbare modellen
+  - `get_llm_settings()`: LLM configuratie ophalen
+  - Ondersteunt ephemeral caching voor system prompt en project info
+- **Dependencies**: anthropic library, anthropic_config
+- **Relatie**: Low-level client gebruikt door anthropic_api.py
+
+### anthropic_config.py
+- **Doel**: Centralized Anthropic-specifieke configuratie
+- **Features**:
+  - Lazy loading van configuratiebestanden (werkwijze.txt, system_prompt.txt, project_info.txt)
+  - LLM presets (developer_agent, creative_writing, analysis, balanced)
+  - Temperature en max_tokens configuratie
+  - Environment variable ondersteuning
+- **Dependencies**: os, pathlib
+- **Relatie**: Gebruikt door alle Anthropic-gerelateerde modules
+
+### conversation_manager.py
+- **Doel**: Beheer van conversatie staat en geschiedenis
+- **Features**:
+  - In-memory en database-backed storage
+  - Pagination en search functionaliteit
+  - Metadata beheer voor conversations
+  - Soft delete ondersteuning
+- **Dependencies**: repositories.conversation_repository
+- **Relatie**: Gebruikt door anthropic_api.py voor conversation tracking
+
+### mcp_integration.py
+- **Doel**: MCP (Model Context Protocol) server integratie
+- **Features**:
+  - Enhanced tool logging met gedetailleerde parameters
+  - Tool start/complete/failed logging patterns
+  - Async tool execution handling
+  - Visual indicators voor tool status
+- **Dependencies**: mcp_connector, anthropic_config
+- **Relatie**: Gebruikt door anthropic_api.py voor externe tool integratie
+
+### auth.py
+- **Doel**: Authenticatie en autorisatie via OAuth
+- **Features**:
+  - Google OAuth integratie
+  - Domain-based access control (@lynxx.nl)
+  - Flask-Login integratie
+  - Session management
+- **Dependencies**: Flask-Login, Authlib, user model
+- **Relatie**: Beschermt routes in app.py
+
+### database.py
+- **Doel**: Database configuratie en SQLAlchemy setup
+- **Features**:
+  - SQLAlchemy session management
+  - Database initialisatie
+  - Model registratie
+- **Dependencies**: Flask-SQLAlchemy
+- **Relatie**: Basis voor alle database operaties
+
+## Analytics Modules
+
+### analytics/token_tracker.py
+- **Doel**: Token usage tracking en recording
+- **Features**:
+  - Real-time token usage recording
+  - Conversation-level analytics
+  - Usage trends en patterns
+  - Cleanup van oude records
+- **Dependencies**: models.token_usage, cost_calculator
+- **Relatie**: Gebruikt door anthropic_api.py voor usage tracking
+
+### analytics/cost_calculator.py
+- **Doel**: Kosten berekening voor AI model gebruik
+- **Features**:
+  - Model-specifieke pricing
+  - Cache cost calculations
+  - Cost projections
+  - Efficiency metrics
+- **Dependencies**: Geen directe dependencies
+- **Relatie**: Gebruikt door token_tracker en analytics_service
+
+### analytics/analytics_service.py
+- **Doel**: Analytics data aggregatie en insights
+- **Features**:
+  - Dashboard data generatie
+  - Usage patterns analyse
+  - Automated insights
+  - Model comparison metrics
+- **Dependencies**: token_tracker, cost_calculator, analytics_repository
+- **Relatie**: Gebruikt door analytics API endpoints
+
+## Frontend Modules
+
+### static/js/home.js
+- **Doel**: JavaScript voor home page functionaliteit
+- **Features**:
+  - Workflow tabs management
+  - Workflow automatisering (Issue/PR/PR Processed flows)
+  - Chat window management
+  - Real-time message streaming
+  - Activity indicators
+- **Dependencies**: log-formatter.js
+- **Relatie**: Hoofdscript voor chat interface
+
+### static/js/analytics.js
+- **Doel**: Analytics dashboard functionaliteit
+- **Features**:
+  - Chart.js visualisaties
+  - Period selection
+  - Data loading en formatting
+  - Real-time updates
+- **Dependencies**: Chart.js library
+- **Relatie**: Gebruikt door analytics.html template
+
+### static/js/log-formatter.js
+- **Doel**: Log berichten formattering
+- **Features**:
+  - Enhanced tool logging patterns detectie
+  - JSON syntax highlighting
+  - Collapsible log sections
+  - Tool-specifieke formatting
+- **Dependencies**: Geen
+- **Relatie**: Gebruikt door home.js voor log weergave
+
+## API Routes
+
+### routes/api.py
+- **Doel**: Hoofd API endpoints
+- **Features**:
+  - Conversation management endpoints
+  - Prompt streaming endpoint
+  - LLM settings endpoints
+  - Token usage endpoints
+  - CSRF protection
+- **Dependencies**: anthropic_api, conversation_manager, repositories
+- **Relatie**: Centrale API voor frontend communicatie
+
+### routes/analytics.py
+- **Doel**: Analytics API endpoints
+- **Features**:
+  - Dashboard data endpoint
+  - Token usage endpoints
+  - Cost analysis endpoints
+  - Trends en insights endpoints
+- **Dependencies**: analytics_service, token_tracker, cost_calculator
+- **Relatie**: Analytics data voor frontend
+
+## Configuratie Bestanden
+
+### requirements.txt
+- Flask en extensions (Flask-Login, Flask-WTF, Flask-SQLAlchemy)
+- Anthropic SDK
+- Authlib voor OAuth
+- SQLAlchemy voor database
+- python-dotenv voor environment variables
+- Andere utilities (requests, asyncio, etc.)
+
+### werkwijze/werkwijze.txt
+- Gedetailleerde instructies voor AI-gestuurde ontwikkeling
+- Stappen voor issue creation, development, en PR workflow
+- Repository summary generatie instructies (nieuw toegevoegd)
+
+### system_prompt.txt
+- Basis instructies voor het AI model
+- Wordt gecombineerd met werkwijze voor complete context
+
+### project_info.txt
+- Uitgebreide project documentatie
+- Module beschrijvingen en status
+- Wordt gecached voor development vragen
+
+## Entry Points en Gebruik
+
+1. **Ontwikkeling starten**: `python app.py`
+   - Start Flask development server op port 5000
+   - Vereist environment variables in .env file
+
+2. **Productie deployment**:
+   - Gebruik WSGI server zoals Gunicorn
+   - Configure reverse proxy (nginx/Apache)
+   - Set FLASK_ENV=production
+
+3. **Database setup**:
+   - Run migrations met Alembic
+   - Database wordt automatisch aangemaakt bij eerste run
+
+4. **MCP Server**:
+   - Optioneel: configureer MCP_SERVER_SCRIPT_PATH
+   - Biedt externe tool integratie voor AI
+
+## Belangrijke Features
+
+1. **Workflow Automatisering**: 3 workflow profielen met automatische tab switching
+2. **Analytics Dashboard**: Uitgebreide token usage en cost tracking
+3. **Enhanced Tool Logging**: Gedetailleerde logging van tool uitvoering
+4. **LLM Presets**: Voorgedefinieerde settings voor verschillende use cases
+5. **Conversation Persistence**: Robuuste database-backed conversation storage
+6. **CSRF Protection**: Volledige bescherming tegen CSRF aanvallen
+7. **OAuth Authentication**: Veilige authenticatie via Google OAuth
+8. **Responsive Design**: Werkt op desktop en mobile devices
