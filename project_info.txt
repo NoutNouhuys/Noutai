@@ -1,17 +1,18 @@
 # Project Informatie: aiontwikkelhulp
 
 ## Projectoverzicht
-De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie. Bevat workflow automatisering voor het automatisch openen en sluiten van chat windows op basis van AI responses, inclusief automatische configuratie van nieuwe chats met Claude Sonnet 4 en developer_agent preset. Volledig analytics systeem voor token usage tracking, kosten berekening en usage insights met real-time weergave in de chat interface. Uitgebreid met conversation enhancements voor token usage weergave en bulk delete functionaliteit. CSRF token ondersteuning geïmplementeerd voor alle API calls. Volledig gerefactored voor betere code organisatie met scheiding van HTML, JavaScript en CSS. Enhanced tool logging geïmplementeerd voor gedetailleerde inzichten in tool uitvoering met visueel onderscheidbare log patterns. Workflow tabs functionaliteit geïmplementeerd voor directe toegang tot 3 verschillende workflow profielen via tabs in plaats van één enkel window, wat de gebruikservaring verbetert door directe toegang, overzicht en efficiëntie. Tab kleurstelling verbeterd voor optimale leesbaarheid in zowel light als dark mode met WCAG AA compliance.
+De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie. Bevat workflow automatisering voor het automatisch openen en sluiten van chat windows op basis van AI responses, inclusief automatische configuratie van nieuwe chats met Claude Sonnet 4 en developer_agent preset. Volledig analytics systeem voor token usage tracking, kosten berekening en usage insights met real-time weergave in de chat interface. Uitgebreid met conversation enhancements voor token usage weergave en bulk delete functionaliteit. CSRF token ondersteuning geïmplementeerd voor alle API calls. Volledig gerefactored voor betere code organisatie met scheiding van HTML, JavaScript en CSS. Enhanced tool logging geïmplementeerd voor gedetailleerde inzichten in tool uitvoering met visueel onderscheidbare log patterns. Workflow tabs functionaliteit geïmplementeerd voor directe toegang tot 3 verschillende workflow profielen via tabs in plaats van één enkel window, wat de gebruikservaring verbetert door directe toegang, overzicht en efficiëntie. Tab kleurstelling verbeterd voor optimale leesbaarheid in zowel light als dark mode met WCAG AA compliance. Repository summary generatie functionaliteit toegevoegd voor automatische documentatie van repository structuur.
 
 ## Architectuur
 De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruikers te helpen bij het ontwikkelen van software met behulp van AI:
 
 ### Core Modules:
 - Flask web-applicatie (app.py) - met analytics routes en CSRF protection
-- Anthropic API integratie (anthropic_api.py) - met token tracking integratie
+- Anthropic API integratie (anthropic_api.py) - met token tracking integratie en repository summary generatie
 - MCP Connector voor tools integratie (mcp_connector.py)
 - Configuratie (config.py)
 - Repository beheer
+- Repository analyzer (repository_analyzer.py) - voor automatische repository documentatie
 
 ### Analytics Modules:
 - Token tracker (analytics/token_tracker.py) - Token usage monitoring en recording
@@ -39,6 +40,42 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - static/css/log-formatter.css - Styling voor geformatteerde logs met enhanced tool logging patterns
 
 ## Modules
+
+### repository_analyzer.py
+- **Status**: Nieuw toegevoegd
+- **Pad**: /repository_analyzer.py
+- **Functionaliteit**: Module voor het analyseren van repository structuur en het genereren van samenvattingen. Belangrijke features:
+  - Analyseert alle relevante bestanden in een repository
+  - Genereert beschrijvingen op basis van bestandsinhoud en context
+  - Identificeert hoofdcomponenten van de applicatie
+  - Creëert gestructureerde markdown output
+  - Filtert irrelevante bestanden en directories
+  - Ondersteunt verschillende bestandstypen en programmeertalen
+- **Afhankelijkheden**: pathlib, os, logging, mimetypes
+
+### werkwijze/werkwijze.txt
+- **Status**: Bijgewerkt met stap 0 voor repository summary generatie
+- **Pad**: /werkwijze/werkwijze.txt
+- **Functionaliteit**: Bevat instructies voor het AI-model over hoe repository-ontwikkeling moet verlopen. Nieuwe stap 0 toegevoegd die controleert of repository_summary.txt bestaat en deze genereert indien nodig in een nieuwe branch.
+- **Afhankelijkheden**: Wordt gebruikt door anthropic_config.py (lazy loaded)
+
+### anthropic_api.py
+- **Status**: Uitgebreid met repository summary generatie functionaliteit
+- **Pad**: /anthropic_api.py
+- **Functionaliteit**: High-level API voor interactie met Anthropic Claude modellen. Coördineert tussen client, conversation management, MCP integratie, en token tracking. Nieuwe functies toegevoegd:
+  - generate_repository_summary(): Genereert een samenvatting van de repository
+  - check_and_generate_repository_summary(): Controleert en genereert repository_summary.txt indien nodig
+  - Ondersteunt repo_path parameter in send_prompt() voor context-aware repository analyse
+- **Afhankelijkheden**: anthropic_config.py, anthropic_client.py, conversation_manager.py, mcp_integration.py, repositories, analytics/token_tracker.py, repository_analyzer.py
+
+### routes/api.py
+- **Status**: Uitgebreid met repo_path parameter ondersteuning
+- **Pad**: /routes/api.py
+- **Functionaliteit**: API endpoints voor conversation management inclusief pagination, search, bulk operations, CRUD operaties met database persistence. Nieuwe functionaliteit:
+  - repo_path parameter toegevoegd aan /api/prompt endpoint
+  - repo_path parameter toegevoegd aan /api/prompt_stream endpoint
+  - Standaard waarde '.' voor repo_path om huidige directory te gebruiken
+- **Afhankelijkheden**: anthropic_api.py, ConversationManager, ConversationRepository, AnalyticsRepository, Flask app context, Flask-WTF CSRF
 
 ### static/css/home.css
 - **Status**: Verbeterd met professionele tab kleurstelling en WCAG AA compliance (5.4KB)
@@ -122,12 +159,6 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Functionaliteit**: Basis template met navigatie, thema switching en CSRF token meta tag. Bevat `<meta name="csrf-token" content="{{ csrf_token() }}">` voor frontend toegang tot CSRF token.
 - **Afhankelijkheden**: Flask-WTF CSRF token functionaliteit
 
-### routes/api.py
-- **Status**: Uitgebreid met token usage endpoints, enhanced conversations API en CSRF protection
-- **Pad**: /routes/api.py
-- **Functionaliteit**: API endpoints voor conversation management inclusief pagination, search, bulk operations, CRUD operaties met database persistence. Geïntegreerd met ConversationManager voor robuuste data handling. Bugfix toegepast voor thread context issue in send_prompt_stream functie. LLM settings API endpoints, temperature en preset ondersteuning in prompt endpoints. Token usage endpoints: GET /api/analytics/conversations/<id>/usage voor conversation-specifieke usage data, GET /api/analytics/users/<id>/usage voor user usage summaries. Enhanced conversations endpoint met include_usage parameter voor token data. Volledige CSRF protection via Flask-WTF voor alle POST/PUT/DELETE endpoints met proper error handling.
-- **Afhankelijkheden**: anthropic_api.py, ConversationManager, ConversationRepository, AnalyticsRepository, Flask app context, Flask-WTF CSRF
-
 ### static/css/style.css
 - **Status**: Uitgebreid met conversation enhancements styling
 - **Pad**: /static/css/style.css
@@ -188,12 +219,6 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Functionaliteit**: JavaScript voor analytics dashboard functionaliteit. Ondersteunt data loading, Chart.js visualisaties, period selection, error handling, en data formatting.
 - **Afhankelijkheden**: Chart.js library
 
-### anthropic_api.py
-- **Status**: Uitgebreid met token tracking integratie
-- **Pad**: /anthropic_api.py
-- **Functionaliteit**: High-level API voor interactie met Anthropic Claude modellen. Coördineert tussen client, conversation management, MCP integratie, en token tracking. Ondersteunt conditionele inclusie van project_info in cache. Token usage recording, conversation analytics, real-time usage tracking.
-- **Afhankelijkheden**: anthropic_config.py, anthropic_client.py, conversation_manager.py, mcp_integration.py, repositories, analytics/token_tracker.py
-
 ### anthropic_config.py
 - **Status**: Uitgebreid met LLM settings en presets
 - **Pad**: /anthropic_config.py
@@ -235,12 +260,6 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Pad**: /database.py
 - **Functionaliteit**: Database configuratie en session management voor SQLAlchemy. TokenUsage model import voor analytics functionaliteit.
 - **Afhankelijkheden**: Flask-SQLAlchemy, models/token_usage.py
-
-### werkwijze/werkwijze.txt
-- **Status**: Actief
-- **Pad**: /werkwijze/werkwijze.txt
-- **Functionaliteit**: Bevat instructies voor het AI-model over hoe repository-ontwikkeling moet verlopen.
-- **Afhankelijkheden**: Wordt gebruikt door anthropic_config.py (lazy loaded)
 
 ### system_prompt.txt
 - **Status**: Actief
