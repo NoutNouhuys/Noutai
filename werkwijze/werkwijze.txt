@@ -1,5 +1,23 @@
 # Instructies voor ontwikkelproces (volg deze nauwkeurig op)
 
+## 0. Repository Summary Generatie
+
+0.1 Controleer of `repository_summary.txt` bestaat in de hoofdmap van de repository:
+
+0.1.1 Als het niet bestaat of als je expliciet gevraagd wordt om het bij te werken:
+* 0.1.1.1 Maak een nieuwe branch aan met naam `feature/update-repository-summary`
+* 0.1.1.2 Genereer een `repository_summary.txt` bestand met:
+  - Overzicht van alle bestanden in de repository (gegroepeerd per directory)
+  - Voor elk bestand: pad, grootte, korte beschrijving van de functionaliteit
+  - Algemene projectstructuur en architectuur
+  - Belangrijkste modules en hun onderlinge relaties
+* 0.1.1.3 Commit het bestand met bericht "Add/Update repository summary"
+* 0.1.1.4 Push de branch
+* 0.1.1.5 Ga verder met stap 1
+
+0.1.2 Als het wel bestaat:
+* 0.1.2.1 Ga direct verder met stap 1
+
 ## 1. Controleer project\_info.txt
 
 1.1 Als `project_info.txt` bestaat, lees altijd dit bestand eerst en ga naar Stap 2.
