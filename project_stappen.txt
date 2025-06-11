@@ -330,6 +330,28 @@
      - static/js/home.js - Tab-based workflow functionaliteit (59KB)
      - static/css/home.css - Workflow tabs styling (3.7KB)
      - project_info.txt - Documentatie update
+20. [✓] Repository Summary Generatie (Issue #1) - VOLTOOID
+   - Doelstelling: Automatische generatie van repository_summary.txt voor Python projecten
+   - Implementatie:
+     - [✓] Nieuwe stap 0 toegevoegd aan werkwijze/werkwijze.txt
+     - [✓] Controle op aanwezigheid van Python bestanden via search_code
+     - [✓] Automatische generatie van repository_summary.txt indien niet aanwezig
+     - [✓] Uitgebreide documentatie van project structuur, Python modules, dependencies
+   - Repository Summary inhoud:
+     - [✓] Repository informatie en beschrijving
+     - [✓] Complete project structuur (directory tree)
+     - [✓] Gedetailleerde beschrijving per Python module:
+       - Doel en functionaliteit
+       - Belangrijke classes en functies
+       - Dependencies en imports
+       - Relatie tot andere modules
+     - [✓] Configuratie bestanden documentatie
+     - [✓] Entry points en gebruik instructies
+     - [✓] Belangrijke features overzicht
+   - Bestanden gewijzigd:
+     - werkwijze/werkwijze.txt - Nieuwe stap 0 voor repository summary
+     - repository_summary.txt - Nieuw gegenereerd bestand
+     - project_info.txt - Documentatie van nieuwe functionaliteit
 
 ## Toekomstige stappen (Must-have)
 
