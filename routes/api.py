@@ -9,6 +9,7 @@ from repositories.conversation_repository import ConversationRepository
 from repositories.analytics_repository import AnalyticsRepository
 from models.conversation import Conversation, Message
 from conversation_manager import ConversationManager
+from repository_summary_generator import RepositorySummaryGenerator
 
 # Create a Blueprint for the API routes
 api_bp = Blueprint('api', __name__)
@@ -206,6 +207,126 @@ def _validate_model_id(model_id: str) -> bool:
         return model_id in valid_model_ids
     except Exception:
         return False
+
+@api_bp.route('/repository/summary', methods=['POST'])
+@login_required
+@check_lynxx_domain
+def generate_repository_summary():
+    """
+    API endpoint to generate a repository summary.
+    
+    Request body:
+        repo_path: Optional path to repository (default: current directory)
+        output_filename: Optional output filename (default: repository_summary.txt)
+        force_overwrite: Optional flag to overwrite existing file (default: false)
+        
+    Returns:
+        JSON response with generation status and summary content
+    """
+    try:
+        data = request.get_json() or {}
+        
+        repo_path = data.get('repo_path', '.')
+        output_filename = data.get('output_filename', 'repository_summary.txt')
+        force_overwrite = data.get('force_overwrite', False)
+        
+        # Initialize the repository summary generator
+        generator = RepositorySummaryGenerator(repo_path)
+        
+        # Check if output file already exists
+        from pathlib import Path
+        output_path = Path(repo_path) / output_filename
+        if output_path.exists() and not force_overwrite:
+            return jsonify({
+                "success": False,
+                "error": f"Output file '{output_filename}' already exists. Use force_overwrite=true to overwrite.",
+                "file_exists": True
+            }), 409
+        
+        # Generate the summary
+        summary_content = generator.generate_repository_summary()
+        
+        # Save the summary
+        save_success = generator.save_summary(summary_content, output_filename)
+        
+        if save_success:
+            # Get file size for response
+            file_size = output_path.stat().st_size if output_path.exists() else 0
+            
+            return jsonify({
+                "success": True,
+                "message": "Repository summary generated successfully",
+                "output_file": str(output_path),
+                "file_size": file_size,
+                "summary_preview": summary_content[:500] + "..." if len(summary_content) > 500 else summary_content
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "error": "Failed to save repository summary",
+                "summary_content": summary_content  # Return content even if save failed
+            }), 500
+            
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+@api_bp.route('/repository/summary', methods=['GET'])
+@login_required
+@check_lynxx_domain
+def get_repository_summary():
+    """
+    API endpoint to retrieve existing repository summary.
+    
+    Query parameters:
+        repo_path: Optional path to repository (default: current directory)
+        filename: Optional filename (default: repository_summary.txt)
+        
+    Returns:
+        JSON response with summary content
+    """
+    try:
+        repo_path = request.args.get('repo_path', '.')
+        filename = request.args.get('filename', 'repository_summary.txt')
+        
+        from pathlib import Path
+        summary_path = Path(repo_path) / filename
+        
+        if not summary_path.exists():
+            return jsonify({
+                "success": False,
+                "error": f"Repository summary file '{filename}' not found",
+                "file_exists": False
+            }), 404
+        
+        # Read the summary file
+        try:
+            with open(summary_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            file_size = summary_path.stat().st_size
+            
+            return jsonify({
+                "success": True,
+                "content": content,
+                "file_path": str(summary_path),
+                "file_size": file_size,
+                "last_modified": summary_path.stat().st_mtime
+            })
+            
+        except Exception as e:
+            return jsonify({
+                "success": False,
+                "error": f"Failed to read summary file: {str(e)}"
+            }), 500
+            
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
 @api_bp.route('/conversations', methods=['GET'])
 @login_required
@@ -982,9 +1103,9 @@ def send_prompt_stream():
         while True:
             item = q.get()
             if item['type'] == 'log':
-                yield f"event: log\ndata: {json.dumps(item['data'])}\n\n"  # Enkele backslashes!
+                yield f"event: log\\ndata: {json.dumps(item['data'])}\\n\\n"  # Enkele backslashes!
             elif item['type'] == 'final':
-                yield f"event: final\ndata: {json.dumps(item['data'])}\n\n"  # Enkele backslashes!
+                yield f"event: final\\ndata: {json.dumps(item['data'])}\\n\\n"  # Enkele backslashes!
                 break
 
     return Response(event_stream(), mimetype='text/event-stream')
