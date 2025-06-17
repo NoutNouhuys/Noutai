@@ -1,0 +1,148 @@
+<!-- Repository Summary Component -->
+<div id="repository-summary-section" class="card mt-4">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-file-alt me-2"></i>
+            Repository Summary
+        </h5>
+    </div>
+    <div class="card-body">
+        <!-- Loading Message -->
+        <div id="loading-message" class="alert alert-info" style="display: none;">
+            <i class="fas fa-spinner fa-spin me-2"></i>
+            <span>Loading...</span>
+        </div>
+
+        <!-- Generate Section -->
+        <div id="generate-section" style="display: none;">
+            <div id="no-summary-message" class="text-muted mb-3">
+                <i class="fas fa-info-circle me-2"></i>
+                No repository summary found. Generate one to get a comprehensive overview of this project.
+            </div>
+            <button id="generate-summary-btn" class="btn btn-primary">
+                <i class="fas fa-magic me-2"></i>
+                Generate Summary
+            </button>
+        </div>
+
+        <!-- Summary Actions -->
+        <div id="summary-actions" class="mb-3" style="display: none;">
+            <div class="btn-group" role="group">
+                <button id="refresh-summary-btn" class="btn btn-outline-secondary">
+                    <i class="fas fa-sync-alt me-2"></i>
+                    Refresh
+                </button>
+                <button id="download-summary-btn" class="btn btn-outline-primary">
+                    <i class="fas fa-download me-2"></i>
+                    Download
+                </button>
+                <button id="generate-summary-btn" class="btn btn-success">
+                    <i class="fas fa-magic me-2"></i>
+                    Regenerate
+                </button>
+            </div>
+        </div>
+
+        <!-- Summary Content -->
+        <div id="summary-content" class="summary-content" style="display: none;">
+            <!-- Summary content will be loaded here -->
+        </div>
+    </div>
+</div>
+
+<!-- CSS for Repository Summary -->
+<style>
+.summary-content {
+    max-height: 600px;
+    overflow-y: auto;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    background-color: var(--bs-body-bg);
+}
+
+.summary-content h1,
+.summary-content h2,
+.summary-content h3 {
+    color: var(--bs-primary);
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.summary-content h1:first-child,
+.summary-content h2:first-child,
+.summary-content h3:first-child {
+    margin-top: 0;
+}
+
+.summary-content ul {
+    margin-bottom: 1rem;
+}
+
+.summary-content li {
+    margin-bottom: 0.25rem;
+}
+
+.summary-content code {
+    background-color: var(--bs-gray-100);
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+    font-size: 0.875em;
+}
+
+.summary-content pre {
+    background-color: var(--bs-gray-100);
+    padding: 1rem;
+    border-radius: 0.375rem;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+}
+
+.summary-content pre code {
+    background-color: transparent;
+    padding: 0;
+}
+
+.summary-content strong {
+    font-weight: 600;
+}
+
+.summary-content em {
+    font-style: italic;
+}
+
+/* Dark mode support */
+[data-bs-theme="dark"] .summary-content {
+    border-color: var(--bs-border-color);
+}
+
+[data-bs-theme="dark"] .summary-content code {
+    background-color: var(--bs-gray-800);
+    color: var(--bs-body-color);
+}
+
+[data-bs-theme="dark"] .summary-content pre {
+    background-color: var(--bs-gray-800);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .summary-content {
+        max-height: 400px;
+    }
+    
+    #summary-actions .btn-group {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+    }
+    
+    #summary-actions .btn {
+        margin-bottom: 0.5rem;
+        border-radius: 0.375rem !important;
+    }
+}
+</style>
+
+<!-- Include the JavaScript -->
+<script src="{{ url_for('static', filename='js/repository-summary.js') }}"></script>
