@@ -1,0 +1,191 @@
+# Repository Summary - AI Ontwikkelhulp (Noutai)
+
+## Project Overview
+AI Ontwikkelhulp is een gespecialiseerde tool die communicatie tussen gebruikers en AI-modellen (Claude) faciliteert voor code-ontwikkeling en repository-beheer. De applicatie biedt een gestructureerde werkwijze voor AI-gestuurde softwareontwikkeling met integratie van externe tools via het Model Context Protocol (MCP).
+
+## Repository Structure
+
+### Root Directory Files (30 bestanden)
+- `.env.example` (837 bytes) - Environment variabelen template
+- `.gitignore` (714 bytes) - Git ignore configuratie
+- `CONTRIBUTING.md` (3,856 bytes) - Bijdrage richtlijnen
+- `MERGED.md` (1,897 bytes) - Merge documentatie
+- `README.md` (16,740 bytes) - Hoofddocumentatie met uitgebreide setup instructies
+- `anthropic_api.py` (22,330 bytes) - High-level Anthropic API interface
+- `anthropic_client.py` (6,951 bytes) - Pure API communicatie client
+- `anthropic_config.py` (11,112 bytes) - Anthropic configuratie beheer
+- `app.py` (5,818 bytes) - Flask applicatie entry point
+- `auth.py` (5,684 bytes) - Google OAuth authenticatie
+- `config.py` (7,218 bytes) - Algemene applicatie configuratie
+- `conversation_manager.py` (17,931 bytes) - Gesprek state management
+- `database.py` (1,469 bytes) - Database configuratie en setup
+- `mcp_connector.py` (5,150 bytes) - MCP protocol connector
+- `mcp_integration.py` (15,752 bytes) - MCP server integratie
+- `project_info.txt` (21,090 bytes) - AI project informatie cache
+- `project_stappen.txt` (21,868 bytes) - Ontwikkelstappen voor AI
+- `requirements.txt` (1,227 bytes) - Python dependencies
+- `runtime.txt` (13 bytes) - Python runtime versie
+- `start_template.txt` (784 bytes) - Start template
+- `system_prompt.txt` (368 bytes) - AI system prompt
+- `user.py` (3,497 bytes) - User model en sessie beheer
+
+### Analytics Module (4 bestanden)
+- `analytics/__init__.py` (267 bytes) - Module initialisatie
+- `analytics/analytics_service.py` (19,810 bytes) - Analytics service implementatie
+- `analytics/cost_calculator.py` (8,378 bytes) - Kosten berekening functionaliteit
+- `analytics/token_tracker.py` (13,116 bytes) - Token gebruik tracking
+
+### Feature Directory (1 bestand)
+- `feature/basic-structure` (0 bytes) - Basis structuur marker
+
+### Database Migrations (6 bestanden)
+- `migrations/README.md` (1,499 bytes) - Migratie documentatie
+- `migrations/alembic.ini` (2,610 bytes) - Alembic configuratie
+- `migrations/env.py` (2,272 bytes) - Migratie environment setup
+- `migrations/rename_metadata_field.py` (808 bytes) - Metadata veld hernoemen migratie
+- `migrations/script.py.mako` (494 bytes) - Migratie script template
+- `migrations/versions/.gitkeep` (0 bytes) - Versie directory placeholder
+
+### Data Models (3 bestanden)
+- `models/__init__.py` (52 bytes) - Models module initialisatie
+- `models/conversation.py` (3,130 bytes) - Conversation SQLAlchemy model
+- `models/token_usage.py` (5,171 bytes) - Token usage tracking model
+
+### Data Repositories (3 bestanden)
+- `repositories/__init__.py` (58 bytes) - Repository module initialisatie
+- `repositories/analytics_repository.py` (17,670 bytes) - Analytics data access layer
+- `repositories/conversation_repository.py` (7,559 bytes) - Conversation CRUD operaties
+
+### API Routes (3 bestanden)
+- `routes/__init__.py` (92 bytes) - Routes module initialisatie
+- `routes/analytics.py` (11,297 bytes) - Analytics API endpoints
+- `routes/api.py` (34,028 bytes) - Hoofd REST API endpoints
+
+### Static Assets
+#### CSS Stylesheets (4 bestanden)
+- `static/css/analytics.css` (7,829 bytes) - Analytics pagina styling
+- `static/css/home.css` (5,383 bytes) - Home pagina styling
+- `static/css/log-formatter.css` (12,105 bytes) - Log formattering styles
+- `static/css/style.css` (23,006 bytes) - Hoofd styling en thema's
+
+#### JavaScript Files (4 bestanden)
+- `static/js/analytics.js` (12,710 bytes) - Analytics functionaliteit
+- `static/js/home.js` (67,050 bytes) - Hoofd chat interface JavaScript
+- `static/js/log-formatter.js` (13,249 bytes) - Log formattering module
+- `static/js/main.js` (13,883 bytes) - Algemene JavaScript functionaliteit
+
+#### Images (1 bestand)
+- `static/img/google-logo.svg` (1,672 bytes) - Google login logo
+
+### HTML Templates (7 bestanden)
+- `templates/analytics.html` (4,024 bytes) - Analytics dashboard template
+- `templates/base.html` (8,209 bytes) - Base template met navigatie
+- `templates/conversations.html` (33,516 bytes) - Gesprekken overzicht template
+- `templates/home.html` (6,834 bytes) - Hoofd chat interface template
+- `templates/login.html` (6,568 bytes) - Login pagina template
+- `templates/components/chat_window.html` (3,271 bytes) - Chat window component
+
+### Test Suite (14 bestanden)
+- `tests/__init__.py` (295 bytes) - Test module initialisatie
+- `tests/test_anthropic_api.py` (5,355 bytes) - Anthropic API tests
+- `tests/test_anthropic_client.py` (16,189 bytes) - Anthropic client tests
+- `tests/test_anthropic_config.py` (8,555 bytes) - Anthropic config tests
+- `tests/test_anthropic_config_llm_settings.py` (10,580 bytes) - LLM settings tests
+- `tests/test_api_conversation_persistence.py` (21,112 bytes) - API persistence tests
+- `tests/test_api_llm_settings.py` (15,716 bytes) - API LLM settings tests
+- `tests/test_auth.py` (2,843 bytes) - Authenticatie tests
+- `tests/test_config.py` (6,765 bytes) - Configuratie tests
+- `tests/test_conversation_manager.py` (17,821 bytes) - Conversation manager tests
+- `tests/test_database.py` (10,639 bytes) - Database tests
+- `tests/test_prompt_cache_control.py` (1,131 bytes) - Prompt cache tests
+- `tests/test_tool_deduplication.py` (1,598 bytes) - Tool deduplicatie tests
+- `tests/test_werkwijze_repo.py` (990 bytes) - Werkwijze repository tests
+
+### Werkwijze Documentation (1 bestand)
+- `werkwijze/werkwijze.txt` (4,185 bytes) - AI ontwikkeling instructies
+
+## Architectuur en Module Relaties
+
+### Core Application Layer
+- **app.py**: Flask applicatie entry point, integreert alle modules
+- **config.py**: Centrale configuratie management
+- **database.py**: Database setup en connectie management
+
+### Authentication & User Management
+- **auth.py**: Google OAuth implementatie met Lynxx domain restrictie
+- **user.py**: User model en sessie beheer
+
+### AI Integration Layer
+- **anthropic_api.py**: High-level interface voor Anthropic Claude API
+- **anthropic_client.py**: Low-level API communicatie
+- **anthropic_config.py**: Configuratie management voor AI modellen
+- **conversation_manager.py**: State management voor gesprekken
+
+### MCP (Model Context Protocol) Integration
+- **mcp_integration.py**: Hoofdmodule voor MCP server integratie
+- **mcp_connector.py**: Protocol connector voor externe tools
+
+### Data Layer
+- **models/**: SQLAlchemy database modellen
+- **repositories/**: Data access layer met CRUD operaties
+- **migrations/**: Database schema versioning
+
+### API Layer
+- **routes/api.py**: REST API endpoints voor chat functionaliteit
+- **routes/analytics.py**: Analytics en reporting endpoints
+
+### Analytics & Monitoring
+- **analytics/**: Complete analytics module met cost tracking en token monitoring
+
+### Frontend Layer
+- **templates/**: Jinja2 HTML templates
+- **static/**: CSS, JavaScript en assets
+- **Workflow automation**: JavaScript-based workflow management
+
+## Belangrijkste Functionaliteiten
+
+### 1. AI-Gestuurde Repository Ontwikkeling
+- Automatische GitHub repository ontwikkeling via `ga` commando
+- Issue-driven development workflow
+- Automatische branch en pull request management
+
+### 2. Workflow Automation
+- Pattern-based workflow automation
+- Automatische chat window management
+- Gestructureerde development cycles
+
+### 3. MCP Tool Integration
+- GitHub API integratie via MCP
+- External tool support
+- Real-time tool execution feedback
+
+### 4. Analytics & Monitoring
+- Token usage tracking
+- Cost calculation
+- Performance analytics
+- Usage reporting
+
+### 5. User Interface
+- Split-view chat interface
+- Log formatting en syntax highlighting
+- Dark/light theme support
+- Real-time updates
+
+### 6. Authentication & Security
+- Google OAuth met domain restrictie
+- Session management
+- Secure API key handling
+
+## Development Status
+Het project is actief in ontwikkeling met een uitgebreide test suite en gestructureerde development workflow. De applicatie is productie-klaar met Docker support en deployment configuraties.
+
+## Key Dependencies
+- Flask (web framework)
+- SQLAlchemy (ORM)
+- Anthropic SDK (AI integration)
+- Google OAuth libraries
+- MCP protocol libraries
+- Alembic (database migrations)
+
+## Total Files: 82
+## Total Size: ~500KB (excluding dependencies)
