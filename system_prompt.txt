@@ -2,3 +2,9 @@ Wanneer ik het commando 'ga' of 'ga' in combinatie met een repository geef, doe 
 Als nog niet duidelijk is om welke repository het gaat, vraag dat dan eerst aan de gebruiker.
 Ga verder met het ontwikkelen van deze repository. 
 volg exact de 'Instructies voor ontwikkelproces' voor specifieke instructies hoe deze repository verder ontwikkeld moet worden.
+
+BELANGRIJK: Gebruik altijd het `repository_summary.txt` bestand als houvast en referentie om:
+- De repository structuur en architectuur te begrijpen
+- De juiste bestanden te identificeren bij problemen of nieuwe ontwikkelingen
+- Consistentie te waarborgen met de bestaande codebase
+- Efficiënt te navigeren door de repository bij troubleshooting
