@@ -2,6 +2,8 @@ from flask import Blueprint, jsonify, request, Response, current_app
 import json
 import queue
 import threading
+import os
+import subprocess
 from flask_login import login_required, current_user
 from anthropic_api import anthropic_api
 from auth import check_lynxx_domain
@@ -206,6 +208,148 @@ def _validate_model_id(model_id: str) -> bool:
         return model_id in valid_model_ids
     except Exception:
         return False
+
+def _generate_repository_summary(repo_path: str = '.') -> str:
+    """
+    Generate a comprehensive repository summary.
+    
+    Args:
+        repo_path: Path to the repository (default: current directory)
+        
+    Returns:
+        Repository summary as a string
+    """
+    try:
+        summary_parts = []
+        
+        # Basic repository information
+        summary_parts.append("# Repository Summary")
+        summary_parts.append(f"Generated at: {repo_path}")
+        summary_parts.append("")
+        
+        # Get repository structure
+        try:
+            result = subprocess.run(['find', repo_path, '-type', 'f', '-name', '*.py', '-o', '-name', '*.txt', '-o', '-name', '*.md', '-o', '-name', '*.json', '-o', '-name', '*.yml', '-o', '-name', '*.yaml'], 
+                                  capture_output=True, text=True, timeout=10)
+            if result.returncode == 0:
+                files = result.stdout.strip().split('\n')
+                files = [f for f in files if f and not any(skip in f for skip in ['.git/', '__pycache__/', '.pyc', 'node_modules/', '.env'])]
+                
+                summary_parts.append("## File Structure")
+                for file in sorted(files)[:50]:  # Limit to first 50 files
+                    summary_parts.append(f"- {file}")
+                if len(files) > 50:
+                    summary_parts.append(f"... and {len(files) - 50} more files")
+                summary_parts.append("")
+        except Exception as e:
+            summary_parts.append(f"Could not generate file structure: {str(e)}")
+            summary_parts.append("")
+        
+        # Read key files
+        key_files = ['README.md', 'requirements.txt', 'package.json', 'setup.py', 'pyproject.toml']
+        
+        for key_file in key_files:
+            file_path = os.path.join(repo_path, key_file)
+            if os.path.exists(file_path):
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                        summary_parts.append(f"## {key_file}")
+                        summary_parts.append("```")
+                        summary_parts.append(content[:2000])  # Limit content length
+                        if len(content) > 2000:
+                            summary_parts.append("... (truncated)")
+                        summary_parts.append("```")
+                        summary_parts.append("")
+                except Exception as e:
+                    summary_parts.append(f"Could not read {key_file}: {str(e)}")
+                    summary_parts.append("")
+        
+        # Get git information if available
+        try:
+            # Get current branch
+            result = subprocess.run(['git', 'branch', '--show-current'], 
+                                  cwd=repo_path, capture_output=True, text=True, timeout=5)
+            if result.returncode == 0:
+                current_branch = result.stdout.strip()
+                summary_parts.append(f"## Git Information")
+                summary_parts.append(f"Current branch: {current_branch}")
+                
+                # Get recent commits
+                result = subprocess.run(['git', 'log', '--oneline', '-10'], 
+                                      cwd=repo_path, capture_output=True, text=True, timeout=5)
+                if result.returncode == 0:
+                    commits = result.stdout.strip().split('\n')
+                    summary_parts.append("Recent commits:")
+                    for commit in commits:
+                        if commit.strip():
+                            summary_parts.append(f"- {commit}")
+                summary_parts.append("")
+        except Exception as e:
+            summary_parts.append(f"Git information not available: {str(e)}")
+            summary_parts.append("")
+        
+        return '\n'.join(summary_parts)
+        
+    except Exception as e:
+        return f"Error generating repository summary: {str(e)}"
+
+@api_bp.route('/repository/summary', methods=['POST'])
+@login_required
+@check_lynxx_domain
+def generate_repository_summary():
+    """
+    API endpoint to generate a repository summary.
+    
+    Request body:
+        repo_path: Optional path to repository (default: current directory)
+        
+    Returns:
+        JSON response with repository summary
+    """
+    try:
+        data = request.get_json() or {}
+        repo_path = data.get('repo_path', '.')
+        
+        # Validate path exists and is accessible
+        if not os.path.exists(repo_path):
+            return jsonify({
+                "success": False,
+                "error": f"Repository path does not exist: {repo_path}"
+            }), 400
+        
+        if not os.path.isdir(repo_path):
+            return jsonify({
+                "success": False,
+                "error": f"Path is not a directory: {repo_path}"
+            }), 400
+        
+        # Generate summary
+        summary = _generate_repository_summary(repo_path)
+        
+        # Save summary to file
+        summary_file = os.path.join(repo_path, 'repository_summary.txt')
+        try:
+            with open(summary_file, 'w', encoding='utf-8') as f:
+                f.write(summary)
+        except Exception as e:
+            return jsonify({
+                "success": False,
+                "error": f"Could not save summary file: {str(e)}"
+            }), 500
+        
+        return jsonify({
+            "success": True,
+            "summary": summary,
+            "summary_file": summary_file,
+            "message": f"Repository summary generated and saved to {summary_file}"
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
 
 @api_bp.route('/conversations', methods=['GET'])
 @login_required
@@ -719,6 +863,7 @@ def send_prompt():
         temperature: (Optional) Temperature for response generation (0.0-1.0)
         max_tokens: (Optional) Maximum tokens for response
         preset_name: (Optional) LLM preset name to use
+        repo_path: (Optional) Path to repository for context
         
     Returns:
         JSON response with Claude's reply and metadata
@@ -741,6 +886,7 @@ def send_prompt():
         temperature = data.get('temperature')
         max_tokens = data.get('max_tokens')
         preset_name = data.get('preset_name')
+        repo_path = data.get('repo_path', '.')  # Default to current directory
         
         # Validate model_id
         if not _validate_model_id(model_id):
@@ -779,6 +925,17 @@ def send_prompt():
                     "error": "Max tokens must be a valid integer"
                 }), 400
         
+        # Generate repository summary if repo_path is provided and different from current directory
+        if repo_path and repo_path != '.' and os.path.exists(repo_path):
+            try:
+                summary = _generate_repository_summary(repo_path)
+                summary_file = os.path.join(repo_path, 'repository_summary.txt')
+                with open(summary_file, 'w', encoding='utf-8') as f:
+                    f.write(summary)
+            except Exception as e:
+                # Log the error but don't fail the request
+                current_app.logger.warning(f"Could not generate repository summary: {str(e)}")
+        
         # Initialize ConversationManager with database backend for persistence
         conv_manager = ConversationManager(storage_backend=True, user_id=current_user.id)
         
@@ -787,7 +944,7 @@ def send_prompt():
         anthropic_api.conversation_manager = conv_manager
         
         try:
-            # Call the Anthropic API
+            # Call the Anthropic API with repo_path context
             response = anthropic_api.send_prompt(
                 prompt=prompt,
                 model_id=model_id,
@@ -795,7 +952,8 @@ def send_prompt():
                 system_prompt=system_prompt,
                 temperature=temperature,
                 max_tokens=max_tokens,
-                preset_name=preset_name
+                preset_name=preset_name,
+                repo_path=repo_path
             )
         finally:
             # Restore original conversation manager
@@ -830,7 +988,8 @@ def send_prompt():
                                 'temperature': response.get('temperature'),
                                 'max_tokens': response.get('max_tokens'),
                                 'preset_name': response.get('preset_name'),
-                                'token_count': response.get('token_count', 0)
+                                'token_count': response.get('token_count', 0),
+                                'repo_path': repo_path
                             }
                         }
                     )
@@ -868,7 +1027,8 @@ def send_prompt():
                                 'temperature': response.get('temperature'),
                                 'max_tokens': response.get('max_tokens'),
                                 'preset_name': response.get('preset_name'),
-                                'token_count': response.get('token_count', 0)
+                                'token_count': response.get('token_count', 0),
+                                'repo_path': repo_path
                             }
                         }
                     )
@@ -903,6 +1063,7 @@ def send_prompt_stream():
     temperature = request.args.get('temperature')
     max_tokens = request.args.get('max_tokens')
     preset_name = request.args.get('preset_name')
+    repo_path = request.args.get('repo_path', '.')  # Default to current directory
     
     # Validate model_id
     if not _validate_model_id(model_id):
@@ -953,6 +1114,17 @@ def send_prompt_stream():
 
         def worker(app, user_id):
             with app.app_context():
+                # Generate repository summary if repo_path is provided
+                if repo_path and repo_path != '.' and os.path.exists(repo_path):
+                    try:
+                        summary = _generate_repository_summary(repo_path)
+                        summary_file = os.path.join(repo_path, 'repository_summary.txt')
+                        with open(summary_file, 'w', encoding='utf-8') as f:
+                            f.write(summary)
+                        callback(f"Repository summary generated: {summary_file}")
+                    except Exception as e:
+                        callback(f"Warning: Could not generate repository summary: {str(e)}")
+                
                 # Initialize ConversationManager with database backend
                 conv_manager = ConversationManager(storage_backend=True, user_id=user_id)
                 
@@ -970,6 +1142,7 @@ def send_prompt_stream():
                         max_tokens=max_tokens,
                         preset_name=preset_name,
                         log_callback=callback,
+                        repo_path=repo_path
                     )
                 finally:
                     # Restore original conversation manager
