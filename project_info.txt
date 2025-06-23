@@ -1,7 +1,7 @@
 # Project Informatie: aiontwikkelhulp
 
 ## Projectoverzicht
-De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie. Bevat workflow automatisering voor het automatisch openen en sluiten van chat windows op basis van AI responses, inclusief automatische configuratie van nieuwe chats met Claude Sonnet 4 en developer_agent preset. Volledig analytics systeem voor token usage tracking, kosten berekening en usage insights met real-time weergave in de chat interface. Uitgebreid met conversation enhancements voor token usage weergave en bulk delete functionaliteit. CSRF token ondersteuning geïmplementeerd voor alle API calls. Volledig gerefactored voor betere code organisatie met scheiding van HTML, JavaScript en CSS. Enhanced tool logging geïmplementeerd voor gedetailleerde inzichten in tool uitvoering met visueel onderscheidbare log patterns. Workflow tabs functionaliteit geïmplementeerd voor directe toegang tot 3 verschillende workflow profielen via tabs in plaats van één enkel window, wat de gebruikservaring verbetert door directe toegang, overzicht en efficiëntie. Tab kleurstelling verbeterd voor optimale leesbaarheid in zowel light als dark mode met WCAG AA compliance.
+De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie. Bevat workflow automatisering voor het automatisch openen en sluiten van chat windows op basis van AI responses, inclusief automatische configuratie van nieuwe chats met Claude Sonnet 4 en developer_agent preset. Volledig analytics systeem voor token usage tracking, kosten berekening en usage insights met real-time weergave in de chat interface. Uitgebreid met conversation enhancements voor token usage weergave en bulk delete functionaliteit. CSRF token ondersteuning geïmplementeerd voor alle API calls. Volledig gerefactored voor betere code organisatie met scheiding van HTML, JavaScript en CSS. Enhanced tool logging geïmplementeerd voor gedetailleerde inzichten in tool uitvoering met visueel onderscheidbare log patterns. Workflow tabs functionaliteit geïmplementeerd voor directe toegang tot 3 verschillende workflow profielen via tabs in plaats van één enkel window, wat de gebruikservaring verbetert door directe toegang, overzicht en efficiëntie. Tab kleurstelling verbeterd voor optimale leesbaarheid in zowel light als dark mode met WCAG AA compliance. **Nieuwe Code Error Solving functionaliteit geïmplementeerd voor intelligente error analysis en AI-powered solution generation.**
 
 ## Architectuur
 De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruikers te helpen bij het ontwikkelen van software met behulp van AI:
@@ -12,6 +12,13 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - MCP Connector voor tools integratie (mcp_connector.py)
 - Configuratie (config.py)
 - Repository beheer
+
+### Error Solving Modules:
+- **Error Analyzer (error_analyzer.py)** - Core error analysis functionaliteit voor lokaliseren en analyseren van code errors
+- **Error Solver (error_solver.py)** - AI-powered error solving service met Claude integratie voor solution generation
+- **Error Solving API endpoints** - Geïntegreerd in routes/api.py voor error analysis, solution generation, en repository upload
+- **Error Solving Frontend** - JavaScript (static/js/error-solver.js) en CSS (static/css/error-solver.css) voor gebruikersinterface
+- **Error Solver Component** - HTML template (templates/components/error_solver.html) voor error solving interface
 
 ### Analytics Modules:
 - Token tracker (analytics/token_tracker.py) - Token usage monitoring en recording
@@ -28,10 +35,13 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 ### Frontend Modules:
 - templates/home.html - Hoofdtemplate met workflow tabs functionaliteit (6.8KB)
 - templates/components/chat_window.html - Herbruikbare chat window component
+- templates/components/error_solver.html - Error solver component template
 - templates/conversations.html - Conversation management met token usage, bulk delete en CSRF token ondersteuning
 - templates/analytics.html - Analytics dashboard template
 - static/js/home.js - JavaScript met workflow tabs en tab-based workflow automatisering (59KB)
+- static/js/error-solver.js - Frontend error solving interface JavaScript
 - static/css/home.css - CSS met verbeterde workflow tabs styling, WCAG AA compliance en activity indicators (5.4KB)
+- static/css/error-solver.css - Styling voor error solving UI
 - static/css/style.css - Algemene applicatie styling
 - static/css/analytics.css - Styling voor analytics dashboard
 - static/js/analytics.js - JavaScript voor analytics dashboard functionaliteit
@@ -39,6 +49,112 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - static/css/log-formatter.css - Styling voor geformatteerde logs met enhanced tool logging patterns
 
 ## Modules
+
+### error_analyzer.py
+- **Status**: Nieuw geïmplementeerd voor Code Error Solving
+- **Pad**: /error_analyzer.py
+- **Functionaliteit**: Core error analysis functionaliteit voor lokaliseren en analyseren van code errors in repositories. Ondersteunt:
+  - Error pattern matching en classificatie voor Python, JavaScript, TypeScript, HTML, CSS
+  - File scanning en error locatie detectie met line number extraction
+  - Context extractie rond error locaties (10-20 regels)
+  - Syntax checking voor Python bestanden met AST parsing
+  - Error severity determination (critical, high, medium, low)
+  - Multi-language error pattern recognition
+  - Repository file analysis en filtering
+  - Basic suggestion generation voor common error types
+- **Afhankelijkheden**: pathlib, ast, re, json, traceback
+
+### error_solver.py
+- **Status**: Nieuw geïmplementeerd voor Code Error Solving
+- **Pad**: /error_solver.py
+- **Functionaliteit**: AI-powered error solving service die solutions en code fixes genereert met Claude integratie. Ondersteunt:
+  - AI-powered error analysis met Claude Opus voor detailed solutions
+  - Solution generation op basis van error type en context
+  - Code suggestion generation met specific fixes
+  - Template-based solutions voor common error patterns
+  - Step-by-step solution instructions
+  - Prevention tips en best practices recommendations
+  - Helpful resources generation (documentation links, tutorials)
+  - Recommended actions met priority levels en time estimates
+  - Root cause analysis en impact assessment
+  - Alternative solution approaches
+- **Afhankelijkheden**: error_analyzer.py, anthropic_api.py, pathlib, json, traceback
+
+### static/js/error-solver.js
+- **Status**: Nieuw geïmplementeerd voor Code Error Solving frontend
+- **Pad**: /static/js/error-solver.js
+- **Functionaliteit**: Frontend JavaScript voor error solving interface. Ondersteunt:
+  - Repository upload via drag & drop of file selection (ZIP files)
+  - Error analysis form handling met validation
+  - AI solution generation met loading indicators
+  - Results display met syntax highlighting en code context
+  - Copy-to-clipboard functionaliteit voor code snippets
+  - Expandable/collapsible sections voor organized results
+  - File upload progress en error handling
+  - Temporary file cleanup management
+  - Responsive design voor mobile devices
+  - Integration met bestaande API endpoints
+- **Afhankelijkheden**: Fetch API, DOM manipulation, clipboard API
+
+### static/css/error-solver.css
+- **Status**: Nieuw geïmplementeerd voor Code Error Solving styling
+- **Pad**: /static/css/error-solver.css
+- **Functionaliteit**: Comprehensive CSS styling voor error solving UI components. Ondersteunt:
+  - Professional gradient headers en section styling
+  - Drag & drop zone styling met hover effects
+  - Code block styling met syntax highlighting support
+  - Severity en priority badge styling (critical, high, medium, low)
+  - Responsive grid layouts voor results display
+  - Dark mode support met proper contrast ratios
+  - Animation effects voor loading states en interactions
+  - Copy button styling en feedback states
+  - Error classification visual hierarchy
+  - Mobile-responsive design met collapsible sections
+- **Afhankelijkheden**: CSS Grid, Flexbox, CSS custom properties
+
+### templates/components/error_solver.html
+- **Status**: Nieuw geïmplementeerd voor Code Error Solving component
+- **Pad**: /templates/components/error_solver.html
+- **Functionaliteit**: HTML template component voor error solving interface. Bevat:
+  - Repository upload section met drag & drop zone
+  - Error analysis form met error message input en type selection
+  - Action buttons voor analyze, generate solutions, clear results
+  - Results containers voor analysis en solution display
+  - Help section met usage instructions
+  - Features showcase section
+  - Responsive layout met mobile optimization
+  - Accessibility features (ARIA labels, keyboard navigation)
+  - Integration met error-solver.js en error-solver.css
+- **Afhankelijkheden**: Bootstrap components, form validation, responsive design
+
+### test_error_solver.py
+- **Status**: Nieuw geïmplementeerd voor Code Error Solving testing
+- **Pad**: /test_error_solver.py
+- **Functionaliteit**: Comprehensive unit tests voor error solving functionaliteit. Test coverage:
+  - ErrorAnalyzer class: initialization, error parsing, file analysis, classification
+  - ErrorSolver class: AI solution generation, template solutions, context preparation
+  - Integration tests: end-to-end workflow testing
+  - Mock testing voor Anthropic API calls
+  - File system operations testing met temporary directories
+  - Error pattern recognition testing voor verschillende languages
+  - Solution quality validation
+  - Edge case handling (malformed errors, missing files, API failures)
+- **Afhankelijkheden**: unittest, unittest.mock, tempfile, pathlib, error_analyzer.py, error_solver.py
+
+### routes/api.py (Error Solving Endpoints)
+- **Status**: Uitgebreid met error solving API endpoints
+- **Pad**: /routes/api.py
+- **Functionaliteit**: Nieuwe API endpoints voor error solving functionaliteit:
+  - **POST /api/error/analyze** - Analyseer error in repository met error_message en repo_path
+  - **POST /api/error/solve** - Genereer AI-powered solutions voor errors
+  - **POST /api/error/analyze-repo** - Analyseer repository voor potential errors
+  - **POST /api/error/upload-repo** - Upload ZIP repository voor analysis
+  - **POST /api/error/cleanup-temp** - Cleanup temporary repository files
+  - Input validation en error handling
+  - File upload processing met security checks
+  - Temporary file management
+  - Integration met ErrorAnalyzer en ErrorSolver classes
+- **Afhankelijkheden**: error_analyzer.py, error_solver.py, tempfile, zipfile, pathlib
 
 ### static/css/home.css
 - **Status**: Verbeterd met professionele tab kleurstelling en WCAG AA compliance (5.4KB)
@@ -123,10 +239,10 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Afhankelijkheden**: Flask-WTF CSRF token functionaliteit
 
 ### routes/api.py
-- **Status**: Uitgebreid met token usage endpoints, enhanced conversations API en CSRF protection
+- **Status**: Uitgebreid met token usage endpoints, enhanced conversations API, CSRF protection en error solving endpoints
 - **Pad**: /routes/api.py
-- **Functionaliteit**: API endpoints voor conversation management inclusief pagination, search, bulk operations, CRUD operaties met database persistence. Geïntegreerd met ConversationManager voor robuuste data handling. Bugfix toegepast voor thread context issue in send_prompt_stream functie. LLM settings API endpoints, temperature en preset ondersteuning in prompt endpoints. Token usage endpoints: GET /api/analytics/conversations/<id>/usage voor conversation-specifieke usage data, GET /api/analytics/users/<id>/usage voor user usage summaries. Enhanced conversations endpoint met include_usage parameter voor token data. Volledige CSRF protection via Flask-WTF voor alle POST/PUT/DELETE endpoints met proper error handling.
-- **Afhankelijkheden**: anthropic_api.py, ConversationManager, ConversationRepository, AnalyticsRepository, Flask app context, Flask-WTF CSRF
+- **Functionaliteit**: API endpoints voor conversation management inclusief pagination, search, bulk operations, CRUD operaties met database persistence. Geïntegreerd met ConversationManager voor robuuste data handling. Bugfix toegepast voor thread context issue in send_prompt_stream functie. LLM settings API endpoints, temperature en preset ondersteuning in prompt endpoints. Token usage endpoints: GET /api/analytics/conversations/<id>/usage voor conversation-specifieke usage data, GET /api/analytics/users/<id>/usage voor user usage summaries. Enhanced conversations endpoint met include_usage parameter voor token data. Volledige CSRF protection via Flask-WTF voor alle POST/PUT/DELETE endpoints met proper error handling. **Nieuwe error solving endpoints voor error analysis, solution generation, repository upload en temporary file management.**
+- **Afhankelijkheden**: anthropic_api.py, ConversationManager, ConversationRepository, AnalyticsRepository, Flask app context, Flask-WTF CSRF, error_analyzer.py, error_solver.py
 
 ### static/css/style.css
 - **Status**: Uitgebreid met conversation enhancements styling
