@@ -1,0 +1,255 @@
+<!-- Error Solver Component Template -->
+<div id="error-solver-container" class="error-solver-container">
+    <!-- Header -->
+    <div class="error-solver-header">
+        <h1>🔧 Code Error Solver</h1>
+        <p>AI-powered error analysis and solution generation for your code repositories</p>
+    </div>
+
+    <!-- Message Container -->
+    <div id="message-container" class="message" style="display: none;"></div>
+
+    <!-- Loading Indicator -->
+    <div id="loading-indicator" class="loading-indicator" style="display: none;">
+        Analyzing your code...
+    </div>
+
+    <!-- Repository Upload Section -->
+    <div class="form-section">
+        <h2>📁 Repository Upload</h2>
+        <p>Upload a ZIP file containing your repository or provide a local path to analyze errors.</p>
+        
+        <form id="repo-upload-form">
+            <div class="form-group">
+                <div id="repo-drop-zone" class="repo-drop-zone">
+                    <div class="upload-icon">📦</div>
+                    <p><strong>Drop your repository ZIP file here</strong></p>
+                    <p>or click to select a file</p>
+                    <input type="file" id="repo-file-input" class="file-input-hidden" accept=".zip">
+                </div>
+                <div class="selected-file" id="selected-file-info" style="display: none;">
+                    <strong>Selected file:</strong> <span id="selected-file-name">No file selected</span>
+                </div>
+            </div>
+            
+            <button type="submit" id="upload-repo-btn" class="btn btn-primary" disabled>
+                📤 Upload Repository
+            </button>
+        </form>
+
+        <div class="form-group" style="margin-top: 20px;">
+            <label for="repo-path-input">Or enter repository path directly:</label>
+            <input type="text" id="repo-path-input" class="form-input" 
+                   placeholder="/path/to/your/repository" 
+                   title="Enter the full path to your local repository">
+        </div>
+    </div>
+
+    <!-- Error Analysis Section -->
+    <div class="form-section" id="error-analysis-section">
+        <h2>🔍 Error Analysis</h2>
+        <p>Provide the error message you want to analyze and get AI-powered solutions.</p>
+        
+        <form id="error-analyze-form">
+            <div class="form-group">
+                <label for="error-message-input">Error Message *</label>
+                <textarea id="error-message-input" class="form-textarea" 
+                          placeholder="Paste your error message here..." 
+                          required></textarea>
+                <small>Include the full error traceback for better analysis</small>
+            </div>
+
+            <div class="form-group">
+                <label for="error-type-select">Error Type (Optional)</label>
+                <select id="error-type-select" class="form-select">
+                    <option value="">Auto-detect</option>
+                    <option value="python">Python</option>
+                    <option value="javascript">JavaScript</option>
+                    <option value="typescript">TypeScript</option>
+                    <option value="html">HTML</option>
+                    <option value="css">CSS</option>
+                    <option value="java">Java</option>
+                    <option value="csharp">C#</option>
+                    <option value="cpp">C++</option>
+                    <option value="php">PHP</option>
+                    <option value="ruby">Ruby</option>
+                    <option value="go">Go</option>
+                    <option value="rust">Rust</option>
+                </select>
+            </div>
+
+            <div class="action-buttons">
+                <button type="submit" class="btn btn-primary">
+                    🔍 Analyze Error
+                </button>
+                <button type="button" id="generate-solutions-btn" class="btn btn-success" disabled>
+                    🤖 Generate AI Solutions
+                </button>
+                <button type="button" id="clear-results-btn" class="btn btn-secondary">
+                    🗑️ Clear Results
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Analysis Results -->
+    <div id="analysis-results" class="results-container" style="display: none;">
+        <!-- Analysis results will be populated by JavaScript -->
+    </div>
+
+    <!-- Solution Results -->
+    <div id="solution-results" class="results-container" style="display: none;">
+        <!-- Solution results will be populated by JavaScript -->
+    </div>
+
+    <!-- Help Section -->
+    <div class="form-section">
+        <h2>❓ How to Use</h2>
+        <div class="help-content">
+            <div class="help-step">
+                <h3>1. Upload Repository</h3>
+                <p>Upload a ZIP file of your repository or enter the path to a local repository. The system will analyze the code structure and prepare for error analysis.</p>
+            </div>
+            
+            <div class="help-step">
+                <h3>2. Provide Error Message</h3>
+                <p>Copy and paste the complete error message, including any stack traces or line numbers. The more information you provide, the better the analysis will be.</p>
+            </div>
+            
+            <div class="help-step">
+                <h3>3. Analyze Error</h3>
+                <p>Click "Analyze Error" to locate the error in your code, understand its context, and get initial classification and suggestions.</p>
+            </div>
+            
+            <div class="help-step">
+                <h3>4. Generate AI Solutions</h3>
+                <p>Use the AI-powered solution generator to get detailed explanations, code fixes, step-by-step instructions, and prevention tips.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="form-section">
+        <h2>✨ Features</h2>
+        <div class="features-grid">
+            <div class="feature-item">
+                <h3>🎯 Smart Error Detection</h3>
+                <p>Automatically locates errors in your codebase using advanced pattern matching and file analysis.</p>
+            </div>
+            
+            <div class="feature-item">
+                <h3>🤖 AI-Powered Solutions</h3>
+                <p>Leverages Claude AI to provide detailed explanations, root cause analysis, and actionable solutions.</p>
+            </div>
+            
+            <div class="feature-item">
+                <h3>🔧 Code Fixes</h3>
+                <p>Generates specific code changes and alternative approaches to resolve your issues.</p>
+            </div>
+            
+            <div class="feature-item">
+                <h3>📚 Learning Resources</h3>
+                <p>Provides relevant documentation links and best practices to help you understand and prevent similar errors.</p>
+            </div>
+            
+            <div class="feature-item">
+                <h3>🛡️ Prevention Tips</h3>
+                <p>Offers strategies and tools to prevent similar errors in the future, improving your development workflow.</p>
+            </div>
+            
+            <div class="feature-item">
+                <h3>🌐 Multi-Language Support</h3>
+                <p>Supports error analysis for Python, JavaScript, TypeScript, HTML, CSS, and many other programming languages.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Styles for Help and Features -->
+<style>
+.help-content {
+    display: grid;
+    gap: 20px;
+}
+
+.help-step {
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+}
+
+.help-step h3 {
+    margin: 0 0 10px 0;
+    color: #2d3748;
+    font-size: 1.1rem;
+}
+
+.help-step p {
+    margin: 0;
+    color: #4a5568;
+    line-height: 1.6;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.feature-item {
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.feature-item h3 {
+    margin: 0 0 10px 0;
+    color: #2d3748;
+    font-size: 1.1rem;
+}
+
+.feature-item p {
+    margin: 0;
+    color: #6c757d;
+    line-height: 1.5;
+}
+
+@media (max-width: 768px) {
+    .features-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .help-content {
+        gap: 15px;
+    }
+    
+    .help-step,
+    .feature-item {
+        padding: 15px;
+    }
+}
+
+/* Dark mode support for help and features */
+@media (prefers-color-scheme: dark) {
+    .help-step,
+    .feature-item {
+        background: #374151;
+        border-color: #4a5568;
+    }
+    
+    .help-step h3,
+    .feature-item h3 {
+        color: #f7fafc;
+    }
+    
+    .help-step p {
+        color: #d1d5db;
+    }
+    
+    .feature-item p {
+        color: #9ca3af;
+    }
+}
+</style>

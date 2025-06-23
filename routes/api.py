@@ -9,6 +9,12 @@ from repositories.conversation_repository import ConversationRepository
 from repositories.analytics_repository import AnalyticsRepository
 from models.conversation import Conversation, Message
 from conversation_manager import ConversationManager
+from error_analyzer import ErrorAnalyzer
+from error_solver import ErrorSolver
+import os
+import tempfile
+import shutil
+from pathlib import Path
 
 # Create a Blueprint for the API routes
 api_bp = Blueprint('api', __name__)
@@ -988,3 +994,384 @@ def send_prompt_stream():
                 break
 
     return Response(event_stream(), mimetype='text/event-stream')
+
+
+# Error Solving API Endpoints
+
+@api_bp.route('/error/analyze', methods=['POST'])
+@login_required
+@check_lynxx_domain
+def analyze_error():
+    """
+    API endpoint to analyze an error in a repository.
+    
+    Request body:
+        repo_path: Path to the repository (required)
+        error_message: Error message to analyze (required)
+        error_type: Optional error type hint (e.g., 'python', 'javascript')
+        
+    Returns:
+        JSON response with error analysis results
+    """
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                "success": False,
+                "error": "Request body is required"
+            }), 400
+        
+        repo_path = data.get('repo_path')
+        error_message = data.get('error_message')
+        error_type = data.get('error_type')
+        
+        if not repo_path:
+            return jsonify({
+                "success": False,
+                "error": "repo_path is required"
+            }), 400
+            
+        if not error_message:
+            return jsonify({
+                "success": False,
+                "error": "error_message is required"
+            }), 400
+        
+        # Validate repository path exists
+        if not os.path.exists(repo_path):
+            return jsonify({
+                "success": False,
+                "error": f"Repository path does not exist: {repo_path}"
+            }), 400
+        
+        # Initialize error analyzer
+        analyzer = ErrorAnalyzer(repo_path)
+        
+        # Analyze the error
+        analysis_result = analyzer.analyze_error(error_message, error_type)
+        
+        return jsonify(analysis_result)
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Error analysis failed: {str(e)}"
+        }), 500
+
+
+@api_bp.route('/error/solve', methods=['POST'])
+@login_required
+@check_lynxx_domain
+def solve_error():
+    """
+    API endpoint to generate solutions for an error.
+    
+    Request body:
+        repo_path: Path to the repository (required)
+        error_message: Error message to solve (required)
+        error_type: Optional error type hint
+        include_code_fixes: Whether to generate code fixes (default: true)
+        include_explanations: Whether to include detailed explanations (default: true)
+        
+    Returns:
+        JSON response with error solutions
+    """
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                "success": False,
+                "error": "Request body is required"
+            }), 400
+        
+        repo_path = data.get('repo_path')
+        error_message = data.get('error_message')
+        error_type = data.get('error_type')
+        include_code_fixes = data.get('include_code_fixes', True)
+        include_explanations = data.get('include_explanations', True)
+        
+        if not repo_path:
+            return jsonify({
+                "success": False,
+                "error": "repo_path is required"
+            }), 400
+            
+        if not error_message:
+            return jsonify({
+                "success": False,
+                "error": "error_message is required"
+            }), 400
+        
+        # Validate repository path exists
+        if not os.path.exists(repo_path):
+            return jsonify({
+                "success": False,
+                "error": f"Repository path does not exist: {repo_path}"
+            }), 400
+        
+        # Initialize error solver
+        solver = ErrorSolver(repo_path)
+        
+        # Solve the error
+        solution_result = solver.solve_error(
+            error_message=error_message,
+            error_type=error_type,
+            include_code_fixes=include_code_fixes,
+            include_explanations=include_explanations
+        )
+        
+        return jsonify(solution_result)
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Error solving failed: {str(e)}"
+        }), 500
+
+
+@api_bp.route('/error/analyze-repo', methods=['POST'])
+@login_required
+@check_lynxx_domain
+def analyze_repository():
+    """
+    API endpoint to analyze a repository for potential errors.
+    
+    Request body:
+        repo_path: Path to the repository (required)
+        file_extensions: List of file extensions to analyze (optional)
+        max_files: Maximum number of files to analyze (default: 50)
+        
+    Returns:
+        JSON response with repository analysis results
+    """
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                "success": False,
+                "error": "Request body is required"
+            }), 400
+        
+        repo_path = data.get('repo_path')
+        file_extensions = data.get('file_extensions', ['.py', '.js', '.jsx', '.ts', '.tsx'])
+        max_files = data.get('max_files', 50)
+        
+        if not repo_path:
+            return jsonify({
+                "success": False,
+                "error": "repo_path is required"
+            }), 400
+        
+        # Validate repository path exists
+        if not os.path.exists(repo_path):
+            return jsonify({
+                "success": False,
+                "error": f"Repository path does not exist: {repo_path}"
+            }), 400
+        
+        # Initialize error analyzer
+        analyzer = ErrorAnalyzer(repo_path)
+        
+        # Find relevant files
+        relevant_files = []
+        file_count = 0
+        
+        for root, dirs, files in os.walk(repo_path):
+            # Skip common non-source directories
+            dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['node_modules', '__pycache__', 'venv', 'env']]
+            
+            for file in files:
+                if file_count >= max_files:
+                    break
+                    
+                file_path = Path(root) / file
+                if file_path.suffix.lower() in file_extensions:
+                    relevant_files.append(str(file_path))
+                    file_count += 1
+            
+            if file_count >= max_files:
+                break
+        
+        # Analyze each file for potential issues
+        analysis_results = []
+        for file_path in relevant_files:
+            try:
+                file_summary = analyzer.get_file_summary(file_path)
+                if not file_summary.get('error'):
+                    analysis_results.append(file_summary)
+            except Exception as e:
+                analysis_results.append({
+                    'file_path': file_path,
+                    'error': f"Failed to analyze: {str(e)}"
+                })
+        
+        return jsonify({
+            "success": True,
+            "repository_path": repo_path,
+            "files_analyzed": len(analysis_results),
+            "total_files_found": len(relevant_files),
+            "file_extensions": file_extensions,
+            "analysis_results": analysis_results
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Repository analysis failed: {str(e)}"
+        }), 500
+
+
+@api_bp.route('/error/upload-repo', methods=['POST'])
+@login_required
+@check_lynxx_domain
+def upload_repository():
+    """
+    API endpoint to upload a repository for error analysis.
+    
+    Request body (multipart/form-data):
+        repo_file: ZIP file containing the repository
+        
+    Returns:
+        JSON response with upload results and temporary path
+    """
+    try:
+        if 'repo_file' not in request.files:
+            return jsonify({
+                "success": False,
+                "error": "No repository file provided"
+            }), 400
+        
+        file = request.files['repo_file']
+        
+        if file.filename == '':
+            return jsonify({
+                "success": False,
+                "error": "No file selected"
+            }), 400
+        
+        if not file.filename.lower().endswith('.zip'):
+            return jsonify({
+                "success": False,
+                "error": "Only ZIP files are supported"
+            }), 400
+        
+        # Create temporary directory
+        temp_dir = tempfile.mkdtemp(prefix='noutai_repo_')
+        
+        try:
+            # Save uploaded file
+            zip_path = os.path.join(temp_dir, 'repository.zip')
+            file.save(zip_path)
+            
+            # Extract ZIP file
+            import zipfile
+            extract_dir = os.path.join(temp_dir, 'extracted')
+            os.makedirs(extract_dir, exist_ok=True)
+            
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                zip_ref.extractall(extract_dir)
+            
+            # Find the actual repository root (handle nested directories)
+            repo_root = extract_dir
+            items = os.listdir(extract_dir)
+            if len(items) == 1 and os.path.isdir(os.path.join(extract_dir, items[0])):
+                repo_root = os.path.join(extract_dir, items[0])
+            
+            # Count files for basic validation
+            file_count = 0
+            for root, dirs, files in os.walk(repo_root):
+                file_count += len(files)
+            
+            if file_count == 0:
+                return jsonify({
+                    "success": False,
+                    "error": "No files found in uploaded repository"
+                }), 400
+            
+            return jsonify({
+                "success": True,
+                "message": "Repository uploaded successfully",
+                "temp_path": repo_root,
+                "file_count": file_count,
+                "cleanup_note": "Temporary files will be cleaned up automatically"
+            })
+            
+        except Exception as e:
+            # Clean up on error
+            shutil.rmtree(temp_dir, ignore_errors=True)
+            raise e
+            
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Repository upload failed: {str(e)}"
+        }), 500
+
+
+@api_bp.route('/error/cleanup-temp', methods=['POST'])
+@login_required
+@check_lynxx_domain
+def cleanup_temp_repository():
+    """
+    API endpoint to clean up temporary repository files.
+    
+    Request body:
+        temp_path: Path to temporary repository directory
+        
+    Returns:
+        JSON response with cleanup status
+    """
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                "success": False,
+                "error": "Request body is required"
+            }), 400
+        
+        temp_path = data.get('temp_path')
+        
+        if not temp_path:
+            return jsonify({
+                "success": False,
+                "error": "temp_path is required"
+            }), 400
+        
+        # Security check: only allow cleanup of temp directories
+        if not temp_path.startswith(tempfile.gettempdir()):
+            return jsonify({
+                "success": False,
+                "error": "Invalid temp path"
+            }), 400
+        
+        # Clean up the temporary directory
+        if os.path.exists(temp_path):
+            # Find the root temp directory (go up until we find the noutai_repo_ prefix)
+            cleanup_path = temp_path
+            while cleanup_path != tempfile.gettempdir():
+                parent = os.path.dirname(cleanup_path)
+                if os.path.basename(cleanup_path).startswith('noutai_repo_'):
+                    break
+                cleanup_path = parent
+            
+            shutil.rmtree(cleanup_path, ignore_errors=True)
+            
+            return jsonify({
+                "success": True,
+                "message": "Temporary files cleaned up successfully"
+            })
+        else:
+            return jsonify({
+                "success": True,
+                "message": "Temporary files already cleaned up"
+            })
+            
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Cleanup failed: {str(e)}"
+        }), 500
