@@ -333,11 +333,6 @@
 
 ## Toekomstige stappen (Must-have)
 
-1. Code error solving
-   - Als er een repo in combinatie met een error message wordt gestuurd moet de error worden gelocaliseerd. 
-   - Output moet de fyle + code geven met error er in
-   - Geef aan wat dez error is 
-   - Geef waar mogelijk suggesties voor oplossingen 
 
 ## Toekomstige stappen (Nice-to-have)
 
