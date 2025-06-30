@@ -68,9 +68,10 @@
 * 4.1.1 Zo ja, werk daarin verder
 * 4.1.2 Zo nee, maak een branche aan en voer daar de werkzaamheden uit
 4.2 Werk wijzigingen uit volgens beschrijving, analyseer relevante files of scripts om goed te berijpen hoe het issue ontwikkeld moet worden.
+* 4.2.1 Als er nieuwe code wordt geschreven met meerdere Python functies, zorg ervoor dat elke functie in een eigen Python-bestand staat, tenzij functies direct van elkaar afhankelijk zijn. 
+* 4.2.1 Groepeer deze .py bestanden in een logisch vernoemd mapje
 4.3 Commit wijzigingen of file direct en met een duidelijk bericht
 4.4 Werk tegelijk documenten bij (`project_info.txt`, `project_stappen.txt`) en verwijder al uitgevoerde stappen uit 'project\_stappen.txt' door ze samen te vatten en daarmee het document compact te houden.
-
 
 4.5 Maak Pull Request:
 * 4.5.1 Titel: korte omschrijving
@@ -88,4 +89,3 @@
 ## 6. Algemeen
 
 6.1 Houd code overzichtelijk en documentatie synchroon
-6.2 Splits grote wijzigingen (>400 regels) in kleinere delen
