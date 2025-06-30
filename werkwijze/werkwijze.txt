@@ -53,37 +53,29 @@
 3.1 Maak nieuw issue op basis van eerstvolgende 'must-have'-stap uit `project_stappen.txt` als er geen open issue aanwezig is, maar als geen 'must-have' stap open staat, stop je met de melding: 'Alle must-have taken zijn uitgevoerd'
 * 3.1.1 Titel: omschrijving te implementeren functionaliteit
 * 3.1.2 Analyseer relevante scripts om te bepalen hoe de functionaliteit het beste toegevoegd kan worden, doe dit grondig.
-* 3.1.3 **Gebruik `repository_summary.txt` als referentie om te begrijpen welke bestanden relevant zijn en hoe de architectuur in elkaar zit**
-3.1.4 Beschrijving:
-* 3.1.4.1 Duidelijke uitleg implementatie. Denk hier niet alleen technisch maar leg ook goed het doel, nut een noodzaak uit. Als er ook teksten, communicatie of andere niet teschnische elementen moeten worden opgeleverd, denk hier al over na en beschrijf hier zo goed mogelijk wat er moet gebeuren of werk de teksten alvast uit.
-* 3.1.4.2 Welke modules/bestanden aangemaakt of gewijzigd (gebruik repository_summary.txt om de juiste bestanden te identificeren)
-* 3.1.4.3 Welke functies toegevoegd/aangepast
-* 3.1.4.4 Acceptatiecriteria (bijvoorbeeld: functie X levert resultaat Y bij input Z)
-* 3.1.4.5 Maak een branche aan, geef expliciete branchnaam (`feature/...`)
-3.1.5 Labels toevoegen: `"must-have"`, `"nice-to-have"` of `"bug"`
-3.1.6 Als je klaar bent geef je geen samenvatting van je werkzaamheden maar vertelt alleen: 'Ik heb issue \[nummer] aangemaakt voor Repo \[owner]/\[repo]', je doet verder niks en je wacht verdere instructies
+3.1.3 Beschrijving:
+* 3.1.3.1 Duidelijke uitleg implementatie. Denk hier niet alleen technisch maar leg ook goed het doel, nut een noodzaak uit. Als er ook teksten, communicatie of andere niet teschnische elementen moeten worden opgeleverd, denk hier al over na en beschrijf hier zo goed mogelijk wat er moet gebeuren of werk de teksten alvast uit.
+* 3.1.3.2 Welke modules/bestanden aangemaakt of gewijzigd
+* 3.1.3.3 Welke functies toegevoegd/aangepast
+* 3.1.3.4 Acceptatiecriteria (bijvoorbeeld: functie X levert resultaat Y bij input Z)
+* 3.1.3.5 Maak een branche aan, geef expliciete branchnaam (`feature/...`)
+3.1.4 Labels toevoegen: `"must-have"`, `"nice-to-have"` of `"bug"`
+3.1.5 Als je klaar bent geef je geen samenvatting van je werkzaamheden maar vertelt alleen: 'Ik heb issue \[nummer] aangemaakt voor Repo \[owner]/\[repo]', je doet verder niks en je wacht verdere instructies
 
 ## 4. Issue uitvoeren
 
-4.1 **Raadpleeg eerst `repository_summary.txt` om de relevante bestanden en architectuur te begrijpen voordat je begint**
+4.1 Kijk of er een branch genoemd wordt in het issue:
+* 4.1.1 Zo ja, werk daarin verder
+* 4.1.2 Zo nee, maak een branche aan en voer daar de werkzaamheden uit
+4.2 Werk wijzigingen uit volgens beschrijving, analyseer relevante files of scripts om goed te berijpen hoe het issue ontwikkeld moet worden.
+4.3 Commit wijzigingen of file direct en met een duidelijk bericht
+4.4 Werk tegelijk documenten bij (`project_info.txt`, `project_stappen.txt`) en verwijder al uitgevoerde stappen uit 'project\_stappen.txt' door ze samen te vatten en daarmee het document compact te houden.
 
-4.2 Kijk of er een branch genoemd wordt in het issue:
-* 4.2.1 Zo ja, werk daarin verder
-* 4.2.2 Zo nee, maak een branche aan en voer daar de werkzaamheden uit
 
-4.3 Werk wijzigingen uit volgens beschrijving, analyseer relevante files of scripts om goed te berijpen hoe het issue ontwikkeld moet worden.
-* 4.3.1 **Gebruik `repository_summary.txt` om te identificeren welke bestanden je moet bekijken of wijzigen**
-* 4.3.2 **Bij errors of problemen, raadpleeg `repository_summary.txt` om te begrijpen welke bestanden gerelateerd zijn aan het probleem**
-
-4.4 Commit wijzigingen of file direct en met een duidelijk bericht
-
-4.5 Werk tegelijk documenten bij (`project_info.txt`, `project_stappen.txt`) en verwijder al uitgevoerde stappen uit 'project\_stappen.txt' door ze samen te vatten en daarmee het document compact te houden.
-
-4.6 Maak Pull Request:
-* 4.6.1 Titel: korte omschrijving
-* 4.6.2 Beschrijving: refereer naar issue, beschrijf uitgevoerde wijzigingen, status tests en documentatie
-
-4.7 Als je klaar bent geef je geen samenvatting van je werkzaamheden maar vertelt alleen: 'Ik heb Pull Request \[nummer] aangemaakt voor Repo \[owner]/\[repo]', je doet verder niks en je wacht verdere instructies
+4.5 Maak Pull Request:
+* 4.5.1 Titel: korte omschrijving
+* 4.5.2 Beschrijving: refereer naar issue, beschrijf uitgevoerde wijzigingen, status tests en documentatie
+4.6 Als je klaar bent geef je geen samenvatting van je werkzaamheden maar vertelt alleen: 'Ik heb Pull Request \[nummer] aangemaakt voor Repo \[owner]/\[repo]', je doet verder niks en je wacht verdere instructies
 
 ## 5. Mergen Pull Request
 
@@ -97,17 +89,3 @@
 
 6.1 Houd code overzichtelijk en documentatie synchroon
 6.2 Splits grote wijzigingen (>400 regels) in kleinere delen
-6.3 **Gebruik altijd `repository_summary.txt` als referentie om de codebase te begrijpen en de juiste bestanden te identificeren bij problemen of nieuwe ontwikkelingen**
-
-## 7. Troubleshooting en Error Handling
-
-7.1 **Bij errors of onverwacht gedrag:**
-* 7.1.1 Raadpleeg eerst `repository_summary.txt` om te begrijpen welke bestanden gerelateerd zijn aan het probleem
-* 7.1.2 Identificeer de relevante modules en hun onderlinge relaties
-* 7.1.3 Bekijk de betreffende bestanden om de oorzaak te achterhalen
-* 7.1.4 Gebruik de architectuur informatie uit de repository summary om de impact van wijzigingen te begrijpen
-
-7.2 **Bij het toevoegen van nieuwe functionaliteit:**
-* 7.2.1 Controleer in `repository_summary.txt` waar vergelijkbare functionaliteit al bestaat
-* 7.2.2 Volg de bestaande architectuurpatronen en modulestructuur
-* 7.2.3 Zorg ervoor dat nieuwe code consistent is met de bestaande codebase structuur
