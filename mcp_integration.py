@@ -1,18 +1,19 @@
 """
 MCP (Model Context Protocol) integration module.
-Handles communication with MCP servers for tool usage.
+Handles communication with MCP servers for tool usage with multi-platform support.
 """
 import logging
 import asyncio
-from typing import Dict, List, Optional, Any, Callable
+from typing import Dict, List, Optional, Any, Callable, Union
 import mcp_connector
 from anthropic_config import AnthropicConfig
+from platform_management import PlatformManager
 
 logger = logging.getLogger(__name__)
 
 
 class MCPIntegration:
-    """Manages MCP server connections and tool usage."""
+    """Manages MCP server connections and tool usage with multi-platform support."""
     
     def __init__(self, config: AnthropicConfig):
         """
@@ -25,9 +26,13 @@ class MCPIntegration:
         self.connector = mcp_connector.MCPConnector()
         self._connected = False
         
+        # Initialize platform manager for multi-platform support
+        self.platform_manager = PlatformManager(config)
+        self._platform_manager_initialized = False
+        
     async def connect(self, server_script_path: Optional[str] = None, server_venv_path: Optional[str] = None) -> bool:
         """
-        Connect to MCP server.
+        Connect to GitHub MCP server (legacy method for backward compatibility).
         
         Args:
             server_script_path: Path to server script
@@ -46,26 +51,58 @@ class MCPIntegration:
                 
             await self.connector.connect_to_server(script_path, venv_path)
             self._connected = True
-            logger.info("Successfully connected to MCP server")
+            logger.info("Successfully connected to GitHub MCP server")
             return True
             
         except Exception as e:
-            logger.error(f"Failed to connect to MCP server: {str(e)}")
+            logger.error(f"Failed to connect to GitHub MCP server: {str(e)}")
             return False
+    
+    async def connect_all_platforms(self) -> Dict[str, bool]:
+        """
+        Connect to all available platform MCP servers.
+        
+        Returns:
+            Dict with connection status for each platform
+        """
+        try:
+            # Initialize platform manager
+            connection_results = await self.platform_manager.initialize()
+            self._platform_manager_initialized = True
+            
+            # Also connect to GitHub via legacy connector for backward compatibility
+            github_connected = await self.connect()
+            if github_connected:
+                connection_results["github_legacy"] = True
+                
+            logger.info(f"Platform connections: {connection_results}")
+            return connection_results
+            
+        except Exception as e:
+            logger.error(f"Failed to initialize platform connections: {str(e)}")
+            return {}
             
     async def disconnect(self) -> None:
-        """Disconnect from MCP server."""
+        """Disconnect from all MCP servers."""
         if self._connected:
             try:
                 await self.connector.close()
                 self._connected = False
-                logger.info("Disconnected from MCP server")
+                logger.info("Disconnected from GitHub MCP server")
             except Exception as e:
-                logger.error(f"Error disconnecting from MCP server: {str(e)}")
+                logger.error(f"Error disconnecting from GitHub MCP server: {str(e)}")
+                
+        if self._platform_manager_initialized:
+            try:
+                await self.platform_manager.disconnect_all()
+                self._platform_manager_initialized = False
+                logger.info("Disconnected from all platform MCP servers")
+            except Exception as e:
+                logger.error(f"Error disconnecting from platform MCP servers: {str(e)}")
                 
     async def get_tools(self) -> List[Dict[str, Any]]:
         """
-        Get available tools from MCP server.
+        Get available tools from MCP server (legacy GitHub-only method).
         
         Returns:
             List of tool definitions
@@ -84,11 +121,47 @@ class MCPIntegration:
                     unique_tools.append(tool)
                     seen.add(tool["name"])
                     
-            logger.debug(f"Retrieved {len(unique_tools)} unique tools from MCP server")
+            logger.debug(f"Retrieved {len(unique_tools)} unique tools from GitHub MCP server")
             return unique_tools
             
         except Exception as e:
-            logger.error(f"Failed to get tools from MCP server: {str(e)}")
+            logger.error(f"Failed to get tools from GitHub MCP server: {str(e)}")
+            return []
+    
+    async def get_all_platform_tools(self) -> Dict[str, List[Dict[str, Any]]]:
+        """
+        Get tools from all connected platforms.
+        
+        Returns:
+            Dict with tools grouped by platform
+        """
+        if not self._platform_manager_initialized:
+            return {}
+            
+        try:
+            return await self.platform_manager.get_all_tools()
+        except Exception as e:
+            logger.error(f"Failed to get platform tools: {str(e)}")
+            return {}
+    
+    async def get_unified_tools(self) -> List[Dict[str, Any]]:
+        """
+        Get unified tool list from all platforms.
+        
+        Returns:
+            List of all available tools with platform identifiers
+        """
+        if not self._platform_manager_initialized:
+            # Fallback to legacy GitHub tools
+            github_tools = await self.get_tools()
+            for tool in github_tools:
+                tool["platform"] = "github"
+            return github_tools
+            
+        try:
+            return await self.platform_manager.get_unified_tools()
+        except Exception as e:
+            logger.error(f"Failed to get unified tools: {str(e)}")
             return []
     
     def _format_tool_args(self, tool_name: str, tool_args: Dict[str, Any]) -> str:
@@ -97,74 +170,74 @@ class MCPIntegration:
             repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
             path = tool_args.get('path', 'unknown')
             ref = tool_args.get('ref', 'main')
-            return f"  Repository: {repo_info}\n  Path: {path}\n  Branch/Ref: {ref}"
+            return f"  Repository: {repo_info}\\n  Path: {path}\\n  Branch/Ref: {ref}"
         
         elif tool_name == "create_issue":
             repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
             title = tool_args.get('title', 'No title')
             labels = tool_args.get('labels', [])
-            return f"  Repository: {repo_info}\n  Title: {title}\n  Labels: {', '.join(labels) if labels else 'None'}"
+            return f"  Repository: {repo_info}\\n  Title: {title}\\n  Labels: {', '.join(labels) if labels else 'None'}"
         
         elif tool_name == "update_issue":
             repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
             issue_num = tool_args.get('issue_number', 'unknown')
             title = tool_args.get('title', 'No title change')
             state = tool_args.get('state', 'No state change')
-            return f"  Repository: {repo_info}\n  Issue: #{issue_num}\n  Title: {title}\n  State: {state}"
+            return f"  Repository: {repo_info}\\n  Issue: #{issue_num}\\n  Title: {title}\\n  State: {state}"
         
         elif tool_name == "create_pull_request":
             repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
             title = tool_args.get('title', 'No title')
             head = tool_args.get('head', 'unknown')
             base = tool_args.get('base', 'unknown')
-            return f"  Repository: {repo_info}\n  Title: {title}\n  From: {head} → {base}"
+            return f"  Repository: {repo_info}\\n  Title: {title}\\n  From: {head} → {base}"
         
         elif tool_name == "merge_pull_request":
             repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
             pr_num = tool_args.get('pull_number', 'unknown')
             method = tool_args.get('merge_method', 'merge')
-            return f"  Repository: {repo_info}\n  Pull Request: #{pr_num}\n  Method: {method}"
+            return f"  Repository: {repo_info}\\n  Pull Request: #{pr_num}\\n  Method: {method}"
         
         elif tool_name == "create_or_update_file":
             repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
             path = tool_args.get('path', 'unknown')
             branch = tool_args.get('branch', 'main')
             content_size = len(str(tool_args.get('content', '')))
-            return f"  Repository: {repo_info}\n  Path: {path}\n  Branch: {branch}\n  Content size: {content_size} chars"
+            return f"  Repository: {repo_info}\\n  Path: {path}\\n  Branch: {branch}\\n  Content size: {content_size} chars"
         
         elif tool_name == "push_files":
             repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
             branch = tool_args.get('branch', 'unknown')
             files = tool_args.get('files', [])
             file_count = len(files)
-            return f"  Repository: {repo_info}\n  Branch: {branch}\n  Files: {file_count} files"
+            return f"  Repository: {repo_info}\\n  Branch: {branch}\\n  Files: {file_count} files"
         
         elif tool_name == "list_issues":
             repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
             state = tool_args.get('state', 'open')
             labels = tool_args.get('labels', [])
-            return f"  Repository: {repo_info}\n  State: {state}\n  Labels: {', '.join(labels) if labels else 'All'}"
+            return f"  Repository: {repo_info}\\n  State: {state}\\n  Labels: {', '.join(labels) if labels else 'All'}"
         
         elif tool_name == "search_issues":
             query = tool_args.get('query', 'No query')
             per_page = tool_args.get('per_page', 30)
-            return f"  Query: {query}\n  Per page: {per_page}"
+            return f"  Query: {query}\\n  Per page: {per_page}"
         
         elif tool_name == "search_repositories":
             query = tool_args.get('query', 'No query')
             sort = tool_args.get('sort', 'best match')
-            return f"  Query: {query}\n  Sort: {sort}"
+            return f"  Query: {query}\\n  Sort: {sort}"
         
         elif tool_name == "create_repository":
             name = tool_args.get('name', 'unknown')
             private = tool_args.get('private', True)
             description = tool_args.get('description', 'No description')
-            return f"  Name: {name}\n  Private: {private}\n  Description: {description}"
+            return f"  Name: {name}\\n  Private: {private}\\n  Description: {description}"
         
         elif tool_name == "fork_repository":
             repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
             org = tool_args.get('organization', 'Personal account')
-            return f"  Repository: {repo_info}\n  Fork to: {org}"
+            return f"  Repository: {repo_info}\\n  Fork to: {org}"
         
         else:
             # Generic formatting for unknown tools
@@ -173,7 +246,7 @@ class MCPIntegration:
                 if isinstance(value, str) and len(value) > 50:
                     value = value[:47] + "..."
                 formatted_args.append(f"  {key}: {value}")
-            return "\n".join(formatted_args) if formatted_args else "  No parameters"
+            return "\\n".join(formatted_args) if formatted_args else "  No parameters"
     
     def _summarize_result(self, tool_name: str, content: Any) -> str:
         """Make a concise summary of the result."""
@@ -190,7 +263,7 @@ class MCPIntegration:
                     # Estimate file size
                     content_length = len(content_str)
                     file_type = "text" if "text" in content_str else "binary"
-                    return f"  File retrieved ({content_length/1024:.1f} KB)\n  Type: {file_type}"
+                    return f"  File retrieved ({content_length/1024:.1f} KB)\\n  Type: {file_type}"
                 else:
                     return f"  File content retrieved ({len(content_str)} chars)"
             except:
@@ -201,7 +274,7 @@ class MCPIntegration:
                 try:
                     # Extract issue number if possible
                     import re
-                    match = re.search(r'"number":\s*(\d+)', content_str)
+                    match = re.search(r'"number":\\s*(\\d+)', content_str)
                     if match:
                         issue_num = match.group(1)
                         return f"  Issue #{issue_num} processed successfully"
@@ -213,7 +286,7 @@ class MCPIntegration:
             if "number" in content_str:
                 try:
                     import re
-                    match = re.search(r'"number":\s*(\d+)', content_str)
+                    match = re.search(r'"number":\\s*(\\d+)', content_str)
                     if match:
                         pr_num = match.group(1)
                         return f"  Pull Request #{pr_num} created"
@@ -230,7 +303,7 @@ class MCPIntegration:
             if "commit" in content_str:
                 try:
                     import re
-                    match = re.search(r'"sha":\s*"([a-f0-9]{7})', content_str)
+                    match = re.search(r'"sha":\\s*"([a-f0-9]{7})', content_str)
                     if match:
                         sha = match.group(1)
                         return f"  Files committed (SHA: {sha})"
@@ -254,7 +327,7 @@ class MCPIntegration:
             try:
                 import re
                 # Look for total_count in search results
-                match = re.search(r'"total_count":\s*(\d+)', content_str)
+                match = re.search(r'"total_count":\\s*(\\d+)', content_str)
                 if match:
                     total = match.group(1)
                     item_type = "issues" if "issue" in tool_name else "repositories"
@@ -266,7 +339,7 @@ class MCPIntegration:
         else:
             # Generic result summary
             if len(content_str) > 200:
-                return f"  Result received ({len(content_str)} chars)\n  Preview: {content_str[:100]}..."
+                return f"  Result received ({len(content_str)} chars)\\n  Preview: {content_str[:100]}..."
             else:
                 return f"  Result: {content_str}"
             
@@ -274,27 +347,42 @@ class MCPIntegration:
         self,
         tool_name: str,
         tool_args: Dict[str, Any],
+        platform: Optional[str] = None,
+        repository_hint: Optional[str] = None,
         log_callback: Optional[Callable[[str], None]] = None
     ) -> Dict[str, Any]:
         """
-        Execute a tool through MCP server.
+        Execute a tool through appropriate MCP server.
         
         Args:
             tool_name: Name of the tool to execute
             tool_args: Arguments for the tool
+            platform: Optional platform override ('github' or 'bitbucket')
+            repository_hint: Optional repository identifier hint
             log_callback: Optional callback for logging
             
         Returns:
             Tool execution result
         """
         try:
+            # Use platform manager if initialized
+            if self._platform_manager_initialized:
+                return await self.platform_manager.use_tool(
+                    tool_name=tool_name,
+                    tool_args=tool_args,
+                    platform=platform,
+                    repository_hint=repository_hint,
+                    log_callback=log_callback
+                )
+            
+            # Fallback to legacy GitHub-only implementation
             if not self._connected:
                 raise RuntimeError("Not connected to MCP server")
             
             # Log tool start with formatted parameters
             if log_callback:
                 formatted_args = self._format_tool_args(tool_name, tool_args)
-                log_callback(f"▶ Starting tool: {tool_name}\n{formatted_args}")
+                log_callback(f"▶ Starting tool: {tool_name}\\n{formatted_args}")
                 
             result = await self.connector.use_tool(tool_name=tool_name, tool_args=tool_args)
             
@@ -302,18 +390,18 @@ class MCPIntegration:
             logger.info(f"Tool '{tool_name}' executed successfully")
             if log_callback:
                 result_summary = self._summarize_result(tool_name, result.content)
-                log_callback(f"✓ Tool {tool_name} completed:\n{result_summary}")
+                log_callback(f"✓ Tool {tool_name} completed:\\n{result_summary}")
                 
-            return {"success": True, "content": result.content}
+            return {"success": True, "content": result.content, "platform": "github"}
             
         except Exception as e:
             error_msg = f"Tool '{tool_name}' failed with error: {str(e)}"
             logger.error(error_msg)
             
             if log_callback:
-                log_callback(f"✗ Tool {tool_name} failed:\n  Error: {str(e)}")
+                log_callback(f"✗ Tool {tool_name} failed:\\n  Error: {str(e)}")
                 
-            return {"success": False, "error": str(e), "content": error_msg}
+            return {"success": False, "error": str(e), "content": error_msg, "platform": "unknown"}
             
     async def handle_tool_use(
         self,
@@ -345,8 +433,8 @@ class MCPIntegration:
                 tool_args = content.input
                 tool_id = content.id
                 
-                # Execute tool
-                result = await self.use_tool(tool_name, tool_args, log_callback)
+                # Execute tool with platform support
+                result = await self.use_tool(tool_name, tool_args, log_callback=log_callback)
                 
                 # Add assistant message with tool use
                 message_params["messages"].append({
@@ -366,7 +454,7 @@ class MCPIntegration:
                 message_params["messages"].append(tool_result_message)
                 
                 # Get next response
-                response = response = client.create_message(**message_params)
+                response = client.create_message(**message_params)
                 logger.info(f"Received follow-up response after tool use")
                 
         return response
@@ -374,4 +462,63 @@ class MCPIntegration:
     @property
     def is_connected(self) -> bool:
         """Check if connected to MCP server."""
-        return self._connected
+        return self._connected or self._platform_manager_initialized
+    
+    def get_connection_status(self) -> Dict[str, bool]:
+        """
+        Get connection status for all platforms.
+        
+        Returns:
+            Dict with connection status for each platform
+        """
+        status = {"github_legacy": self._connected}
+        
+        if self._platform_manager_initialized:
+            platform_status = self.platform_manager.get_connection_status()
+            status.update(platform_status)
+            
+        return status
+    
+    def get_available_platforms(self) -> List[str]:
+        """
+        Get list of available (connected) platforms.
+        
+        Returns:
+            List of available platform names
+        """
+        if self._platform_manager_initialized:
+            return self.platform_manager.get_available_platforms()
+        elif self._connected:
+            return ["github"]
+        else:
+            return []
+    
+    def set_active_platform(self, platform: str) -> bool:
+        """
+        Set the active platform for tool execution.
+        
+        Args:
+            platform: Platform name to set as active
+            
+        Returns:
+            True if platform was set successfully
+        """
+        if self._platform_manager_initialized:
+            return self.platform_manager.set_active_platform(platform)
+        else:
+            logger.warning("Platform manager not initialized, cannot set active platform")
+            return False
+    
+    def get_active_platform(self) -> str:
+        """
+        Get the currently active platform.
+        
+        Returns:
+            Active platform name
+        """
+        if self._platform_manager_initialized:
+            return self.platform_manager.get_active_platform().value
+        elif self._connected:
+            return "github"
+        else:
+            return "none"

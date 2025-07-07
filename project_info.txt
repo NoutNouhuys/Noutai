@@ -1,7 +1,7 @@
 # Project Informatie: aiontwikkelhulp
 
 ## Projectoverzicht
-De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie. Bevat workflow automatisering voor het automatisch openen en sluiten van chat windows op basis van AI responses, inclusief automatische configuratie van nieuwe chats met Claude Sonnet 4 en developer_agent preset. Volledig analytics systeem voor token usage tracking, kosten berekening en usage insights met real-time weergave in de chat interface. Uitgebreid met conversation enhancements voor token usage weergave en bulk delete functionaliteit. CSRF token ondersteuning geïmplementeerd voor alle API calls. Volledig gerefactored voor betere code organisatie met scheiding van HTML, JavaScript en CSS. Enhanced tool logging geïmplementeerd voor gedetailleerde inzichten in tool uitvoering met visueel onderscheidbare log patterns. Workflow tabs functionaliteit geïmplementeerd voor directe toegang tot 3 verschillende workflow profielen via tabs in plaats van één enkel window, wat de gebruikservaring verbetert door directe toegang, overzicht en efficiëntie. Tab kleurstelling verbeterd voor optimale leesbaarheid in zowel light als dark mode met WCAG AA compliance.
+De AI Ontwikkelhulp (aiontwikkelhulp) is een tool die de communicatie tussen gebruikers en AI-modellen (specifiek Claude) faciliteert om code-ontwikkeling en repository-beheer te ondersteunen. De tool biedt een gestructureerde manier om AI-gestuurde ontwikkeling uit te voeren volgens een vooraf gedefinieerde werkwijze. Ondersteunt configureerbare LLM instellingen inclusief temperature configuratie en presets voor verschillende use cases met volledige UI integratie. Bevat workflow automatisering voor het automatisch openen en sluiten van chat windows op basis van AI responses, inclusief automatische configuratie van nieuwe chats met Claude Sonnet 4 en developer_agent preset. Volledig analytics systeem voor token usage tracking, kosten berekening en usage insights met real-time weergave in de chat interface. Uitgebreid met conversation enhancements voor token usage weergave en bulk delete functionaliteit. CSRF token ondersteuning geïmplementeerd voor alle API calls. Volledig gerefactored voor betere code organisatie met scheiding van HTML, JavaScript en CSS. Enhanced tool logging geïmplementeerd voor gedetailleerde inzichten in tool uitvoering met visueel onderscheidbare log patterns. Workflow tabs functionaliteit geïmplementeerd voor directe toegang tot 3 verschillende workflow profielen via tabs in plaats van één enkel window, wat de gebruikservaring verbetert door directe toegang, overzicht en efficiëntie. Tab kleurstelling verbeterd voor optimale leesbaarheid in zowel light als dark mode met WCAG AA compliance. **Nieuw: Multi-platform Git repository ondersteuning met Bitbucket MCP integratie naast bestaande GitHub ondersteuning, inclusief platform selector UI, automatische platform detectie, en unified tool interface.**
 
 ## Architectuur
 De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruikers te helpen bij het ontwikkelen van software met behulp van AI:
@@ -10,8 +10,16 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - Flask web-applicatie (app.py) - met analytics routes en CSRF protection
 - Anthropic API integratie (anthropic_api.py) - met token tracking integratie
 - MCP Connector voor tools integratie (mcp_connector.py)
+- **Multi-platform MCP integratie (mcp_integration.py) - uitgebreid met platform management**
+- **Platform Management (platform_management/) - nieuwe module voor multi-platform ondersteuning**
 - Configuratie (config.py)
 - Repository beheer
+
+### Platform Management Modules (NIEUW):
+- Platform Manager (platform_management/platform_manager.py) - Centrale platform management en routing
+- MCP Bitbucket Connector (platform_management/mcp_bitbucket_connector.py) - Bitbucket-specifieke MCP integratie
+- Platform Selector UI (static/js/platform-selector.js) - Frontend platform selectie
+- Platform Selector CSS (static/css/platform-selector.css) - Styling voor platform UI
 
 ### Analytics Modules:
 - Token tracker (analytics/token_tracker.py) - Token usage monitoring en recording
@@ -20,18 +28,21 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - Analytics repository (repositories/analytics_repository.py) - Database operaties voor analytics
 
 ### Nieuwe Modules (Refactoring):
-- Anthropic configuratie (anthropic_config.py) - met LLM settings en presets
+- **Anthropic configuratie (anthropic_config.py) - uitgebreid met Bitbucket MCP server configuratie**
 - Anthropic client (anthropic_client.py) - met temperature en preset ondersteuning
 - Conversation manager (conversation_manager.py)
-- MCP integratie (mcp_integration.py) - met enhanced tool logging
+- MCP integratie (mcp_integration.py) - met enhanced tool logging en multi-platform support
 
 ### Frontend Modules:
 - templates/home.html - Hoofdtemplate met workflow tabs functionaliteit (6.8KB)
 - templates/components/chat_window.html - Herbruikbare chat window component
 - templates/conversations.html - Conversation management met token usage, bulk delete en CSRF token ondersteuning
 - templates/analytics.html - Analytics dashboard template
+- **templates/base.html - uitgebreid met platform selector CSS en JavaScript includes**
 - static/js/home.js - JavaScript met workflow tabs en tab-based workflow automatisering (59KB)
+- **static/js/platform-selector.js - NIEUW: Platform selector JavaScript module**
 - static/css/home.css - CSS met verbeterde workflow tabs styling, WCAG AA compliance en activity indicators (5.4KB)
+- **static/css/platform-selector.css - NIEUW: Platform selector styling**
 - static/css/style.css - Algemene applicatie styling
 - static/css/analytics.css - Styling voor analytics dashboard
 - static/js/analytics.js - JavaScript voor analytics dashboard functionaliteit
@@ -39,6 +50,109 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - static/css/log-formatter.css - Styling voor geformatteerde logs met enhanced tool logging patterns
 
 ## Modules
+
+### platform_management/platform_manager.py (NIEUW)
+- **Status**: Nieuw geïmplementeerd voor multi-platform ondersteuning
+- **Pad**: /platform_management/platform_manager.py
+- **Functionaliteit**: Centrale platform management voor multi-platform Git repository ondersteuning. Biedt:
+  - Platform detectie (GitHub vs Bitbucket) op basis van repository identifiers
+  - Automatische routing naar juiste connector (GitHub of Bitbucket)
+  - Platform switching functionaliteit met actieve platform management
+  - Unified tool interface voor beide platforms
+  - Tool argument conversie tussen GitHub en Bitbucket formaten
+  - Connection status management voor alle platforms
+  - Error handling en fallback mechanismen
+- **Afhankelijkheden**: anthropic_config.py, mcp_integration.py, mcp_bitbucket_connector.py
+
+### platform_management/mcp_bitbucket_connector.py (NIEUW)
+- **Status**: Nieuw geïmplementeerd voor Bitbucket integratie
+- **Pad**: /platform_management/mcp_bitbucket_connector.py
+- **Functionaliteit**: Bitbucket-specifieke MCP server connector. Biedt:
+  - Connectie met Bitbucket MCP server via configureerbare script en venv paths
+  - Bitbucket-specifieke tool argument formatting (workspace/repo_slug vs owner/repo)
+  - Tool result summarization aangepast voor Bitbucket API responses
+  - Error handling en logging specifiek voor Bitbucket operaties
+  - Platform identifier toevoeging aan alle tool responses
+  - Ondersteuning voor Bitbucket-specifieke operaties (pull requests, issues, repositories)
+- **Afhankelijkheden**: anthropic_config.py, mcp_connector.py
+
+### static/js/platform-selector.js (NIEUW)
+- **Status**: Nieuw geïmplementeerd voor platform selector UI
+- **Pad**: /static/js/platform-selector.js
+- **Functionaliteit**: Frontend JavaScript module voor platform selectie en management. Biedt:
+  - Platform selector UI component met dropdown voor GitHub/Bitbucket/Auto-detect
+  - Real-time connection status indicators voor beide platforms
+  - Platform switching met API communicatie naar backend
+  - Refresh functionaliteit voor platform connections
+  - Error handling en user feedback via notifications
+  - Event dispatching voor platform change notifications naar andere componenten
+  - Responsive design ondersteuning
+- **Afhankelijkheden**: Bootstrap 5, Font Awesome icons, API endpoints
+
+### static/css/platform-selector.css (NIEUW)
+- **Status**: Nieuw geïmplementeerd voor platform selector styling
+- **Pad**: /static/css/platform-selector.css
+- **Functionaliteit**: CSS styling voor platform selector UI componenten. Biedt:
+  - Platform selector container styling met responsive design
+  - Connection status indicators met GitHub/Bitbucket brand colors
+  - Active platform indicator met visual feedback
+  - Hover effects en transitions voor interactieve elementen
+  - Dark theme ondersteuning consistent met applicatie thema
+  - Notification styling voor success/error feedback
+  - Mobile-responsive design voor alle screen sizes
+- **Afhankelijkheden**: Bootstrap 5 CSS variabelen, Font Awesome icons
+
+### anthropic_config.py
+- **Status**: Uitgebreid met Bitbucket MCP server configuratie
+- **Pad**: /anthropic_config.py
+- **Functionaliteit**: Centralized Anthropic-specifieke configuratie met lazy loading en validatie. **Nieuw toegevoegd**:
+  - Bitbucket MCP server configuratie properties (bitbucket_mcp_server_script, bitbucket_mcp_server_venv_path)
+  - Platform-specifieke configuratie methods (get_platform_config, validate_platform_config)
+  - Available platforms detection (get_available_platforms)
+  - Environment variable ondersteuning voor beide platforms
+  - Configuration validation voor multi-platform setup
+- **Afhankelijkheden**: Geen directe afhankelijkheden
+
+### mcp_integration.py
+- **Status**: Uitgebreid met multi-platform support en unified tool routing
+- **Pad**: /mcp_integration.py
+- **Functionaliteit**: Beheert MCP server connecties en tool gebruik met multi-platform ondersteuning. **Nieuw toegevoegd**:
+  - Platform manager integratie voor multi-platform tool routing
+  - Unified tool interface die automatisch het juiste platform selecteert
+  - Backward compatibility met bestaande GitHub-only implementatie
+  - Platform-aware tool execution met repository hint ondersteuning
+  - Connection status management voor alle platforms
+  - Enhanced logging met platform identificatie
+- **Afhankelijkheden**: mcp_connector.py, anthropic_config.py, platform_management.PlatformManager
+
+### routes/api.py
+- **Status**: Uitgebreid met platform management API endpoints
+- **Pad**: /routes/api.py
+- **Functionaliteit**: API endpoints voor conversation management en **nieuw toegevoegd** platform management. **Nieuwe endpoints**:
+  - GET /api/platform/status - Platform connection status en available platforms
+  - POST /api/platform/set-active - Set active platform voor tool execution
+  - POST /api/platform/refresh - Refresh platform connections
+  - GET /api/platform/tools - Get available tools from all platforms (unified of grouped)
+  - POST /api/platform/detect - Detect platform from repository identifier
+- **Afhankelijkheden**: anthropic_api.py, ConversationManager, ConversationRepository, AnalyticsRepository, Flask app context, Flask-WTF CSRF
+
+### templates/base.html
+- **Status**: Uitgebreid met platform selector includes
+- **Pad**: /templates/base.html
+- **Functionaliteit**: Basis template met navigatie, thema switching en CSRF token meta tag. **Nieuw toegevoegd**:
+  - Platform selector CSS include (platform-selector.css)
+  - Platform selector JavaScript include (platform-selector.js)
+  - Updated navbar branding naar "AI Ontwikkelhulp" met Git icon
+- **Afhankelijkheden**: Flask-WTF CSRF token functionaliteit, platform selector assets
+
+### .env.example
+- **Status**: Uitgebreid met Bitbucket MCP server configuratie
+- **Pad**: /.env.example
+- **Functionaliteit**: Environment variables template. **Nieuw toegevoegd**:
+  - BITBUCKET_MCP_SERVER_SCRIPT - Path naar Bitbucket MCP server script
+  - BITBUCKET_MCP_SERVER_VENV_PATH - Path naar Bitbucket MCP server virtual environment
+  - Documentatie voor beide GitHub en Bitbucket MCP server configuratie
+- **Afhankelijkheden**: Geen
 
 ### static/css/home.css
 - **Status**: Verbeterd met professionele tab kleurstelling en WCAG AA compliance (5.4KB)
@@ -67,17 +181,18 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Functionaliteit**: Bevat alle JavaScript functionaliteit voor de home pagina inclusief workflow tabs management. Nieuwe functies: initializeWorkflowTabs(), toggleWorkflowMode(), autoCreateTabWindow(), showActivityIndicator(), hideActivityIndicator(). Tab-based workflow automatisering die automatisch de juiste tab activeert en prompts stuurt naar de correcte workflow window. Ondersteunt 3 workflow profielen met specifieke model/preset configuraties. Behoudt alle bestaande functionaliteit voor reguliere chat windows.
 - **Afhankelijkheden**: log-formatter.js
 
-### mcp_integration.py
-- **Status**: Uitgebreid met enhanced tool logging
+### mcp_integration.py (Enhanced)
+- **Status**: Uitgebreid met enhanced tool logging en multi-platform support
 - **Pad**: /mcp_integration.py
-- **Functionaliteit**: Beheert MCP server connecties en tool gebruik met gedetailleerde logging. Enhanced tool logging implementatie met:
+- **Functionaliteit**: Beheert MCP server connecties en tool gebruik met gedetailleerde logging en multi-platform ondersteuning. Enhanced tool logging implementatie met:
   - Tool start logging: Toont tool naam + geformatteerde parameters per tool type
   - Tool completion logging: Beknopte resultaat samenvatting met tool-specifieke informatie
   - Tool failure logging: Duidelijke error informatie met context
   - Tool-specifieke parameter formatting voor betere leesbaarheid
-  - Result summarization voor verschillende tool types (file operations, GitHub operations, etc.)
+  - Result summarization voor verschillende tool types (file operations, GitHub/Bitbucket operations, etc.)
   - Visual indicators (▶ voor start, ✓ voor success, ✗ voor failure)
-- **Afhankelijkheden**: mcp_connector.py, anthropic_config.py
+  - **Platform-aware logging met platform identificatie**
+- **Afhankelijkheden**: mcp_connector.py, anthropic_config.py, platform_management.PlatformManager
 
 ### static/js/log-formatter.js
 - **Status**: Uitgebreid met enhanced tool logging patterns
@@ -116,16 +231,10 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Functionaliteit**: Template voor conversation management interface. Ondersteunt conversation listing, search, rename, delete operations met real-time updates. Token usage weergave per gesprek (input/output tokens, kosten), bulk delete functionaliteit met checkboxes, selecteer alles/geen functionaliteit, bevestigingsmodals voor bulk acties, responsive design voor mobile devices. Volledige CSRF token ondersteuning: getCSRFToken() functie, X-CSRFToken header in alle fetch requests, proper error handling voor alle API calls.
 - **Afhankelijkheden**: base.html, API endpoints, analytics API endpoints
 
-### templates/base.html
-- **Status**: Actief met CSRF token ondersteuning
-- **Pad**: /templates/base.html
-- **Functionaliteit**: Basis template met navigatie, thema switching en CSRF token meta tag. Bevat `<meta name="csrf-token" content="{{ csrf_token() }}">` voor frontend toegang tot CSRF token.
-- **Afhankelijkheden**: Flask-WTF CSRF token functionaliteit
-
-### routes/api.py
-- **Status**: Uitgebreid met token usage endpoints, enhanced conversations API en CSRF protection
+### routes/api.py (Enhanced)
+- **Status**: Uitgebreid met token usage endpoints, enhanced conversations API, CSRF protection en platform management
 - **Pad**: /routes/api.py
-- **Functionaliteit**: API endpoints voor conversation management inclusief pagination, search, bulk operations, CRUD operaties met database persistence. Geïntegreerd met ConversationManager voor robuuste data handling. Bugfix toegepast voor thread context issue in send_prompt_stream functie. LLM settings API endpoints, temperature en preset ondersteuning in prompt endpoints. Token usage endpoints: GET /api/analytics/conversations/<id>/usage voor conversation-specifieke usage data, GET /api/analytics/users/<id>/usage voor user usage summaries. Enhanced conversations endpoint met include_usage parameter voor token data. Volledige CSRF protection via Flask-WTF voor alle POST/PUT/DELETE endpoints met proper error handling.
+- **Functionaliteit**: API endpoints voor conversation management inclusief pagination, search, bulk operations, CRUD operaties met database persistence. Geïntegreerd met ConversationManager voor robuuste data handling. Bugfix toegepast voor thread context issue in send_prompt_stream functie. LLM settings API endpoints, temperature en preset ondersteuning in prompt endpoints. Token usage endpoints: GET /api/analytics/conversations/<id>/usage voor conversation-specifieke usage data, GET /api/analytics/users/<id>/usage voor user usage summaries. Enhanced conversations endpoint met include_usage parameter voor token data. Volledige CSRF protection via Flask-WTF voor alle POST/PUT/DELETE endpoints met proper error handling. **Nieuw: Platform management API endpoints voor multi-platform Git repository ondersteuning.**
 - **Afhankelijkheden**: anthropic_api.py, ConversationManager, ConversationRepository, AnalyticsRepository, Flask app context, Flask-WTF CSRF
 
 ### static/css/style.css
@@ -193,12 +302,6 @@ De aiontwikkelhulp bestaat uit verschillende modules die samenwerken om gebruike
 - **Pad**: /anthropic_api.py
 - **Functionaliteit**: High-level API voor interactie met Anthropic Claude modellen. Coördineert tussen client, conversation management, MCP integratie, en token tracking. Ondersteunt conditionele inclusie van project_info in cache. Token usage recording, conversation analytics, real-time usage tracking.
 - **Afhankelijkheden**: anthropic_config.py, anthropic_client.py, conversation_manager.py, mcp_integration.py, repositories, analytics/token_tracker.py
-
-### anthropic_config.py
-- **Status**: Uitgebreid met LLM settings en presets
-- **Pad**: /anthropic_config.py
-- **Functionaliteit**: Centralized Anthropic-specifieke configuratie met lazy loading en validatie. Ondersteunt lazy loading van project_info.txt. Temperature property (default 0.2), LLM presets (developer_agent, creative_writing, analysis, balanced), settings validatie, model-specifieke instellingen, en environment variable ondersteuning. Bevat Claude 4 Sonnet model configuratie.
-- **Afhankelijkheden**: Geen directe afhankelijkheden
 
 ### anthropic_client.py
 - **Status**: Uitgebreid met LLM settings ondersteuning

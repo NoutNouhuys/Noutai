@@ -982,9 +982,266 @@ def send_prompt_stream():
         while True:
             item = q.get()
             if item['type'] == 'log':
-                yield f"event: log\ndata: {json.dumps(item['data'])}\n\n"  # Enkele backslashes!
+                yield f"event: log\\ndata: {json.dumps(item['data'])}\\n\\n"  # Enkele backslashes!
             elif item['type'] == 'final':
-                yield f"event: final\ndata: {json.dumps(item['data'])}\n\n"  # Enkele backslashes!
+                yield f"event: final\\ndata: {json.dumps(item['data'])}\\n\\n"  # Enkele backslashes!
                 break
 
     return Response(event_stream(), mimetype='text/event-stream')
+
+
+# Platform Management API Endpoints
+@api_bp.route('/platform/status', methods=['GET'])
+@login_required
+@check_lynxx_domain
+def get_platform_status():
+    """
+    API endpoint to get platform connection status and available platforms.
+    
+    Returns:
+        JSON response with platform status information
+    """
+    try:
+        # Get platform manager from anthropic_api
+        if hasattr(anthropic_api, 'mcp_integration') and hasattr(anthropic_api.mcp_integration, 'platform_manager'):
+            platform_manager = anthropic_api.mcp_integration.platform_manager
+            
+            if platform_manager and platform_manager._platform_manager_initialized:
+                connection_status = platform_manager.get_connection_status()
+                available_platforms = platform_manager.get_available_platforms()
+                active_platform = platform_manager.get_active_platform().value
+            else:
+                # Platform manager not initialized, try to get basic status
+                connection_status = anthropic_api.mcp_integration.get_connection_status()
+                available_platforms = anthropic_api.mcp_integration.get_available_platforms()
+                active_platform = anthropic_api.mcp_integration.get_active_platform()
+        else:
+            # Fallback to basic MCP integration status
+            connection_status = {"github": anthropic_api.mcp_integration.is_connected}
+            available_platforms = ["github"] if anthropic_api.mcp_integration.is_connected else []
+            active_platform = "github" if anthropic_api.mcp_integration.is_connected else "none"
+        
+        return jsonify({
+            "success": True,
+            "connection_status": connection_status,
+            "available_platforms": available_platforms,
+            "active_platform": active_platform
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "connection_status": {},
+            "available_platforms": [],
+            "active_platform": "none"
+        }), 500
+
+
+@api_bp.route('/platform/set-active', methods=['POST'])
+@login_required
+@check_lynxx_domain
+def set_active_platform():
+    """
+    API endpoint to set the active platform for tool execution.
+    
+    Request body:
+        platform: Platform name to set as active ('github', 'bitbucket', or 'auto')
+        
+    Returns:
+        JSON response with operation status
+    """
+    try:
+        data = request.get_json() or {}
+        platform = data.get('platform', '').lower()
+        
+        if not platform:
+            return jsonify({
+                "success": False,
+                "error": "Platform parameter is required"
+            }), 400
+        
+        valid_platforms = ['auto', 'github', 'bitbucket']
+        if platform not in valid_platforms:
+            return jsonify({
+                "success": False,
+                "error": f"Invalid platform. Must be one of: {', '.join(valid_platforms)}"
+            }), 400
+        
+        # Set active platform via MCP integration
+        success = anthropic_api.mcp_integration.set_active_platform(platform)
+        
+        if success:
+            return jsonify({
+                "success": True,
+                "message": f"Active platform set to {platform}",
+                "active_platform": platform
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "error": f"Failed to set platform to {platform}. Platform may not be connected."
+            }), 400
+            
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+@api_bp.route('/platform/refresh', methods=['POST'])
+@login_required
+@check_lynxx_domain
+def refresh_platform_connections():
+    """
+    API endpoint to refresh platform connections.
+    
+    Returns:
+        JSON response with updated connection status
+    """
+    try:
+        # Reconnect to all platforms
+        connection_results = await anthropic_api.mcp_integration.connect_all_platforms()
+        
+        # Get updated status
+        if hasattr(anthropic_api.mcp_integration, 'platform_manager') and anthropic_api.mcp_integration.platform_manager:
+            platform_manager = anthropic_api.mcp_integration.platform_manager
+            if platform_manager._platform_manager_initialized:
+                connection_status = platform_manager.get_connection_status()
+                available_platforms = platform_manager.get_available_platforms()
+            else:
+                connection_status = connection_results
+                available_platforms = [platform for platform, connected in connection_results.items() if connected]
+        else:
+            connection_status = connection_results
+            available_platforms = [platform for platform, connected in connection_results.items() if connected]
+        
+        return jsonify({
+            "success": True,
+            "message": "Platform connections refreshed",
+            "connection_status": connection_status,
+            "available_platforms": available_platforms,
+            "connection_results": connection_results
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "connection_status": {},
+            "available_platforms": []
+        }), 500
+
+
+@api_bp.route('/platform/tools', methods=['GET'])
+@login_required
+@check_lynxx_domain
+def get_platform_tools():
+    """
+    API endpoint to get available tools from all platforms.
+    
+    Query parameters:
+        platform: Optional platform filter ('github' or 'bitbucket')
+        unified: If true, returns unified tool list; if false, returns tools grouped by platform
+        
+    Returns:
+        JSON response with available tools
+    """
+    try:
+        platform_filter = request.args.get('platform', '').lower()
+        unified = request.args.get('unified', 'false').lower() == 'true'
+        
+        if unified:
+            # Get unified tool list
+            tools = await anthropic_api.mcp_integration.get_unified_tools()
+            
+            # Apply platform filter if specified
+            if platform_filter:
+                tools = [tool for tool in tools if tool.get('platform') == platform_filter]
+            
+            return jsonify({
+                "success": True,
+                "tools": tools,
+                "count": len(tools),
+                "unified": True
+            })
+        else:
+            # Get tools grouped by platform
+            all_tools = await anthropic_api.mcp_integration.get_all_platform_tools()
+            
+            # Apply platform filter if specified
+            if platform_filter:
+                if platform_filter in all_tools:
+                    all_tools = {platform_filter: all_tools[platform_filter]}
+                else:
+                    all_tools = {}
+            
+            total_count = sum(len(tools) for tools in all_tools.values())
+            
+            return jsonify({
+                "success": True,
+                "tools": all_tools,
+                "count": total_count,
+                "unified": False
+            })
+            
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "tools": [] if unified else {},
+            "count": 0
+        }), 500
+
+
+@api_bp.route('/platform/detect', methods=['POST'])
+@login_required
+@check_lynxx_domain
+def detect_platform():
+    """
+    API endpoint to detect platform from repository identifier.
+    
+    Request body:
+        repository: Repository identifier (owner/repo, URL, etc.)
+        
+    Returns:
+        JSON response with detected platform
+    """
+    try:
+        data = request.get_json() or {}
+        repository = data.get('repository', '').strip()
+        
+        if not repository:
+            return jsonify({
+                "success": False,
+                "error": "Repository identifier is required"
+            }), 400
+        
+        # Use platform manager to detect platform
+        if hasattr(anthropic_api.mcp_integration, 'platform_manager') and anthropic_api.mcp_integration.platform_manager:
+            platform_manager = anthropic_api.mcp_integration.platform_manager
+            detected_platform = platform_manager.detect_platform(repository)
+            platform_name = detected_platform.value
+        else:
+            # Fallback detection logic
+            if 'github.com' in repository.lower() or not ('bitbucket.org' in repository.lower()):
+                platform_name = 'github'
+            elif 'bitbucket.org' in repository.lower():
+                platform_name = 'bitbucket'
+            else:
+                platform_name = 'auto'
+        
+        return jsonify({
+            "success": True,
+            "repository": repository,
+            "detected_platform": platform_name,
+            "confidence": "high" if platform_name != "auto" else "low"
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e),
+            "detected_platform": "auto"
+        }), 500
