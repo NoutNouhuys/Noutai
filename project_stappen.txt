@@ -333,6 +333,10 @@
 
 ## Toekomstige stappen (Must-have)
 
+1. Verbidning met Bitbucket MCP Server. 
+   - Naast github moet de ai assistant ook connectie met bitbucket maken. 
+   - Ik heb een Bitbucket MCP server gecreeerd met BITBUKET_MCP_SERVER_SCRIPT=/Users/noutnouhuys/Documents/bitbucket-mcp-server/app.py en BITBUCKET_MCP_SERVER_VENV_PATH=/Users/noutnouhuys/Documents/bitbucket-mcp-server/venv
+   - Zorg er voor dat als ik in de .env de juiste variable invul, de ai app ook cennectie kan maken met de Bitbucket MCP sever  
 
 ## Toekomstige stappen (Nice-to-have)
 
