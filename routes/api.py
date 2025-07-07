@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request, Response, current_app
 import json
 import queue
 import threading
+import asyncio
 from flask_login import login_required, current_user
 from anthropic_api import anthropic_api
 from auth import check_lynxx_domain
@@ -1090,6 +1091,27 @@ def set_active_platform():
         }), 500
 
 
+def _run_async_function(async_func, *args, **kwargs):
+    """
+    Helper function to run async functions in sync context.
+    """
+    try:
+        # Try to get existing event loop
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            # If loop is running, we need to run in a new thread
+            import concurrent.futures
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                future = executor.submit(asyncio.run, async_func(*args, **kwargs))
+                return future.result()
+        else:
+            # If no loop is running, we can run directly
+            return loop.run_until_complete(async_func(*args, **kwargs))
+    except RuntimeError:
+        # No event loop exists, create a new one
+        return asyncio.run(async_func(*args, **kwargs))
+
+
 @api_bp.route('/platform/refresh', methods=['POST'])
 @login_required
 @check_lynxx_domain
@@ -1101,8 +1123,8 @@ def refresh_platform_connections():
         JSON response with updated connection status
     """
     try:
-        # Reconnect to all platforms
-        connection_results = await anthropic_api.mcp_integration.connect_all_platforms()
+        # Reconnect to all platforms using helper function
+        connection_results = _run_async_function(anthropic_api.mcp_integration.connect_all_platforms)
         
         # Get updated status
         if hasattr(anthropic_api.mcp_integration, 'platform_manager') and anthropic_api.mcp_integration.platform_manager:
@@ -1153,8 +1175,8 @@ def get_platform_tools():
         unified = request.args.get('unified', 'false').lower() == 'true'
         
         if unified:
-            # Get unified tool list
-            tools = await anthropic_api.mcp_integration.get_unified_tools()
+            # Get unified tool list using helper function
+            tools = _run_async_function(anthropic_api.mcp_integration.get_unified_tools)
             
             # Apply platform filter if specified
             if platform_filter:
@@ -1167,8 +1189,8 @@ def get_platform_tools():
                 "unified": True
             })
         else:
-            # Get tools grouped by platform
-            all_tools = await anthropic_api.mcp_integration.get_all_platform_tools()
+            # Get tools grouped by platform using helper function
+            all_tools = _run_async_function(anthropic_api.mcp_integration.get_all_platform_tools)
             
             # Apply platform filter if specified
             if platform_filter:
