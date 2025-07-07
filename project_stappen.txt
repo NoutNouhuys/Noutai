@@ -330,20 +330,68 @@
      - static/js/home.js - Tab-based workflow functionaliteit (59KB)
      - static/css/home.css - Workflow tabs styling (3.7KB)
      - project_info.txt - Documentatie update
+20. [✓] Implementeer Bitbucket integratie voor multi-platform ondersteuning (Issue #20) - VOLTOOID
+   - Doelstelling: Volledige Bitbucket ondersteuning naast bestaande GitHub functionaliteit voor uniforme multi-platform interface
+   - Backend Implementatie:
+     - [✓] `mcp_bitbucket_connector.py` - Volledige Bitbucket API connector met alle functionaliteiten
+     - [✓] `platform_api.py` - API endpoints voor platform management (connect, disconnect, switch, status)
+     - [✓] `anthropic_config.py` - Uitgebreid met Bitbucket configuratie properties en multi-platform support
+     - [✓] `mcp_integration.py` - Multi-platform routing en tool conversion tussen GitHub en Bitbucket
+   - Frontend Implementatie:
+     - [✓] Platform selector interface voor platform keuze (GitHub/Bitbucket)
+     - [✓] Real-time connection status indicators voor platform verbindingen
+     - [✓] `static/css/platform-selector.css` - Professional styling voor platform selector
+     - [✓] `static/js/home.js` - Uitgebreid met platform switching logica en API calls
+   - Functionaliteiten:
+     - [✓] Repository management (create, list, fork) voor beide platforms
+     - [✓] Issue management (create, update, list, close) voor beide platforms
+     - [✓] Pull request management (create, update, merge, list) voor beide platforms
+     - [✓] Branch management (create, list, delete) voor beide platforms
+     - [✓] File operations (read, create, update) voor beide platforms
+     - [✓] Commit operations voor beide platforms
+   - Platform Detectie & Switching:
+     - [✓] Automatische detectie op basis van repository format (GitHub: owner/repo, Bitbucket: workspace/repo_slug)
+     - [✓] Handmatige platform selectie via interface
+     - [✓] Tool conversion tussen GitHub en Bitbucket API calls
+     - [✓] Session persistence van actieve platform
+   - Technische Implementatie:
+     - [✓] GitHub via MCP protocol (@modelcontextprotocol/server-github)
+     - [✓] Bitbucket via directe REST API v2.0 integratie
+     - [✓] Unified interface voor gemeenschappelijke functionaliteit
+     - [✓] Platform-specifieke error handling en fallbacks
+   - Configuratie & Documentatie:
+     - [✓] `.env.example` uitgebreid met Bitbucket configuratie opties
+     - [✓] `requirements.txt` bijgewerkt met aiohttp dependency voor Bitbucket API
+     - [✓] Multi-platform instructies toegevoegd aan documentatie
+   - API Endpoints:
+     - [✓] GET /api/platform/config - Platform configuratie ophalen
+     - [✓] GET /api/platform/status - Verbindingsstatus controleren
+     - [✓] POST /api/platform/connect - Verbinden met platform
+     - [✓] POST /api/platform/disconnect - Verbreken van platform
+     - [✓] POST /api/platform/switch - Wisselen tussen platforms
+     - [✓] POST /api/platform/validate - Valideren van platform configuratie
+   - Acceptatiecriteria:
+     - [✓] Automatische platform detectie GitHub vs Bitbucket repositories
+     - [✓] Bestaande GitHub functionaliteit blijft volledig werken
+     - [✓] Volledige Bitbucket functionaliteit beschikbaar (issues, PRs, branches, files)
+     - [✓] Uniforme interface voor beide platforms
+     - [✓] Multi-platform authenticatie werkt voor beide platforms
+     - [✓] Platform-specifieke foutafhandeling geïmplementeerd
+     - [✓] Documentatie bijgewerkt met multi-platform instructies
+   - Workflow Compatibiliteit:
+     - [✓] Bestaande workflow automation werkt naadloos met beide platforms
+     - [✓] Pattern recognition herkent zowel GitHub als Bitbucket repository formats
+     - [✓] Automatische tool conversion tussen GitHub en Bitbucket tools
+     - [✓] Consistente AI responses ongeacht platform
+   - Status: Implementatie voltooid in PR #17, klaar voor productie gebruik
+   - Bestanden gewijzigd:
+     - Nieuwe bestanden: mcp_bitbucket_connector.py, platform_api.py, static/css/platform-selector.css
+     - Bijgewerkte bestanden: anthropic_config.py, mcp_integration.py, .env.example, requirements.txt
+     - Frontend updates: static/js/home.js voor platform switching functionaliteit
 
 ## Toekomstige stappen (Must-have)
 
-1. De branch feature/bitbucket-intergration werkt nog niet naar behoren
-- Het geeft aan niet vrbonden te zijn met github, terwijl daar niks in is veranderd. 
-- Het heeft nog geen verbinden met Bitbucket.
-   - de app geeft aan: 
-         1. De Bitbucket connector bestaat maar niet is geactiveerd in mijn huidige sessie
-         2. Er aanvullende configuratie nodig is om de Bitbucket tools beschikbaar te maken
-         3. De Bitbucket functionaliteit is geïmplementeerd maar nog niet gekoppeld aan mijn tool interface
-         
-         Om dit op te lossen zou je kunnen:
-         - Controleren of de Bitbucket connector correct is geconfigureerd
-         - De MCP (Model Context Protocol) instellingen controleren om te zien of Bitbucket tools beschikbaar zouden moeten zijn
+Alle must-have taken zijn uitgevoerd.
 
 ## Toekomstige stappen (Nice-to-have)
 
@@ -396,3 +444,9 @@
    - Export van log data voor analyse
    - Real-time log streaming
    - Tool performance metrics en analytics
+
+9. Additional Git platform support
+   - GitLab integration voor complete Git platform coverage
+   - Azure DevOps integration
+   - Self-hosted Git server support
+   - Platform-agnostic repository management
