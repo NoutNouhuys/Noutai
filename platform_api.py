@@ -5,6 +5,7 @@ Provides endpoints for platform configuration, connection management, and status
 from flask import Blueprint, request, jsonify, session
 from flask_login import login_required
 import logging
+import asyncio
 from anthropic_config import AnthropicConfig
 from mcp_integration import MCPIntegration
 
@@ -21,8 +22,13 @@ def init_platform_api(app):
     global mcp_integration
     
     with app.app_context():
-        config = AnthropicConfig()
-        mcp_integration = MCPIntegration(config)
+        try:
+            config = AnthropicConfig()
+            mcp_integration = MCPIntegration(config)
+            logger.info("MCP Integration initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize MCP Integration: {str(e)}")
+            # Continue without MCP integration - endpoints will handle this gracefully
     
     app.register_blueprint(platform_api)
 
@@ -62,7 +68,8 @@ def get_platform_status():
                 'success': True,
                 'connected': False,
                 'active_platform': None,
-                'connected_platforms': []
+                'connected_platforms': [],
+                'error': 'MCP integration not initialized'
             })
         
         connected_platforms = mcp_integration.connected_platforms
@@ -119,8 +126,12 @@ def connect_platform():
         if not mcp_integration:
             mcp_integration = MCPIntegration(config)
         
-        # Attempt to connect to the platform
-        success = await mcp_integration.connect(platform=platform)
+        # Attempt to connect to the platform using asyncio.run()
+        try:
+            success = asyncio.run(mcp_integration.connect(platform=platform))
+        except Exception as async_error:
+            logger.error(f"Async connection error: {str(async_error)}")
+            success = False
         
         if success:
             # Store active platform in session
@@ -195,13 +206,19 @@ def disconnect_platform():
             # Get currently connected platforms
             connected_platforms = mcp_integration.connected_platforms.copy()
             
-            # Disconnect all
-            await mcp_integration.disconnect()
+            # Disconnect all using asyncio.run()
+            try:
+                asyncio.run(mcp_integration.disconnect())
+            except Exception as async_error:
+                logger.error(f"Async disconnect error: {str(async_error)}")
             
             # Reconnect to other platforms
             for other_platform in connected_platforms:
                 if other_platform != platform:
-                    await mcp_integration.connect(platform=other_platform)
+                    try:
+                        asyncio.run(mcp_integration.connect(platform=other_platform))
+                    except Exception as async_error:
+                        logger.error(f"Async reconnect error for {other_platform}: {str(async_error)}")
             
             # Update session
             if session.get('active_platform') == platform:
@@ -209,7 +226,10 @@ def disconnect_platform():
                 session['active_platform'] = remaining_platforms[0] if remaining_platforms else None
         else:
             # Disconnect all platforms
-            await mcp_integration.disconnect()
+            try:
+                asyncio.run(mcp_integration.disconnect())
+            except Exception as async_error:
+                logger.error(f"Async disconnect all error: {str(async_error)}")
             session.pop('active_platform', None)
         
         return jsonify({
@@ -291,7 +311,12 @@ def get_platform_tools():
                 'platforms': []
             })
         
-        tools = await mcp_integration.get_tools(platform=platform)
+        # Get tools using asyncio.run()
+        try:
+            tools = asyncio.run(mcp_integration.get_tools(platform=platform))
+        except Exception as async_error:
+            logger.error(f"Async get tools error: {str(async_error)}")
+            tools = []
         
         return jsonify({
             'success': True,
