@@ -1,5 +1,18 @@
 # Instructies voor ontwikkelproces (volg deze nauwkeurig op)
 
+Wanneer ik het commando 'ga' of 'ga' in combinatie met een repository geef, doe het volgende:
+Als nog niet duidelijk is om welke repository het gaat, vraag dat dan eerst aan de gebruiker.
+Ga verder met het ontwikkelen van deze repository. 
+volg exact de 'Instructies voor ontwikkelproces' voor specifieke instructies hoe deze repository verder ontwikkeld moet worden.
+
+**BELANGRIJK: Platform Detectie en Ondersteuning**
+- Dit systeem ondersteunt zowel GitHub als Bitbucket repositories
+- Detecteer automatisch het platform op basis van repository referenties:
+  - GitHub: `owner/repo` format (bijv. "NoutNouhuys/Noutai")
+  - Bitbucket: `workspace/repo_slug` format (bijv. "myworkspace/myrepo")
+- Gebruik de juiste tools en API calls voor het gedetecteerde platform
+- Alle workflow instructies gelden voor beide platforms, maar gebruik platform-specifieke terminologie
+
 ## 0. Repository Summary Generatie
 
 0.1 Controleer of `repository_summary.txt` bestaat in de hoofdmap van de repository:
@@ -60,7 +73,7 @@
 * 3.1.3.4 Acceptatiecriteria (bijvoorbeeld: functie X levert resultaat Y bij input Z)
 * 3.1.3.5 Maak een branche aan, geef expliciete branchnaam (`feature/...`)
 3.1.4 Labels toevoegen: `"must-have"`, `"nice-to-have"` of `"bug"`
-3.1.5 Als je klaar bent geef je geen samenvatting van je werkzaamheden maar vertelt alleen: 'Ik heb issue \[nummer] aangemaakt voor Repo \[owner]/\[repo]', je doet verder niks en je wacht verdere instructies
+3.1.5 Als je klaar bent geef je geen samenvatting van je werkzaamheden maar vertelt alleen: 'Ik heb issue \[nummer] aangemaakt voor Repo \[owner]/\[repo]' (GitHub) of 'Ik heb issue \[nummer] aangemaakt voor Repo \[workspace]/\[repo_slug]' (Bitbucket), je doet verder niks en je wacht verdere instructies
 
 ## 4. Issue uitvoeren
 
@@ -76,16 +89,38 @@
 4.5 Maak Pull Request:
 * 4.5.1 Titel: korte omschrijving
 * 4.5.2 Beschrijving: refereer naar issue, beschrijf uitgevoerde wijzigingen, status tests en documentatie
-4.6 Als je klaar bent geef je geen samenvatting van je werkzaamheden maar vertelt alleen: 'Ik heb Pull Request \[nummer] aangemaakt voor Repo \[owner]/\[repo]', je doet verder niks en je wacht verdere instructies
+4.6 Als je klaar bent geef je geen samenvatting van je werkzaamheden maar vertelt alleen: 'Ik heb Pull Request \[nummer] aangemaakt voor Repo \[owner]/\[repo]' (GitHub) of 'Ik heb Pull Request \[nummer] aangemaakt voor Repo \[workspace]/\[repo_slug]' (Bitbucket), je doet verder niks en je wacht verdere instructies
 
 ## 5. Mergen Pull Request
 
-**Deze actie mag alleen worden uitgevoerd als de vraag 'Ik heb Pull Request \[nummer] aangemaakt voor Repo \[owner]/\[repo]' wordt gesteld**
+**Deze actie mag alleen worden uitgevoerd als de vraag 'Ik heb Pull Request \[nummer] aangemaakt voor Repo \[owner]/\[repo]' of 'Ik heb Pull Request \[nummer] aangemaakt voor Repo \[workspace]/\[repo_slug]' wordt gesteld**
 
 5.1 Merge de Pull Request
 5.2 Als je een Pull Request hebt gemerged: Sluit het bijbehorende issue
-5.3 Als je klaar bent geef je geen samenvatting van je werkzaamheden maar vertelt alleen: 'Ik heb Pull Request \[nummer] verwerkt en bijbehorende branche \[branche] verwijderd voor Repo \[owner]/\[repo]', je doet verder niks en je wacht verdere instructies
+5.3 Als je klaar bent geef je geen samenvatting van je werkzaamheden maar vertelt alleen: 'Ik heb Pull Request \[nummer] verwerkt en bijbehorende branche \[branche] verwijderd voor Repo \[owner]/\[repo]' (GitHub) of 'Ik heb Pull Request \[nummer] verwerkt en bijbehorende branche \[branche] verwijderd voor Repo \[workspace]/\[repo_slug]' (Bitbucket), je doet verder niks en je wacht verdere instructies
 
-## 6. Algemeen
+## 6. Platform-specifieke Overwegingen
 
-6.1 Houd code overzichtelijk en documentatie synchroon
+6.1 **GitHub Specifiek:**
+* Gebruik GitHub-specifieke terminologie: "Pull Request", "owner/repo"
+* Issues hebben nummers (#1, #2, etc.)
+* Branches kunnen direct worden verwijderd na merge
+* Labels zijn volledig aanpasbaar
+
+6.2 **Bitbucket Specifiek:**
+* Gebruik Bitbucket-specifieke terminologie: "Pull Request", "workspace/repo_slug"
+* Issues hebben ID's en kunnen verschillende types hebben (bug, enhancement, etc.)
+* Pull requests hebben merge strategies (merge commit, squash, fast-forward)
+* Gebruik workspace en repository slug in plaats van owner/repo
+
+6.3 **Platform Detectie:**
+* Automatisch detecteren op basis van repository referentie format
+* Bij twijfel, vraag expliciet welk platform gebruikt moet worden
+* Gebruik de juiste API calls en tool namen voor het gedetecteerde platform
+
+## 7. Algemeen
+
+7.1 Houd code overzichtelijk en documentatie synchroon
+7.2 Zorg dat alle functionaliteit werkt op beide platforms
+7.3 Gebruik platform-agnostische beschrijvingen waar mogelijk
+7.4 Test functionaliteit op beide platforms indien beschikbaar
