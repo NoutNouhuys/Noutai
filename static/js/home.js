@@ -10,6 +10,11 @@ let lastConversationId = null;
 let workflowActive = false;
 let workflowTabsInitialized = false;
 
+// Platform state
+let currentPlatform = 'github';
+let platformConnected = false;
+let availablePlatforms = ['github', 'bitbucket'];
+
 // Global presets cache
 let availablePresets = {};
 
@@ -80,6 +85,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Setup control panel buttons
     setupControlPanel();
     
+    // Setup platform controls
+    setupPlatformControls();
+    
     // Check URL parameters to load conversations
     checkUrlParams();
     
@@ -105,6 +113,205 @@ document.addEventListener('DOMContentLoaded', function() {
             });
     });
 });
+
+// Platform Management Functions
+function setupPlatformControls() {
+    // Platform radio buttons
+    const platformRadios = document.querySelectorAll('input[name="platform"]');
+    platformRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.checked) {
+                switchPlatform(this.value);
+            }
+        });
+    });
+    
+    // Connect button
+    const connectBtn = document.getElementById('platform-connect-btn');
+    connectBtn.addEventListener('click', function() {
+        if (platformConnected) {
+            disconnectPlatform();
+        } else {
+            connectPlatform();
+        }
+    });
+    
+    // Initialize platform status
+    updatePlatformStatus();
+    
+    // Load platform configuration from server
+    loadPlatformConfiguration();
+}
+
+function loadPlatformConfiguration() {
+    fetch('/api/platform/config')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                currentPlatform = data.default_platform || 'github';
+                availablePlatforms = data.available_platforms || ['github', 'bitbucket'];
+                
+                // Update UI
+                const platformRadio = document.querySelector(`input[name="platform"][value="${currentPlatform}"]`);
+                if (platformRadio) {
+                    platformRadio.checked = true;
+                }
+                
+                // Check if platform is already connected
+                checkPlatformConnection();
+            }
+        })
+        .catch(error => {
+            console.error('Error loading platform configuration:', error);
+        });
+}
+
+function switchPlatform(platform) {
+    if (platform === currentPlatform) return;
+    
+    console.log(`Switching platform from ${currentPlatform} to ${platform}`);
+    
+    // Disconnect current platform if connected
+    if (platformConnected) {
+        disconnectPlatform(false); // Don't update UI yet
+    }
+    
+    currentPlatform = platform;
+    updatePlatformStatus();
+    
+    // Auto-connect to new platform
+    connectPlatform();
+}
+
+function connectPlatform() {
+    const connectBtn = document.getElementById('platform-connect-btn');
+    const statusText = document.getElementById('platform-status-text');
+    
+    // Update UI to show connecting state
+    connectBtn.disabled = true;
+    connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Verbinden...';
+    statusText.innerHTML = '<i class="fas fa-circle me-1"></i> Verbinden...';
+    statusText.className = 'badge bg-warning';
+    
+    // Send connect request to server
+    fetch('/api/platform/connect', {
+        method: 'POST',
+        headers: getAPIHeaders(),
+        body: JSON.stringify({
+            platform: currentPlatform
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            platformConnected = true;
+            updatePlatformStatus();
+            console.log(`Successfully connected to ${currentPlatform}`);
+            
+            // Update MCP status if provided
+            if (data.active_mcp_servers) {
+                updateMcpStatus(data.active_mcp_servers);
+            }
+        } else {
+            throw new Error(data.error || 'Connection failed');
+        }
+    })
+    .catch(error => {
+        console.error(`Error connecting to ${currentPlatform}:`, error);
+        platformConnected = false;
+        updatePlatformStatus();
+        
+        // Show error message
+        const statusText = document.getElementById('platform-status-text');
+        statusText.innerHTML = '<i class="fas fa-circle me-1"></i> Verbindingsfout';
+        statusText.className = 'badge bg-danger';
+        
+        setTimeout(() => {
+            updatePlatformStatus();
+        }, 3000);
+    });
+}
+
+function disconnectPlatform(updateUI = true) {
+    const connectBtn = document.getElementById('platform-connect-btn');
+    
+    if (updateUI) {
+        connectBtn.disabled = true;
+        connectBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Verbreken...';
+    }
+    
+    // Send disconnect request to server
+    fetch('/api/platform/disconnect', {
+        method: 'POST',
+        headers: getAPIHeaders(),
+        body: JSON.stringify({
+            platform: currentPlatform
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        platformConnected = false;
+        if (updateUI) {
+            updatePlatformStatus();
+        }
+        console.log(`Disconnected from ${currentPlatform}`);
+    })
+    .catch(error => {
+        console.error(`Error disconnecting from ${currentPlatform}:`, error);
+        if (updateUI) {
+            updatePlatformStatus();
+        }
+    });
+}
+
+function checkPlatformConnection() {
+    fetch('/api/platform/status')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                platformConnected = data.connected;
+                currentPlatform = data.active_platform || currentPlatform;
+                updatePlatformStatus();
+                
+                // Update platform radio button
+                const platformRadio = document.querySelector(`input[name="platform"][value="${currentPlatform}"]`);
+                if (platformRadio) {
+                    platformRadio.checked = true;
+                }
+                
+                // Update MCP status if provided
+                if (data.active_mcp_servers) {
+                    updateMcpStatus(data.active_mcp_servers);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error checking platform connection:', error);
+        });
+}
+
+function updatePlatformStatus() {
+    const connectBtn = document.getElementById('platform-connect-btn');
+    const statusText = document.getElementById('platform-status-text');
+    
+    if (platformConnected) {
+        // Connected state
+        connectBtn.disabled = false;
+        connectBtn.innerHTML = '<i class="fas fa-unlink me-1"></i> Verbreken';
+        connectBtn.className = 'btn btn-sm btn-outline-danger ms-2';
+        
+        statusText.innerHTML = `<i class="fas fa-circle me-1"></i> Verbonden met ${currentPlatform.charAt(0).toUpperCase() + currentPlatform.slice(1)}`;
+        statusText.className = 'badge bg-success';
+    } else {
+        // Disconnected state
+        connectBtn.disabled = false;
+        connectBtn.innerHTML = '<i class="fas fa-plug me-1"></i> Verbinden';
+        connectBtn.className = 'btn btn-sm btn-outline-success ms-2';
+        
+        statusText.innerHTML = '<i class="fas fa-circle me-1"></i> Niet verbonden';
+        statusText.className = 'badge bg-secondary';
+    }
+}
 
 function loadWorkflowState() {
     const savedState = localStorage.getItem('workflowActive');
@@ -1258,7 +1465,8 @@ function sendPromptWithConfig(windowId, prompt, modelId, presetName) {
     const requestData = {
         prompt: prompt,
         model_id: modelId,
-        preset_name: presetName || undefined
+        preset_name: presetName || undefined,
+        platform: currentPlatform // Include current platform
     };
     
     // Add conversation_id if continuing a conversation (but not if we just reset it)
@@ -1402,7 +1610,7 @@ function sendPrompt(windowId, customInput = null) {
     
     const presetName = presetSelect.value;
     
-    console.log(`Sending prompt with model: ${modelId}, preset: ${presetName || 'none'}`);
+    console.log(`Sending prompt with model: ${modelId}, preset: ${presetName || 'none'}, platform: ${currentPlatform}`);
     
     // Set waiting flag
     windowData.isWaitingForResponse = true;
@@ -1410,7 +1618,8 @@ function sendPrompt(windowId, customInput = null) {
     // Prepare request
     const requestData = {
         prompt: prompt,
-        model_id: modelId
+        model_id: modelId,
+        platform: currentPlatform // Include current platform
     };
     
     // Add preset if selected
