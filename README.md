@@ -1,13 +1,14 @@
 # AI Ontwikkelhulp (aiontwikkelhulp)
 
-Een gespecialiseerde tool die communicatie tussen gebruikers en AI-modellen (Claude) faciliteert voor code-ontwikkeling en repository-beheer. De applicatie biedt een gestructureerde werkwijze voor AI-gestuurde softwareontwikkeling met integratie van externe tools via het Model Context Protocol (MCP).
+Een gespecialiseerde tool die communicatie tussen gebruikers en AI-modellen (Claude) faciliteert voor code-ontwikkeling en repository-beheer. De applicatie biedt een gestructureerde werkwijze voor AI-gestuurde softwareontwikkeling met integratie van externe tools via het Model Context Protocol (MCP) en directe API integratie.
 
 ## ✨ Kernfunctionaliteiten
 
 ### 🤖 AI-Gestuurde Repository Ontwikkeling
 - **`ga` commando**: Start automatische repository ontwikkeling volgens voorgedefinieerde werkwijze
+- **Multi-platform ondersteuning**: Werkt met zowel GitHub als Bitbucket repositories
 - **Project management**: Automatische creatie en beheer van `project_info.txt` en `project_stappen.txt`
-- **Issue-driven development**: Automatische GitHub issue creatie en afhandeling
+- **Issue-driven development**: Automatische issue creatie en afhandeling
 - **Branch management**: Automatische branch creatie en pull request workflow
 
 ### 🔄 Workflow Automation
@@ -24,15 +25,15 @@ De **Workflow** toggle in de interface activeert een intelligente automatisering
 De workflow automation is direct gekoppeld aan de instructies in `werkwijze/werkwijze.txt`:
 
 **Automatische Pattern Herkenning:**
-1. **Issue Creation Pattern**: `"Ik heb issue [nummer] aangemaakt voor Repo [owner]/[repo]"`
+1. **Issue Creation Pattern**: `"Ik heb issue [nummer] aangemaakt voor Repo [owner]/[repo]"` (GitHub) of `"Ik heb issue [nummer] aangemaakt voor Repo [workspace]/[repo_slug]"` (Bitbucket)
    - **Actie**: Opent nieuw window met prompt: `"Ga naar Repo [owner]/[repo] en pak issue [nummer] op"`
    - **Doel**: Automatisch doorschakelen naar issue uitvoering
 
-2. **PR Creation Pattern**: `"Ik heb Pull Request [nummer] aangemaakt voor Repo [owner]/[repo]"`
+2. **PR Creation Pattern**: `"Ik heb Pull Request [nummer] aangemaakt voor Repo [owner]/[repo]"` (GitHub) of `"Ik heb Pull Request [nummer] aangemaakt voor Repo [workspace]/[repo_slug]"` (Bitbucket)
    - **Actie**: Opent nieuw window met prompt: `"Ga naar Repo [owner]/[repo] en merge Pull Request [nummer] en delete de bijbehorende branche"`
    - **Doel**: Automatisch doorschakelen naar PR merge proces
 
-3. **PR Processed Pattern**: `"Ik heb Pull Request [nummer] verwerkt en bijbehorende branche [branche] verwijderd voor Repo [owner]/[repo]"`
+3. **PR Processed Pattern**: `"Ik heb Pull Request [nummer] verwerkt en bijbehorende branche [branche] verwijderd voor Repo [owner]/[repo]"` (GitHub) of `"Ik heb Pull Request [nummer] verwerkt en bijbehorende branche [branche] verwijderd voor Repo [workspace]/[repo_slug]"` (Bitbucket)
    - **Actie**: Opent nieuw window met prompt: `"Ga Repo [owner]/[repo]"`
    - **Doel**: Terugkeren naar algemene repository ontwikkeling
 
@@ -43,33 +44,6 @@ Wanneer workflow mode actief is, worden nieuwe windows automatisch geconfigureer
 - **Timing**: 1 seconde delay voor natuurlijke flow
 - **Window Management**: Automatisch sluiten van vorige windows
 
-#### Gebruiksscenario's
-
-**Scenario 1: Complete Development Cycle**
-```
-1. Gebruiker: "ga myrepo"
-2. AI: "Ik heb issue 42 aangemaakt voor Repo user/myrepo"
-   → Workflow opent automatisch nieuw window
-3. AI: "Ik heb Pull Request 15 aangemaakt voor Repo user/myrepo"
-   → Workflow opent automatisch nieuw window voor merge
-4. AI: "Ik heb Pull Request 15 verwerkt..."
-   → Workflow keert terug naar algemene ontwikkeling
-```
-
-**Scenario 2: Multi-Repository Development**
-```
-1. Werk aan Repository A → Issue creation
-2. Automatisch switch naar issue uitvoering
-3. PR creation → Automatisch switch naar merge proces
-4. Terug naar Repository A voor volgende stap
-```
-
-**Voordelen van Workflow Mode:**
-- **Hands-free development**: Minimale gebruikersinteractie vereist
-- **Consistente configuratie**: Altijd juiste model en preset
-- **Gestructureerde flow**: Volgt exact de werkwijze.txt instructies
-- **Efficiënte context switching**: Automatische window management
-- 
 #### 🏷️ Issue Labels en Workflow Prioritering
 
 De AI-ontwikkelworkflow gebruikt een gestructureerd label systeem voor prioritering:
@@ -90,12 +64,31 @@ De automatische ontwikkelworkflow stopt wanneer:
 - Er geen openstaande `bug` issues zijn
 - De AI meldt: *"Alle must-have taken zijn uitgevoerd"*
 
-Na deze melding zijn alleen nog `nice-to-have` features beschikbaar, die handmatig kunnen worden opgepakt indien gewenst.
+### 🔧 Multi-Platform Repository Integratie
 
-### 🔧 Model Context Protocol (MCP) Integratie
-- **GitHub Tools**: Directe integratie met GitHub API voor repository beheer
-- **External Tools**: Ondersteuning voor custom MCP servers en tools
+#### GitHub Integratie (via MCP)
+- **MCP Protocol**: Directe integratie met GitHub API via Model Context Protocol
+- **GitHub Tools**: Volledige GitHub API toegang voor repository beheer
 - **Real-time Tool Use**: Live feedback over tool gebruik en resultaten
+
+#### Bitbucket Integratie (via Direct API)
+- **Bitbucket API**: Directe integratie met Bitbucket REST API v2.0
+- **Workspace Support**: Ondersteuning voor Bitbucket workspaces en repository slugs
+- **App Passwords**: Veilige authenticatie via Bitbucket app passwords
+
+#### Platform Detectie
+- **Automatische Detectie**: Herkent platform op basis van repository referentie format
+- **GitHub Format**: `owner/repo` (bijv. "NoutNouhuys/Noutai")
+- **Bitbucket Format**: `workspace/repo_slug` (bijv. "myworkspace/myrepo")
+- **Platform Switching**: Handmatige platform selectie via interface
+
+#### Ondersteunde Operaties (Beide Platforms)
+- Repository management (create, list, fork)
+- Issue management (create, update, list, close)
+- Pull request management (create, update, merge, list)
+- Branch management (create, list, delete)
+- File operations (read, create, update)
+- Commit operations
 
 ### 💬 Conversation Management
 - **Persistent Storage**: Gesprekken worden opgeslagen in database
@@ -104,6 +97,8 @@ Na deze melding zijn alleen nog `nice-to-have` features beschikbaar, die handmat
 - **Metadata**: Automatische tracking van model, timestamps, en status
 
 ### 🎨 Enhanced User Interface
+- **Platform Selector**: Kies tussen GitHub en Bitbucket in de interface
+- **Connection Status**: Real-time status van platform verbindingen
 - **Split View**: Gescheiden weergave van chat en log berichten
 - **Log Formatting**: Automatische formattering van JSON, tool gebruik, en errors
 - **Dark/Light Theme**: Volledig themable interface
@@ -121,7 +116,8 @@ Na deze melding zijn alleen nog `nice-to-have` features beschikbaar, die handmat
 - Python 3.8+
 - Google Cloud Platform project met OAuth configuratie
 - Anthropic API key
-- GitHub Personal Access Token (voor MCP integratie)
+- **Voor GitHub**: GitHub Personal Access Token (voor MCP integratie)
+- **Voor Bitbucket**: Bitbucket App Password en workspace toegang
 
 ### Stap 1: Repository Clonen
 ```bash
@@ -154,17 +150,24 @@ pip install -r requirements.txt
    - Authorized redirect URIs: `http://localhost:5000/auth/login/callback`
    - Voor productie: `https://yourdomain.com/auth/login/callback`
 
-#### OAuth Client Configuratie:
-- **Application type**: Web application
-- **Name**: AI Ontwikkelhulp (of eigen naam)
-- **Authorized JavaScript origins**: 
-  - `http://localhost:5000` (development)
-  - `https://yourdomain.com` (production)
-- **Authorized redirect URIs**:
-  - `http://localhost:5000/auth/login/callback` (development)
-  - `https://yourdomain.com/auth/login/callback` (production)
+### Stap 5: Platform Configuratie
 
-### Stap 5: Environment Configuratie
+#### GitHub Setup (Optioneel)
+1. Ga naar GitHub Settings → Developer settings → Personal access tokens
+2. Genereer een nieuwe token met de volgende scopes:
+   - `repo` (volledige repository toegang)
+   - `workflow` (GitHub Actions toegang)
+   - `admin:org` (organisatie toegang indien nodig)
+
+#### Bitbucket Setup (Optioneel)
+1. Ga naar Bitbucket Settings → App passwords
+2. Maak een nieuwe app password aan met de volgende permissions:
+   - **Repositories**: Read, Write, Admin
+   - **Pull requests**: Read, Write
+   - **Issues**: Read, Write
+   - **Webhooks**: Read, Write (optioneel)
+
+### Stap 6: Environment Configuratie
 Maak een `.env` bestand aan in de root directory:
 
 ```env
@@ -185,12 +188,18 @@ ALLOWED_DOMAINS=lynxx.com
 ANTHROPIC_API_KEY=your-anthropic-api-key
 ANTHROPIC_MODEL=claude-3-5-sonnet-20241022
 
-# GitHub Integration (voor MCP tools)
+# Platform Configuration
+DEFAULT_PLATFORM=github
+
+# GitHub MCP Configuration (Optioneel)
+MCP_SERVER_SCRIPT=npx
+MCP_SERVER_VENV_PATH=path/to/mcp/venv
 GITHUB_TOKEN=your-github-personal-access-token
 
-# MCP Server Configuration
-MCP_SERVER_PATH=npx
-MCP_SERVER_ARGS=-y @modelcontextprotocol/server-github
+# Bitbucket API Configuration (Optioneel)
+BITBUCKET_WORKSPACE=your-workspace-name
+BITBUCKET_USERNAME=your-bitbucket-username
+BITBUCKET_APP_PASSWORD=your-bitbucket-app-password
 
 # Database Configuration
 DATABASE_URL=sqlite:///instance/aiontwikkelhulp.db
@@ -200,12 +209,12 @@ APP_NAME=AI Ontwikkelhulp
 LOG_LEVEL=INFO
 ```
 
-### Stap 6: Database Initialisatie
+### Stap 7: Database Initialisatie
 ```bash
 flask db upgrade
 ```
 
-### Stap 7: Applicatie Starten
+### Stap 8: Applicatie Starten
 ```bash
 python app.py
 ```
@@ -221,6 +230,7 @@ aiontwikkelhulp/
 ├── 📄 user.py                         # User model en sessie beheer
 ├── 📄 config.py                       # Algemene applicatie configuratie
 ├── 📄 database.py                     # Database configuratie en setup
+├── 📄 platform_api.py                 # Platform management API endpoints
 ├── 📄 requirements.txt                # Python dependencies
 ├── 📄 .env.example                    # Environment variabelen template
 ├── 📄 README.md                       # Project documentatie
@@ -233,10 +243,11 @@ aiontwikkelhulp/
 │   ├── 📄 anthropic_config.py         # Anthropic configuratie beheer
 │   ├── 📄 anthropic_client.py         # Pure API communicatie client
 │   ├── 📄 conversation_manager.py     # Gesprek state management
-│   └── 📄 mcp_integration.py          # MCP server integratie
+│   └── 📄 mcp_integration.py          # Multi-platform MCP integratie
 │
-├── 🔌 MCP & External Tools
-│   └── 📄 mcp_connector.py            # MCP protocol connector
+├── 🔌 Platform Connectors
+│   ├── 📄 mcp_connector.py            # GitHub MCP protocol connector
+│   └── 📄 mcp_bitbucket_connector.py  # Bitbucket API connector
 │
 ├── 🛣️ routes/
 │   └── 📄 api.py                      # REST API endpoints
@@ -249,19 +260,20 @@ aiontwikkelhulp/
 │
 ├── 🎨 templates/
 │   ├── 📄 base.html                   # Base template met navigatie
-│   ├── 📄 home.html                   # Hoofd chat interface
+│   ├── 📄 home.html                   # Hoofd chat interface met platform selector
 │   └── 📄 conversations.html          # Gesprekken overzicht
 │
 ├── 🎨 static/
 │   ├── css/
 │   │   ├── 📄 style.css               # Hoofd styling en thema's
-│   │   └── 📄 log-formatter.css       # Log formattering styles
+│   │   ├── 📄 log-formatter.css       # Log formattering styles
+│   │   └── 📄 platform-selector.css   # Platform selector styling
 │   └── js/
-│       ├── 📄 main.js                 # Hoofd JavaScript functionaliteit
+│       ├── 📄 home.js                 # Hoofd JavaScript met platform switching
 │       └── 📄 log-formatter.js        # Log formattering module
 │
 ├── 🗂️ werkwijze/
-│   └── 📄 werkwijze.txt               # AI ontwikkeling instructies
+│   └── 📄 werkwijze.txt               # Multi-platform AI ontwikkeling instructies
 │
 ├── 🧪 tests/
 │   ├── 📄 test_anthropic_config.py    # Anthropic config unit tests
@@ -277,51 +289,99 @@ aiontwikkelhulp/
     └── versions/                      # Alembic version bestanden
 ```
 
-## 🔧 Configuratie Details
+## 🔧 Platform Configuratie Details
 
-### Google OAuth Setup voor Lynxx
-De applicatie is geconfigureerd voor Lynxx medewerkers:
+### GitHub Configuratie
+Voor GitHub integratie via MCP:
 
-1. **Domain Restrictie**: Alleen `@lynxx.com` e-mailadressen worden geaccepteerd
-2. **OAuth Scopes**: `openid`, `email`, `profile`
-3. **Redirect Flow**: Automatische redirect naar dashboard na succesvolle login
-4. **Session Persistence**: Login sessies blijven actief tussen browser sessies
+```env
+# GitHub MCP Server
+MCP_SERVER_SCRIPT=npx
+MCP_SERVER_ARGS=-y @modelcontextprotocol/server-github
+GITHUB_TOKEN=ghp_xxxxxxxxxxxxxxxxxxxx
 
-### Anthropic API Configuratie
-- **Model**: Claude 3.5 Sonnet (configureerbaar)
-- **Caching**: Ephemeral caching voor system prompt en project info
-- **Streaming**: Real-time response streaming voor betere UX
+# Optioneel: MCP server virtual environment
+MCP_SERVER_VENV_PATH=/path/to/mcp/venv
+```
 
-### MCP Tools Configuratie
-- **GitHub Integration**: Volledige GitHub API toegang via MCP
-- **Custom Tools**: Ondersteuning voor additional MCP servers
-- **Tool Results**: Real-time feedback over tool execution
+**GitHub Token Permissions:**
+- `repo`: Volledige repository toegang
+- `workflow`: GitHub Actions toegang
+- `admin:org`: Organisatie toegang (indien nodig)
+
+### Bitbucket Configuratie
+Voor Bitbucket integratie via directe API:
+
+```env
+# Bitbucket API Credentials
+BITBUCKET_WORKSPACE=my-workspace
+BITBUCKET_USERNAME=my-username
+BITBUCKET_APP_PASSWORD=ATBBxxxxxxxxxxxxxxxxxx
+```
+
+**Bitbucket App Password Permissions:**
+- **Repositories**: Read, Write, Admin
+- **Pull requests**: Read, Write
+- **Issues**: Read, Write
+- **Webhooks**: Read, Write (optioneel)
+
+**App Password Aanmaken:**
+1. Ga naar Bitbucket Settings → App passwords
+2. Klik "Create app password"
+3. Geef een naam (bijv. "AI Ontwikkelhulp")
+4. Selecteer de benodigde permissions
+5. Kopieer het gegenereerde password (eenmalig zichtbaar)
+
+### Platform Switching
+De applicatie ondersteunt dynamische platform switching:
+
+1. **Interface**: Platform selector in de hoofdinterface
+2. **Automatische Detectie**: Op basis van repository referentie format
+3. **API Endpoints**: `/api/platform/connect`, `/api/platform/disconnect`, `/api/platform/switch`
+4. **Session Storage**: Actieve platform wordt opgeslagen in gebruikerssessie
 
 ## 🎯 Gebruik
 
 ### Voor Gebruikers
 1. **Login**: Gebruik je @lynxx.com Google account
-2. **Chat Interface**: Stel vragen of geef opdrachten aan Claude
-3. **Repository Ontwikkeling**: Gebruik `ga [repository-naam]` voor automatische ontwikkeling
-4. **Workflow Mode**: Activeer de workflow toggle voor geautomatiseerde development cycles
-5. **Gesprekken Beheren**: Bekijk, zoek, en beheer je gesprekgeschiedenis
+2. **Platform Selectie**: Kies GitHub of Bitbucket in de interface
+3. **Verbinding**: Klik "Verbinden" om verbinding te maken met het gekozen platform
+4. **Chat Interface**: Stel vragen of geef opdrachten aan Claude
+5. **Repository Ontwikkeling**: Gebruik `ga [repository-naam]` voor automatische ontwikkeling
+6. **Workflow Mode**: Activeer de workflow toggle voor geautomatiseerde development cycles
 
 ### Voor Ontwikkelaars
-1. **Code Development**: Gebruik `ga` commando met repository naam
-2. **Issue Tracking**: Automatische GitHub issue creatie en management
-3. **Branch Workflow**: Automatische branch creatie en PR workflow
-4. **Workflow Automation**: Laat de AI automatisch door development cycles navigeren
-5. **Testing**: Gebruik MCP tools voor code testing en validation
+
+#### GitHub Repositories
+```bash
+# GitHub repository format: owner/repo
+ga NoutNouhuys/Noutai
+ga myorganization/myproject
+```
+
+#### Bitbucket Repositories
+```bash
+# Bitbucket repository format: workspace/repo_slug
+ga myworkspace/myproject
+ga company-workspace/application-name
+```
+
+#### Multi-Platform Development
+1. **Platform Detection**: De AI detecteert automatisch het platform op basis van repository format
+2. **Cross-Platform**: Wissel tussen GitHub en Bitbucket projecten binnen dezelfde sessie
+3. **Unified Workflow**: Dezelfde workflow instructies werken voor beide platforms
+4. **Tool Translation**: GitHub tools worden automatisch vertaald naar Bitbucket equivalenten
 
 ### Workflow Mode Gebruiken
 1. **Activeer Workflow**: Zet de "Workflow" toggle aan in de interface
-2. **Start Development**: Gebruik `ga [repository-naam]` commando
-3. **Automatische Flow**: De AI zal automatisch:
+2. **Selecteer Platform**: Kies GitHub of Bitbucket en maak verbinding
+3. **Start Development**: Gebruik `ga [repository-naam]` commando
+4. **Automatische Flow**: De AI zal automatisch:
    - Issues aanmaken en oppakken
    - Pull requests creëren en mergen
    - Nieuwe chat windows openen met juiste configuratie
+   - Platform-specifieke API calls gebruiken
    - Vorige windows sluiten voor clean workflow
-4. **Monitor Progress**: Volg de automatische progressie in de logs
 
 ## 🚀 Productie Deployment
 
@@ -335,6 +395,12 @@ GOOGLE_CLIENT_SECRET=production-client-secret
 DATABASE_URL=postgresql://user:pass@localhost/aiontwikkelhulp
 SSL_REDIRECT=True
 PROXY_COUNT=1
+
+# Platform Configuration
+DEFAULT_PLATFORM=github
+BITBUCKET_WORKSPACE=production-workspace
+BITBUCKET_USERNAME=production-user
+BITBUCKET_APP_PASSWORD=production-app-password
 ```
 
 ### Gunicorn Deployment
@@ -367,61 +433,84 @@ pytest tests/test_anthropic_config.py
 pytest --cov=. --cov-report=html
 ```
 
-### API Tests
+### Platform Integration Tests
 ```bash
-# API endpoints testen
-pytest tests/test_api_conversation_persistence.py -v
+# Test GitHub integratie
+pytest tests/test_github_integration.py -v
+
+# Test Bitbucket integratie
+pytest tests/test_bitbucket_integration.py -v
+
+# Test platform switching
+pytest tests/test_platform_switching.py -v
 ```
 
 ## 🔍 Troubleshooting
 
 ### Veel Voorkomende Problemen
 
-#### Google OAuth Errors
-- **Error**: `redirect_uri_mismatch`
-  - **Oplossing**: Controleer of redirect URI in Google Console overeenkomt met applicatie URL
+#### Platform Connection Issues
+- **Error**: `Platform not configured`
+  - **Oplossing**: Controleer environment variabelen voor het gekozen platform
+- **Error**: `Bitbucket authentication failed`
+  - **Oplossing**: Verifieer app password en workspace naam
+- **Error**: `GitHub MCP server connection failed`
+  - **Oplossing**: Controleer GitHub token permissions en MCP server configuratie
 
-#### Anthropic API Issues
-- **Error**: `AuthenticationError`
-  - **Oplossing**: Verifieer ANTHROPIC_API_KEY in .env bestand
+#### Repository Format Issues
+- **Error**: `Repository format not recognized`
+  - **Oplossing**: Gebruik correct format (`owner/repo` voor GitHub, `workspace/repo_slug` voor Bitbucket)
+- **Error**: `Platform detection failed`
+  - **Oplossing**: Specificeer platform expliciet in de interface
 
-#### MCP Connection Problems
-- **Error**: MCP server connection failed
-  - **Oplossing**: Controleer of GitHub token juiste permissions heeft
-
-#### Database Errors
-- **Error**: `sqlite3.OperationalError`
-  - **Oplossing**: Run `flask db upgrade` om database schema bij te werken
-
-#### Workflow Issues
-- **Error**: Workflow patterns niet herkend
+#### Workflow Pattern Issues
+- **Error**: `Workflow patterns not recognized`
   - **Oplossing**: Controleer of AI responses exact overeenkomen met patterns in `werkwijze.txt`
-- **Error**: Nieuwe windows openen niet automatisch
-  - **Oplossing**: Verifieer dat workflow toggle geactiveerd is en Claude 4 Sonnet beschikbaar is
+- **Error**: `Cross-platform workflow confusion`
+  - **Oplossing**: Zorg dat repository referenties consistent zijn binnen een workflow
 
-### Logging & Debugging
+### Platform-Specifieke Debugging
+
+#### GitHub Debugging
 ```bash
-# Verhoog log level voor debugging
+# Check GitHub MCP connection
 export LOG_LEVEL=DEBUG
+tail -f logs/app.log | grep "github"
 
-# Check logs voor specifieke modules
-tail -f logs/app.log | grep "anthropic_api"
+# Test GitHub token
+curl -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/user
+```
 
-# Monitor workflow patterns
-tail -f logs/app.log | grep "workflow"
+#### Bitbucket Debugging
+```bash
+# Check Bitbucket API connection
+export LOG_LEVEL=DEBUG
+tail -f logs/app.log | grep "bitbucket"
+
+# Test Bitbucket credentials
+curl -u "$BITBUCKET_USERNAME:$BITBUCKET_APP_PASSWORD" \
+     https://api.bitbucket.org/2.0/user
 ```
 
 ## 🤝 Contributing
 
 1. Fork de repository
 2. Maak een feature branch (`git checkout -b feature/nieuwe-functie`)
-3. Commit je wijzigingen (`git commit -am 'Voeg nieuwe functie toe'`)
-4. Push naar branch (`git push origin feature/nieuwe-functie`)
-5. Maak een Pull Request
+3. Test op beide platforms (GitHub en Bitbucket)
+4. Commit je wijzigingen (`git commit -am 'Voeg nieuwe functie toe'`)
+5. Push naar branch (`git push origin feature/nieuwe-functie`)
+6. Maak een Pull Request
+
+### Development Guidelines
+- Test nieuwe features op beide platforms
+- Update werkwijze.txt voor platform-specifieke instructies
+- Voeg platform-agnostische error handling toe
+- Documenteer platform-specifieke configuratie
 
 ## 📝 Changelog
 
 ### Recent Updates
+- **v3.0.0**: Multi-platform ondersteuning (GitHub + Bitbucket)
 - **v2.2.0**: Workflow automation en pattern matching
 - **v2.1.0**: Log formatting en UI verbeteringen
 - **v2.0.0**: Database persistence voor conversations

@@ -1,18 +1,20 @@
 """
 MCP (Model Context Protocol) integration module.
 Handles communication with MCP servers for tool usage.
+Supports both GitHub and Bitbucket platforms.
 """
 import logging
 import asyncio
 from typing import Dict, List, Optional, Any, Callable
 import mcp_connector
+import mcp_bitbucket_connector
 from anthropic_config import AnthropicConfig
 
 logger = logging.getLogger(__name__)
 
 
 class MCPIntegration:
-    """Manages MCP server connections and tool usage."""
+    """Manages MCP server connections and tool usage for multiple platforms."""
     
     def __init__(self, config: AnthropicConfig):
         """
@@ -22,149 +24,329 @@ class MCPIntegration:
             config: AnthropicConfig instance
         """
         self.config = config
-        self.connector = mcp_connector.MCPConnector()
-        self._connected = False
+        self.github_connector = mcp_connector.MCPConnector()
+        self.bitbucket_connector = mcp_bitbucket_connector.BitbucketMCPConnector()
+        self._github_connected = False
+        self._bitbucket_connected = False
+        self._active_platform = None
         
-    async def connect(self, server_script_path: Optional[str] = None, server_venv_path: Optional[str] = None) -> bool:
+    async def connect(self, 
+                     platform: Optional[str] = None,
+                     server_script_path: Optional[str] = None, 
+                     server_venv_path: Optional[str] = None) -> bool:
         """
-        Connect to MCP server.
+        Connect to MCP server(s).
         
         Args:
-            server_script_path: Path to server script
-            server_venv_path: Path to virtual environment
+            platform: Specific platform to connect to (github/bitbucket), or None for all configured
+            server_script_path: Path to server script (GitHub only)
+            server_venv_path: Path to virtual environment (GitHub only)
             
         Returns:
-            True if connection successful
+            True if at least one connection successful
         """
-        try:
-            script_path = server_script_path or self.config.mcp_server_script
-            venv_path = server_venv_path or self.config.mcp_server_venv_path
-            
-            if not script_path:
-                logger.debug("No MCP server script path configured")
+        success = False
+        
+        # Determine which platforms to connect to
+        platforms_to_connect = []
+        if platform:
+            if self.config.is_platform_supported(platform):
+                platforms_to_connect = [platform.lower()]
+            else:
+                logger.error(f"Unsupported platform: {platform}")
                 return False
+        else:
+            # Connect to all configured platforms
+            if self.config.is_github_configured():
+                platforms_to_connect.append(self.config.PLATFORM_GITHUB)
+            if self.config.is_bitbucket_configured():
+                platforms_to_connect.append(self.config.PLATFORM_BITBUCKET)
+        
+        # Connect to GitHub if requested and configured
+        if self.config.PLATFORM_GITHUB in platforms_to_connect:
+            try:
+                script_path = server_script_path or self.config.mcp_server_script
+                venv_path = server_venv_path or self.config.mcp_server_venv_path
                 
-            await self.connector.connect_to_server(script_path, venv_path)
-            self._connected = True
-            logger.info("Successfully connected to MCP server")
-            return True
-            
-        except Exception as e:
-            logger.error(f"Failed to connect to MCP server: {str(e)}")
-            return False
+                if script_path:
+                    await self.github_connector.connect_to_server(script_path, venv_path)
+                    self._github_connected = True
+                    success = True
+                    logger.info("Successfully connected to GitHub MCP server")
+                else:
+                    logger.debug("GitHub MCP server script path not configured")
+                    
+            except Exception as e:
+                logger.error(f"Failed to connect to GitHub MCP server: {str(e)}")
+        
+        # Connect to Bitbucket if requested and configured
+        if self.config.PLATFORM_BITBUCKET in platforms_to_connect:
+            try:
+                if self.config.is_bitbucket_configured():
+                    await self.bitbucket_connector.connect_to_server()
+                    self._bitbucket_connected = True
+                    success = True
+                    logger.info("Successfully connected to Bitbucket API")
+                else:
+                    logger.debug("Bitbucket API not configured")
+                    
+            except Exception as e:
+                logger.error(f"Failed to connect to Bitbucket API: {str(e)}")
+        
+        # Set active platform
+        if success:
+            if platform:
+                self._active_platform = platform.lower()
+            else:
+                # Use default platform if multiple are connected
+                self._active_platform = self.config.default_platform
+                
+        return success
             
     async def disconnect(self) -> None:
-        """Disconnect from MCP server."""
-        if self._connected:
+        """Disconnect from all MCP servers."""
+        if self._github_connected:
             try:
-                await self.connector.close()
-                self._connected = False
-                logger.info("Disconnected from MCP server")
+                await self.github_connector.close()
+                self._github_connected = False
+                logger.info("Disconnected from GitHub MCP server")
             except Exception as e:
-                logger.error(f"Error disconnecting from MCP server: {str(e)}")
+                logger.error(f"Error disconnecting from GitHub MCP server: {str(e)}")
+        
+        if self._bitbucket_connected:
+            try:
+                await self.bitbucket_connector.close()
+                self._bitbucket_connected = False
+                logger.info("Disconnected from Bitbucket API")
+            except Exception as e:
+                logger.error(f"Error disconnecting from Bitbucket API: {str(e)}")
                 
-    async def get_tools(self) -> List[Dict[str, Any]]:
+        self._active_platform = None
+                
+    async def get_tools(self, platform: Optional[str] = None) -> List[Dict[str, Any]]:
         """
-        Get available tools from MCP server.
+        Get available tools from MCP server(s).
+        
+        Args:
+            platform: Specific platform to get tools from, or None for all connected
         
         Returns:
             List of tool definitions
         """
-        if not self._connected:
-            return []
+        tools = []
+        
+        # Determine which platforms to get tools from
+        if platform:
+            platforms = [platform.lower()] if self.config.is_platform_supported(platform) else []
+        else:
+            platforms = []
+            if self._github_connected:
+                platforms.append(self.config.PLATFORM_GITHUB)
+            if self._bitbucket_connected:
+                platforms.append(self.config.PLATFORM_BITBUCKET)
+        
+        # Get GitHub tools
+        if self.config.PLATFORM_GITHUB in platforms and self._github_connected:
+            try:
+                github_tools = await self.github_connector.get_tools()
+                tools.extend(github_tools)
+                logger.debug(f"Retrieved {len(github_tools)} tools from GitHub MCP server")
+            except Exception as e:
+                logger.error(f"Failed to get tools from GitHub MCP server: {str(e)}")
+        
+        # Get Bitbucket tools
+        if self.config.PLATFORM_BITBUCKET in platforms and self._bitbucket_connected:
+            try:
+                bitbucket_tools = await self.bitbucket_connector.get_tools()
+                tools.extend(bitbucket_tools)
+                logger.debug(f"Retrieved {len(bitbucket_tools)} tools from Bitbucket connector")
+            except Exception as e:
+                logger.error(f"Failed to get tools from Bitbucket connector: {str(e)}")
+        
+        # Remove duplicates (though there shouldn't be any with different prefixes)
+        unique_tools = []
+        seen = set()
+        for tool in tools:
+            if tool["name"] not in seen:
+                unique_tools.append(tool)
+                seen.add(tool["name"])
+                
+        logger.debug(f"Retrieved {len(unique_tools)} unique tools total")
+        return unique_tools
+    
+    def _detect_platform_from_tool(self, tool_name: str) -> Optional[str]:
+        """
+        Detect platform from tool name.
+        
+        Args:
+            tool_name: Name of the tool
             
-        try:
-            tools = await self.connector.get_tools()
+        Returns:
+            Platform name or None if cannot be detected
+        """
+        if tool_name.startswith('bitbucket_') or 'bitbucket' in tool_name:
+            return self.config.PLATFORM_BITBUCKET
+        elif any(github_tool in tool_name for github_tool in [
+            'get_file_contents', 'create_issue', 'list_issues', 'create_pull_request',
+            'list_pull_requests', 'merge_pull_request', 'create_repository', 'fork_repository',
+            'create_branch', 'list_branches', 'create_or_update_file', 'push_files'
+        ]):
+            return self.config.PLATFORM_GITHUB
+        return None
+    
+    def _detect_platform_from_args(self, tool_args: Dict[str, Any]) -> Optional[str]:
+        """
+        Detect platform from tool arguments.
+        
+        Args:
+            tool_args: Tool arguments
             
-            # Remove duplicates
-            unique_tools = []
-            seen = set()
-            for tool in tools:
-                if tool["name"] not in seen:
-                    unique_tools.append(tool)
-                    seen.add(tool["name"])
-                    
-            logger.debug(f"Retrieved {len(unique_tools)} unique tools from MCP server")
-            return unique_tools
+        Returns:
+            Platform name or None if cannot be detected
+        """
+        # Bitbucket uses workspace/repo_slug pattern
+        if 'workspace' in tool_args and 'repo_slug' in tool_args:
+            return self.config.PLATFORM_BITBUCKET
+        # GitHub uses owner/repo pattern
+        elif 'owner' in tool_args and 'repo' in tool_args:
+            return self.config.PLATFORM_GITHUB
+        return None
+    
+    def _convert_github_to_bitbucket_args(self, tool_name: str, tool_args: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Convert GitHub tool arguments to Bitbucket format.
+        
+        Args:
+            tool_name: Name of the tool
+            tool_args: GitHub tool arguments
             
-        except Exception as e:
-            logger.error(f"Failed to get tools from MCP server: {str(e)}")
-            return []
+        Returns:
+            Converted Bitbucket tool arguments
+        """
+        converted_args = tool_args.copy()
+        
+        # Convert owner/repo to workspace/repo_slug
+        if 'owner' in converted_args:
+            converted_args['workspace'] = converted_args.pop('owner')
+        if 'repo' in converted_args:
+            converted_args['repo_slug'] = converted_args.pop('repo')
+        
+        # Convert specific argument names
+        if 'issue_number' in converted_args:
+            converted_args['issue_id'] = converted_args.pop('issue_number')
+        if 'pull_number' in converted_args:
+            converted_args['pull_request_id'] = converted_args.pop('pull_number')
+        if 'body' in converted_args:
+            converted_args['content'] = converted_args.pop('body')
+        if 'head' in converted_args:
+            converted_args['source_branch'] = converted_args.pop('head')
+        if 'base' in converted_args:
+            converted_args['destination_branch'] = converted_args.pop('base')
+        
+        return converted_args
+    
+    def _convert_github_to_bitbucket_tool_name(self, tool_name: str) -> str:
+        """
+        Convert GitHub tool name to Bitbucket equivalent.
+        
+        Args:
+            tool_name: GitHub tool name
+            
+        Returns:
+            Bitbucket tool name
+        """
+        # Mapping of GitHub tools to Bitbucket tools
+        tool_mapping = {
+            'get_file_contents': 'get_bitbucket_file_contents',
+            'create_issue': 'create_bitbucket_issue',
+            'update_issue': 'update_bitbucket_issue',
+            'list_issues': 'list_bitbucket_issues',
+            'create_pull_request': 'create_bitbucket_pull_request',
+            'list_pull_requests': 'list_bitbucket_pull_requests',
+            'merge_pull_request': 'merge_bitbucket_pull_request',
+            'create_repository': 'create_bitbucket_repository',
+            'list_repositories': 'list_bitbucket_repositories',
+            'create_branch': 'create_bitbucket_branch',
+            'list_branches': 'list_bitbucket_branches',
+            'create_or_update_file': 'create_or_update_bitbucket_file'
+        }
+        
+        return tool_mapping.get(tool_name, tool_name)
     
     def _format_tool_args(self, tool_name: str, tool_args: Dict[str, Any]) -> str:
         """Format tool arguments for readable logging."""
-        if tool_name == "get_file_contents":
-            repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
+        if tool_name.startswith('get_') and 'file_contents' in tool_name:
+            if 'workspace' in tool_args:
+                # Bitbucket format
+                repo_info = f"{tool_args.get('workspace', 'unknown')}/{tool_args.get('repo_slug', 'unknown')}"
+            else:
+                # GitHub format
+                repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
             path = tool_args.get('path', 'unknown')
             ref = tool_args.get('ref', 'main')
             return f"  Repository: {repo_info}\n  Path: {path}\n  Branch/Ref: {ref}"
         
-        elif tool_name == "create_issue":
-            repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
+        elif 'create_issue' in tool_name or 'create_bitbucket_issue' in tool_name:
+            if 'workspace' in tool_args:
+                repo_info = f"{tool_args.get('workspace', 'unknown')}/{tool_args.get('repo_slug', 'unknown')}"
+            else:
+                repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
             title = tool_args.get('title', 'No title')
             labels = tool_args.get('labels', [])
             return f"  Repository: {repo_info}\n  Title: {title}\n  Labels: {', '.join(labels) if labels else 'None'}"
         
-        elif tool_name == "update_issue":
-            repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
-            issue_num = tool_args.get('issue_number', 'unknown')
+        elif 'update_issue' in tool_name:
+            if 'workspace' in tool_args:
+                repo_info = f"{tool_args.get('workspace', 'unknown')}/{tool_args.get('repo_slug', 'unknown')}"
+                issue_num = tool_args.get('issue_id', 'unknown')
+            else:
+                repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
+                issue_num = tool_args.get('issue_number', 'unknown')
             title = tool_args.get('title', 'No title change')
             state = tool_args.get('state', 'No state change')
             return f"  Repository: {repo_info}\n  Issue: #{issue_num}\n  Title: {title}\n  State: {state}"
         
-        elif tool_name == "create_pull_request":
-            repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
+        elif 'create_pull_request' in tool_name or 'create_bitbucket_pull_request' in tool_name:
+            if 'workspace' in tool_args:
+                repo_info = f"{tool_args.get('workspace', 'unknown')}/{tool_args.get('repo_slug', 'unknown')}"
+                head = tool_args.get('source_branch', 'unknown')
+                base = tool_args.get('destination_branch', 'unknown')
+            else:
+                repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
+                head = tool_args.get('head', 'unknown')
+                base = tool_args.get('base', 'unknown')
             title = tool_args.get('title', 'No title')
-            head = tool_args.get('head', 'unknown')
-            base = tool_args.get('base', 'unknown')
             return f"  Repository: {repo_info}\n  Title: {title}\n  From: {head} → {base}"
         
-        elif tool_name == "merge_pull_request":
-            repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
-            pr_num = tool_args.get('pull_number', 'unknown')
-            method = tool_args.get('merge_method', 'merge')
+        elif 'merge_pull_request' in tool_name:
+            if 'workspace' in tool_args:
+                repo_info = f"{tool_args.get('workspace', 'unknown')}/{tool_args.get('repo_slug', 'unknown')}"
+                pr_num = tool_args.get('pull_request_id', 'unknown')
+                method = tool_args.get('merge_strategy', 'merge')
+            else:
+                repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
+                pr_num = tool_args.get('pull_number', 'unknown')
+                method = tool_args.get('merge_method', 'merge')
             return f"  Repository: {repo_info}\n  Pull Request: #{pr_num}\n  Method: {method}"
         
-        elif tool_name == "create_or_update_file":
-            repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
+        elif 'create_or_update_file' in tool_name:
+            if 'workspace' in tool_args:
+                repo_info = f"{tool_args.get('workspace', 'unknown')}/{tool_args.get('repo_slug', 'unknown')}"
+            else:
+                repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
             path = tool_args.get('path', 'unknown')
             branch = tool_args.get('branch', 'main')
             content_size = len(str(tool_args.get('content', '')))
             return f"  Repository: {repo_info}\n  Path: {path}\n  Branch: {branch}\n  Content size: {content_size} chars"
         
-        elif tool_name == "push_files":
-            repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
-            branch = tool_args.get('branch', 'unknown')
-            files = tool_args.get('files', [])
-            file_count = len(files)
-            return f"  Repository: {repo_info}\n  Branch: {branch}\n  Files: {file_count} files"
-        
-        elif tool_name == "list_issues":
-            repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
+        elif 'list_issues' in tool_name:
+            if 'workspace' in tool_args:
+                repo_info = f"{tool_args.get('workspace', 'unknown')}/{tool_args.get('repo_slug', 'unknown')}"
+            else:
+                repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
             state = tool_args.get('state', 'open')
             labels = tool_args.get('labels', [])
             return f"  Repository: {repo_info}\n  State: {state}\n  Labels: {', '.join(labels) if labels else 'All'}"
-        
-        elif tool_name == "search_issues":
-            query = tool_args.get('query', 'No query')
-            per_page = tool_args.get('per_page', 30)
-            return f"  Query: {query}\n  Per page: {per_page}"
-        
-        elif tool_name == "search_repositories":
-            query = tool_args.get('query', 'No query')
-            sort = tool_args.get('sort', 'best match')
-            return f"  Query: {query}\n  Sort: {sort}"
-        
-        elif tool_name == "create_repository":
-            name = tool_args.get('name', 'unknown')
-            private = tool_args.get('private', True)
-            description = tool_args.get('description', 'No description')
-            return f"  Name: {name}\n  Private: {private}\n  Description: {description}"
-        
-        elif tool_name == "fork_repository":
-            repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
-            org = tool_args.get('organization', 'Personal account')
-            return f"  Repository: {repo_info}\n  Fork to: {org}"
         
         else:
             # Generic formatting for unknown tools
@@ -183,11 +365,9 @@ class MCPIntegration:
         content_str = str(content)
         
         # Tool-specific result summaries
-        if tool_name == "get_file_contents":
+        if 'file_contents' in tool_name:
             try:
-                # Try to extract useful info from file content result
                 if "type" in content_str and "content" in content_str:
-                    # Estimate file size
                     content_length = len(content_str)
                     file_type = "text" if "text" in content_str else "binary"
                     return f"  File retrieved ({content_length/1024:.1f} KB)\n  Type: {file_type}"
@@ -196,12 +376,12 @@ class MCPIntegration:
             except:
                 return f"  File content retrieved ({len(content_str)} chars)"
         
-        elif tool_name in ["create_issue", "update_issue"]:
-            if "number" in content_str:
+        elif 'issue' in tool_name and ('create' in tool_name or 'update' in tool_name):
+            if "id" in content_str or "number" in content_str:
                 try:
-                    # Extract issue number if possible
                     import re
-                    match = re.search(r'"number":\s*(\d+)', content_str)
+                    # Try to find issue ID or number
+                    match = re.search(r'"(?:id|number)":\s*(\d+)', content_str)
                     if match:
                         issue_num = match.group(1)
                         return f"  Issue #{issue_num} processed successfully"
@@ -209,11 +389,11 @@ class MCPIntegration:
                     pass
             return "  Issue processed successfully"
         
-        elif tool_name == "create_pull_request":
-            if "number" in content_str:
+        elif 'pull_request' in tool_name and 'create' in tool_name:
+            if "id" in content_str or "number" in content_str:
                 try:
                     import re
-                    match = re.search(r'"number":\s*(\d+)', content_str)
+                    match = re.search(r'"(?:id|number)":\s*(\d+)', content_str)
                     if match:
                         pr_num = match.group(1)
                         return f"  Pull Request #{pr_num} created"
@@ -221,16 +401,16 @@ class MCPIntegration:
                     pass
             return "  Pull Request created successfully"
         
-        elif tool_name == "merge_pull_request":
+        elif 'merge' in tool_name and 'pull_request' in tool_name:
             if "merged" in content_str:
                 return "  Pull Request merged successfully"
             return "  Pull Request merge processed"
         
-        elif tool_name in ["create_or_update_file", "push_files"]:
+        elif 'create_or_update_file' in tool_name:
             if "commit" in content_str:
                 try:
                     import re
-                    match = re.search(r'"sha":\s*"([a-f0-9]{7})', content_str)
+                    match = re.search(r'"(?:sha|hash)":\s*"([a-f0-9]{7})', content_str)
                     if match:
                         sha = match.group(1)
                         return f"  Files committed (SHA: {sha})"
@@ -238,30 +418,25 @@ class MCPIntegration:
                     pass
             return "  Files committed successfully"
         
-        elif tool_name in ["list_issues", "list_pull_requests"]:
-            # Count items in list result
+        elif 'list' in tool_name:
             try:
                 import re
-                # Count occurrences of "number": which indicates items
-                matches = re.findall(r'"number":', content_str)
+                # Count items in list result
+                matches = re.findall(r'"(?:id|number)":', content_str)
                 count = len(matches)
-                item_type = "issues" if "issue" in tool_name else "pull requests"
+                if 'issue' in tool_name:
+                    item_type = "issues"
+                elif 'pull_request' in tool_name:
+                    item_type = "pull requests"
+                elif 'repository' in tool_name or 'repositories' in tool_name:
+                    item_type = "repositories"
+                elif 'branch' in tool_name:
+                    item_type = "branches"
+                else:
+                    item_type = "items"
                 return f"  Found {count} {item_type}"
             except:
                 return "  List retrieved successfully"
-        
-        elif tool_name in ["search_issues", "search_repositories"]:
-            try:
-                import re
-                # Look for total_count in search results
-                match = re.search(r'"total_count":\s*(\d+)', content_str)
-                if match:
-                    total = match.group(1)
-                    item_type = "issues" if "issue" in tool_name else "repositories"
-                    return f"  Found {total} {item_type}"
-            except:
-                pass
-            return "  Search completed successfully"
         
         else:
             # Generic result summary
@@ -274,37 +449,81 @@ class MCPIntegration:
         self,
         tool_name: str,
         tool_args: Dict[str, Any],
-        log_callback: Optional[Callable[[str], None]] = None
+        log_callback: Optional[Callable[[str], None]] = None,
+        platform: Optional[str] = None
     ) -> Dict[str, Any]:
         """
-        Execute a tool through MCP server.
+        Execute a tool through appropriate MCP server.
         
         Args:
             tool_name: Name of the tool to execute
             tool_args: Arguments for the tool
             log_callback: Optional callback for logging
+            platform: Optional platform override
             
         Returns:
             Tool execution result
         """
         try:
-            if not self._connected:
-                raise RuntimeError("Not connected to MCP server")
+            # Determine target platform
+            target_platform = platform
+            if not target_platform:
+                # Try to detect from tool name
+                target_platform = self._detect_platform_from_tool(tool_name)
+            if not target_platform:
+                # Try to detect from arguments
+                target_platform = self._detect_platform_from_args(tool_args)
+            if not target_platform:
+                # Use active platform or default
+                target_platform = self._active_platform or self.config.default_platform
+            
+            # Check if target platform is connected
+            if target_platform == self.config.PLATFORM_GITHUB and not self._github_connected:
+                raise RuntimeError("GitHub MCP server not connected")
+            elif target_platform == self.config.PLATFORM_BITBUCKET and not self._bitbucket_connected:
+                raise RuntimeError("Bitbucket API not connected")
+            
+            # Convert tool name and arguments if needed
+            actual_tool_name = tool_name
+            actual_tool_args = tool_args
+            
+            if target_platform == self.config.PLATFORM_BITBUCKET:
+                # If this is a GitHub tool being used on Bitbucket, convert it
+                if not tool_name.startswith('bitbucket_') and 'bitbucket' not in tool_name:
+                    actual_tool_name = self._convert_github_to_bitbucket_tool_name(tool_name)
+                    actual_tool_args = self._convert_github_to_bitbucket_args(tool_name, tool_args)
             
             # Log tool start with formatted parameters
             if log_callback:
-                formatted_args = self._format_tool_args(tool_name, tool_args)
-                log_callback(f"▶ Starting tool: {tool_name}\n{formatted_args}")
-                
-            result = await self.connector.use_tool(tool_name=tool_name, tool_args=tool_args)
+                formatted_args = self._format_tool_args(actual_tool_name, actual_tool_args)
+                platform_info = f" ({target_platform.upper()})"
+                log_callback(f"▶ Starting tool: {actual_tool_name}{platform_info}\n{formatted_args}")
+            
+            # Execute tool on appropriate platform
+            if target_platform == self.config.PLATFORM_GITHUB:
+                result = await self.github_connector.use_tool(
+                    tool_name=actual_tool_name, 
+                    tool_args=actual_tool_args
+                )
+                result_content = result.content
+            elif target_platform == self.config.PLATFORM_BITBUCKET:
+                result = await self.bitbucket_connector.use_tool(
+                    tool_name=actual_tool_name, 
+                    tool_args=actual_tool_args
+                )
+                result_content = result.content
+                if result.is_error:
+                    raise Exception(result_content)
+            else:
+                raise RuntimeError(f"Unsupported platform: {target_platform}")
             
             # Log successful completion with result summary
-            logger.info(f"Tool '{tool_name}' executed successfully")
+            logger.info(f"Tool '{actual_tool_name}' executed successfully on {target_platform}")
             if log_callback:
-                result_summary = self._summarize_result(tool_name, result.content)
-                log_callback(f"✓ Tool {tool_name} completed:\n{result_summary}")
+                result_summary = self._summarize_result(actual_tool_name, result_content)
+                log_callback(f"✓ Tool {actual_tool_name} completed:\n{result_summary}")
                 
-            return {"success": True, "content": result.content}
+            return {"success": True, "content": result_content, "platform": target_platform}
             
         except Exception as e:
             error_msg = f"Tool '{tool_name}' failed with error: {str(e)}"
@@ -366,12 +585,54 @@ class MCPIntegration:
                 message_params["messages"].append(tool_result_message)
                 
                 # Get next response
-                response = response = client.create_message(**message_params)
+                response = client.create_message(**message_params)
                 logger.info(f"Received follow-up response after tool use")
                 
         return response
     
     @property
     def is_connected(self) -> bool:
-        """Check if connected to MCP server."""
-        return self._connected
+        """Check if connected to any MCP server."""
+        return self._github_connected or self._bitbucket_connected
+    
+    @property
+    def connected_platforms(self) -> List[str]:
+        """Get list of connected platforms."""
+        platforms = []
+        if self._github_connected:
+            platforms.append(self.config.PLATFORM_GITHUB)
+        if self._bitbucket_connected:
+            platforms.append(self.config.PLATFORM_BITBUCKET)
+        return platforms
+    
+    @property
+    def active_platform(self) -> Optional[str]:
+        """Get the currently active platform."""
+        return self._active_platform
+    
+    def set_active_platform(self, platform: str) -> bool:
+        """
+        Set the active platform.
+        
+        Args:
+            platform: Platform to set as active
+            
+        Returns:
+            True if platform was set successfully
+        """
+        if not self.config.is_platform_supported(platform):
+            logger.error(f"Unsupported platform: {platform}")
+            return False
+        
+        platform = platform.lower()
+        
+        if platform == self.config.PLATFORM_GITHUB and not self._github_connected:
+            logger.error("Cannot set GitHub as active platform - not connected")
+            return False
+        elif platform == self.config.PLATFORM_BITBUCKET and not self._bitbucket_connected:
+            logger.error("Cannot set Bitbucket as active platform - not connected")
+            return False
+        
+        self._active_platform = platform
+        logger.info(f"Active platform set to: {platform}")
+        return True

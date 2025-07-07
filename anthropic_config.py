@@ -41,6 +41,10 @@ class AnthropicConfig:
         }
     }
     
+    # Platform types
+    PLATFORM_GITHUB = "github"
+    PLATFORM_BITBUCKET = "bitbucket"
+    
     def __init__(self, api_key: Optional[str] = None, config_dict: Optional[Dict[str, Any]] = None):
         """
         Initialize Anthropic configuration.
@@ -292,6 +296,24 @@ class AnthropicConfig:
             logger.error(f"Configuration validation failed: {e}")
             raise
     
+    # Platform Configuration Properties
+    
+    @property
+    def default_platform(self) -> str:
+        """Get the default platform (github or bitbucket)."""
+        return self.config_dict.get('DEFAULT_PLATFORM') or os.environ.get('DEFAULT_PLATFORM', self.PLATFORM_GITHUB)
+    
+    @property
+    def supported_platforms(self) -> List[str]:
+        """Get list of supported platforms."""
+        return [self.PLATFORM_GITHUB, self.PLATFORM_BITBUCKET]
+    
+    def is_platform_supported(self, platform: str) -> bool:
+        """Check if a platform is supported."""
+        return platform.lower() in self.supported_platforms
+    
+    # GitHub Configuration Properties
+    
     @property 
     def mcp_servers(self) -> List[str]:
         """Get MCP server configuration."""
@@ -302,10 +324,96 @@ class AnthropicConfig:
     
     @property
     def mcp_server_script(self) -> Optional[str]:
-        """Get MCP server script path."""
+        """Get GitHub MCP server script path."""
         return os.environ.get("MCP_SERVER_SCRIPT")
     
     @property
     def mcp_server_venv_path(self) -> Optional[str]:
-        """Get MCP server virtual environment path."""
+        """Get GitHub MCP server virtual environment path."""
         return os.environ.get("MCP_SERVER_VENV_PATH")
+    
+    # Bitbucket Configuration Properties
+    
+    @property
+    def bitbucket_workspace(self) -> Optional[str]:
+        """Get Bitbucket workspace."""
+        return self.config_dict.get('BITBUCKET_WORKSPACE') or os.environ.get('BITBUCKET_WORKSPACE')
+    
+    @property
+    def bitbucket_username(self) -> Optional[str]:
+        """Get Bitbucket username."""
+        return self.config_dict.get('BITBUCKET_USERNAME') or os.environ.get('BITBUCKET_USERNAME')
+    
+    @property
+    def bitbucket_app_password(self) -> Optional[str]:
+        """Get Bitbucket app password."""
+        return self.config_dict.get('BITBUCKET_APP_PASSWORD') or os.environ.get('BITBUCKET_APP_PASSWORD')
+    
+    def is_bitbucket_configured(self) -> bool:
+        """Check if Bitbucket is properly configured."""
+        return all([
+            self.bitbucket_workspace,
+            self.bitbucket_username,
+            self.bitbucket_app_password
+        ])
+    
+    def is_github_configured(self) -> bool:
+        """Check if GitHub is properly configured."""
+        return bool(self.mcp_server_script)
+    
+    def get_platform_config(self, platform: str) -> Dict[str, Any]:
+        """
+        Get configuration for a specific platform.
+        
+        Args:
+            platform: Platform name (github or bitbucket)
+            
+        Returns:
+            Dict with platform-specific configuration
+        """
+        if platform.lower() == self.PLATFORM_GITHUB:
+            return {
+                'platform': self.PLATFORM_GITHUB,
+                'configured': self.is_github_configured(),
+                'mcp_server_script': self.mcp_server_script,
+                'mcp_server_venv_path': self.mcp_server_venv_path
+            }
+        elif platform.lower() == self.PLATFORM_BITBUCKET:
+            return {
+                'platform': self.PLATFORM_BITBUCKET,
+                'configured': self.is_bitbucket_configured(),
+                'workspace': self.bitbucket_workspace,
+                'username': self.bitbucket_username,
+                'has_app_password': bool(self.bitbucket_app_password)
+            }
+        else:
+            raise ValueError(f"Unsupported platform: {platform}")
+    
+    def get_available_platforms(self) -> List[Dict[str, Any]]:
+        """Get list of available platforms with their configuration status."""
+        platforms = []
+        
+        for platform in self.supported_platforms:
+            config = self.get_platform_config(platform)
+            platforms.append({
+                'id': platform,
+                'name': platform.title(),
+                'configured': config['configured'],
+                'default': platform == self.default_platform
+            })
+        
+        return platforms
+    
+    def detect_platform_from_repo(self, repo_identifier: str) -> Optional[str]:
+        """
+        Detect platform from repository identifier.
+        
+        Args:
+            repo_identifier: Repository identifier (e.g., "owner/repo" or "workspace/repo_slug")
+            
+        Returns:
+            Platform name or None if cannot be detected
+        """
+        # This is a simple heuristic - in practice you might want more sophisticated detection
+        # For now, we'll use the default platform unless explicitly specified
+        return self.default_platform

@@ -19,6 +19,42 @@
             </div>
         </div>
         
+        <!-- Platform Selection Panel -->
+        <div class="platform-panel mb-3">
+            <div class="card">
+                <div class="card-body py-2">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <span class="me-3"><strong>Platform:</strong></span>
+                                <div class="btn-group" role="group" aria-label="Platform selection">
+                                    <input type="radio" class="btn-check" name="platform" id="platform-github" value="github" checked>
+                                    <label class="btn btn-outline-primary" for="platform-github">
+                                        <i class="fab fa-github me-1"></i> GitHub
+                                    </label>
+                                    
+                                    <input type="radio" class="btn-check" name="platform" id="platform-bitbucket" value="bitbucket">
+                                    <label class="btn btn-outline-primary" for="platform-bitbucket">
+                                        <i class="fab fa-bitbucket me-1"></i> Bitbucket
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <div class="platform-status">
+                                <span id="platform-status-text" class="badge bg-secondary">
+                                    <i class="fas fa-circle me-1"></i> Niet verbonden
+                                </span>
+                                <button id="platform-connect-btn" class="btn btn-sm btn-outline-success ms-2">
+                                    <i class="fas fa-plug me-1"></i> Verbinden
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div class="control-panel mb-3">
             <div class="row">
                 <div class="col-md-6">
@@ -133,4 +169,6 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/log-formatter.css') }}">
 <!-- Include the home page styles -->
 <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+<!-- Include platform selector styles -->
+<link rel="stylesheet" href="{{ url_for('static', filename='css/platform-selector.css') }}">
 {% endblock %}
