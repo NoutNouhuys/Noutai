@@ -330,13 +330,65 @@
      - static/js/home.js - Tab-based workflow functionaliteit (59KB)
      - static/css/home.css - Workflow tabs styling (3.7KB)
      - project_info.txt - Documentatie update
-
-## Toekomstige stappen (Must-have)
-
-1. Verbidning met Bitbucket MCP Server. 
-   - Naast github moet de ai assistant ook connectie met bitbucket maken. 
-   - Ik heb een Bitbucket MCP server gecreeerd met BITBUKET_MCP_SERVER_SCRIPT=/Users/noutnouhuys/Documents/bitbucket-mcp-server/app.py en BITBUCKET_MCP_SERVER_VENV_PATH=/Users/noutnouhuys/Documents/bitbucket-mcp-server/venv
-   - Zorg er voor dat als ik in de .env de juiste variable invul, de ai app ook cennectie kan maken met de Bitbucket MCP sever  
+20. [✓] Implementeer Bitbucket MCP Server integratie voor multi-platform Git repository ondersteuning (Issue #21) - VOLTOOID
+   - Doelstelling: Naast GitHub moet de AI assistant ook connectie maken met Bitbucket via een MCP server
+   - Platform Management Module:
+     - [✓] `platform_management/platform_manager.py` - Centrale platform management en routing
+     - [✓] `platform_management/mcp_bitbucket_connector.py` - Bitbucket-specifieke MCP integratie
+     - [✓] Platform detectie (GitHub vs Bitbucket) op basis van repository identifiers
+     - [✓] Automatische routing naar juiste connector (GitHub of Bitbucket)
+     - [✓] Unified tool interface voor beide platforms
+     - [✓] Tool argument conversie tussen GitHub en Bitbucket formaten
+   - Configuration uitbreiding:
+     - [✓] `anthropic_config.py` uitgebreid met Bitbucket MCP server configuratie
+     - [✓] Environment variables: BITBUCKET_MCP_SERVER_SCRIPT, BITBUCKET_MCP_SERVER_VENV_PATH
+     - [✓] Platform-specifieke configuratie methods en validatie
+     - [✓] Available platforms detection
+   - MCP Integration uitbreiding:
+     - [✓] `mcp_integration.py` uitgebreid met multi-platform support
+     - [✓] Platform manager integratie voor multi-platform tool routing
+     - [✓] Unified tool interface die automatisch het juiste platform selecteert
+     - [✓] Backward compatibility met bestaande GitHub-only implementatie
+     - [✓] Platform-aware tool execution met repository hint ondersteuning
+   - Frontend uitbreiding:
+     - [✓] `static/js/platform-selector.js` - Platform selector JavaScript module
+     - [✓] `static/css/platform-selector.css` - Platform selector styling
+     - [✓] Platform selector UI component met dropdown voor GitHub/Bitbucket/Auto-detect
+     - [✓] Real-time connection status indicators voor beide platforms
+     - [✓] Platform switching met API communicatie naar backend
+     - [✓] Error handling en user feedback via notifications
+   - API endpoints:
+     - [✓] GET /api/platform/status - Platform connection status en available platforms
+     - [✓] POST /api/platform/set-active - Set active platform voor tool execution
+     - [✓] POST /api/platform/refresh - Refresh platform connections
+     - [✓] GET /api/platform/tools - Get available tools from all platforms
+     - [✓] POST /api/platform/detect - Detect platform from repository identifier
+   - Features:
+     - [✓] Multi-platform ondersteuning: Gebruikers kunnen kiezen tussen GitHub en Bitbucket
+     - [✓] Workflow continuïteit: Bestaande workflows werken naadloos met beide platforms
+     - [✓] Platform-agnostische ontwikkelervaring
+     - [✓] Automatische platform detectie of handmatige selectie
+     - [✓] Issues kunnen worden aangemaakt en beheerd in beide platforms
+     - [✓] Pull requests kunnen worden aangemaakt en gemerged in beide platforms
+     - [✓] Platform selector is zichtbaar in de interface
+     - [✓] Gebruiker krijgt feedback over welk platform actief is
+     - [✓] Error handling voor platform-specifieke problemen
+     - [✓] Bestaande GitHub functionaliteit blijft volledig werken
+     - [✓] Geen breaking changes in bestaande workflows
+     - [✓] Backward compatibility gegarandeerd
+   - Bestanden gewijzigd:
+     - platform_management/__init__.py - Module initialisatie
+     - platform_management/platform_manager.py - Platform management en routing
+     - platform_management/mcp_bitbucket_connector.py - Bitbucket MCP connector
+     - anthropic_config.py - Bitbucket MCP server configuratie
+     - mcp_integration.py - Multi-platform support en unified tool routing
+     - routes/api.py - Platform management API endpoints
+     - templates/base.html - Platform selector CSS en JavaScript includes
+     - static/js/platform-selector.js - Platform selector JavaScript module
+     - static/css/platform-selector.css - Platform selector styling
+     - .env.example - Bitbucket MCP server configuratie variabelen
+     - project_info.txt - Documentatie update met nieuwe modules
+     - project_stappen.txt - Stap markering als voltooid
 
 ## Toekomstige stappen (Nice-to-have)
 
@@ -389,3 +441,10 @@
    - Export van log data voor analyse
    - Real-time log streaming
    - Tool performance metrics en analytics
+
+9. Multi-platform enhancements
+   - GitLab MCP server integration
+   - Azure DevOps integration
+   - Custom Git provider support
+   - Cross-platform repository synchronization
+   - Platform-specific workflow optimizations
