@@ -1,11 +1,11 @@
 # Repository Summary - AI Ontwikkelhulp (Noutai)
 
 ## Project Overview
-AI Ontwikkelhulp is een gespecialiseerde tool die communicatie tussen gebruikers en AI-modellen (Claude) faciliteert voor code-ontwikkeling en repository-beheer. De applicatie biedt een gestructureerde werkwijze voor AI-gestuurde softwareontwikkeling met integratie van externe tools via het Model Context Protocol (MCP).
+AI Ontwikkelhulp is een gespecialiseerde tool die communicatie tussen gebruikers en AI-modellen (Claude) faciliteert voor code-ontwikkeling en repository-beheer. De applicatie biedt een gestructureerde werkwijze voor AI-gestuurde softwareontwikkeling met integratie van externe tools via het Model Context Protocol (MCP). **Volledig uitgebreid met multi-platform ondersteuning voor zowel GitHub als Bitbucket repositories via een unified interface.**
 
 ## Repository Structure
 
-### Root Directory Files (30 bestanden)
+### Root Directory Files (33 bestanden)
 - `.env.example` (837 bytes) - Environment variabelen template
 - `.gitignore` (714 bytes) - Git ignore configuratie
 - `CONTRIBUTING.md` (3,856 bytes) - Bijdrage richtlijnen
@@ -13,21 +13,28 @@ AI Ontwikkelhulp is een gespecialiseerde tool die communicatie tussen gebruikers
 - `README.md` (16,740 bytes) - Hoofddocumentatie met uitgebreide setup instructies
 - `anthropic_api.py` (22,330 bytes) - High-level Anthropic API interface
 - `anthropic_client.py` (6,951 bytes) - Pure API communicatie client
-- `anthropic_config.py` (11,112 bytes) - Anthropic configuratie beheer
-- `app.py` (5,818 bytes) - Flask applicatie entry point
+- `anthropic_config.py` (15,212 bytes) - Anthropic configuratie beheer met multi-platform support
+- `app.py` (6,267 bytes) - Flask applicatie entry point met platform API registratie
 - `auth.py` (5,684 bytes) - Google OAuth authenticatie
 - `config.py` (7,218 bytes) - Algemene applicatie configuratie
 - `conversation_manager.py` (17,931 bytes) - Gesprek state management
 - `database.py` (1,469 bytes) - Database configuratie en setup
 - `mcp_connector.py` (5,150 bytes) - MCP protocol connector
-- `mcp_integration.py` (15,752 bytes) - MCP server integratie
-- `project_info.txt` (21,090 bytes) - AI project informatie cache
-- `project_stappen.txt` (21,868 bytes) - Ontwikkelstappen voor AI
-- `requirements.txt` (1,227 bytes) - Python dependencies
+- `mcp_integration.py` (26,908 bytes) - Enhanced MCP server integratie met multi-platform support
+- **`platform_api.py` (14,738 bytes) - Platform management REST API voor GitHub/Bitbucket**
+- `project_info.txt` (28,786 bytes) - AI project informatie cache met multi-platform documentatie
+- `project_stappen.txt` (31,053 bytes) - Ontwikkelstappen voor AI met Bitbucket integratie status
+- `requirements.txt` (1,244 bytes) - Python dependencies inclusief aiohttp
 - `runtime.txt` (13 bytes) - Python runtime versie
 - `start_template.txt` (784 bytes) - Start template
 - `system_prompt.txt` (368 bytes) - AI system prompt
 - `user.py` (3,497 bytes) - User model en sessie beheer
+
+### Bitbucket Integration Module (4 bestanden) - **NIEUW**
+- **`bitbucket/__init__.py` (362 bytes) - Bitbucket module initialisatie**
+- **`bitbucket/bitbucket_api.py` (28,082 bytes) - Comprehensive Bitbucket API wrapper met GitHub-compatible interface**
+- **`bitbucket/platform_detector.py` (14,287 bytes) - Intelligente platform detectie en argument normalisatie**
+- **`bitbucket/unified_interface.py` (22,357 bytes) - Platform-agnostische interface voor multi-platform operaties**
 
 ### Analytics Module (4 bestanden)
 - `analytics/__init__.py` (267 bytes) - Module initialisatie
@@ -59,18 +66,19 @@ AI Ontwikkelhulp is een gespecialiseerde tool die communicatie tussen gebruikers
 ### API Routes (3 bestanden)
 - `routes/__init__.py` (92 bytes) - Routes module initialisatie
 - `routes/analytics.py` (11,297 bytes) - Analytics API endpoints
-- `routes/api.py` (34,028 bytes) - Hoofd REST API endpoints
+- `routes/api.py` (34,028 bytes) - Hoofd REST API endpoints met platform support
 
 ### Static Assets
-#### CSS Stylesheets (4 bestanden)
+#### CSS Stylesheets (5 bestanden)
 - `static/css/analytics.css` (7,829 bytes) - Analytics pagina styling
-- `static/css/home.css` (5,383 bytes) - Home pagina styling
+- `static/css/home.css` (5,383 bytes) - Home pagina styling met workflow tabs
 - `static/css/log-formatter.css` (12,105 bytes) - Log formattering styles
+- **`static/css/platform-selector.css` (5,056 bytes) - Platform selector styling voor GitHub/Bitbucket UI**
 - `static/css/style.css` (23,006 bytes) - Hoofd styling en thema's
 
 #### JavaScript Files (4 bestanden)
 - `static/js/analytics.js` (12,710 bytes) - Analytics functionaliteit
-- `static/js/home.js` (67,050 bytes) - Hoofd chat interface JavaScript
+- `static/js/home.js` (74,126 bytes) - Hoofd chat interface JavaScript met platform management
 - `static/js/log-formatter.js` (13,249 bytes) - Log formattering module
 - `static/js/main.js` (13,883 bytes) - Algemene JavaScript functionaliteit
 
@@ -81,7 +89,7 @@ AI Ontwikkelhulp is een gespecialiseerde tool die communicatie tussen gebruikers
 - `templates/analytics.html` (4,024 bytes) - Analytics dashboard template
 - `templates/base.html` (8,209 bytes) - Base template met navigatie
 - `templates/conversations.html` (33,516 bytes) - Gesprekken overzicht template
-- `templates/home.html` (6,834 bytes) - Hoofd chat interface template
+- `templates/home.html` (9,082 bytes) - Hoofd chat interface template met platform selector
 - `templates/login.html` (6,568 bytes) - Login pagina template
 - `templates/components/chat_window.html` (3,271 bytes) - Chat window component
 
@@ -107,7 +115,7 @@ AI Ontwikkelhulp is een gespecialiseerde tool die communicatie tussen gebruikers
 ## Architectuur en Module Relaties
 
 ### Core Application Layer
-- **app.py**: Flask applicatie entry point, integreert alle modules
+- **app.py**: Flask applicatie entry point, integreert alle modules inclusief platform API
 - **config.py**: Centrale configuratie management
 - **database.py**: Database setup en connectie management
 
@@ -118,12 +126,19 @@ AI Ontwikkelhulp is een gespecialiseerde tool die communicatie tussen gebruikers
 ### AI Integration Layer
 - **anthropic_api.py**: High-level interface voor Anthropic Claude API
 - **anthropic_client.py**: Low-level API communicatie
-- **anthropic_config.py**: Configuratie management voor AI modellen
+- **anthropic_config.py**: Configuratie management voor AI modellen en multi-platform settings
 - **conversation_manager.py**: State management voor gesprekken
 
+### Multi-Platform Integration Layer - **NIEUW**
+- **platform_api.py**: REST API endpoints voor platform configuratie en management
+- **bitbucket/bitbucket_api.py**: Comprehensive Bitbucket API wrapper met GitHub-compatible interface
+- **bitbucket/platform_detector.py**: Intelligente platform detectie op basis van URLs, tool names en argumenten
+- **bitbucket/unified_interface.py**: Platform-agnostische interface voor seamless GitHub/Bitbucket operaties
+- **mcp_integration.py**: Enhanced MCP server integratie met multi-platform support en unified tool execution
+
 ### MCP (Model Context Protocol) Integration
-- **mcp_integration.py**: Hoofdmodule voor MCP server integratie
-- **mcp_connector.py**: Protocol connector voor externe tools
+- **mcp_integration.py**: Hoofdmodule voor MCP server integratie met multi-platform ondersteuning
+- **mcp_connector.py**: Protocol connector voor externe tools (GitHub)
 
 ### Data Layer
 - **models/**: SQLAlchemy database modellen
@@ -131,53 +146,109 @@ AI Ontwikkelhulp is een gespecialiseerde tool die communicatie tussen gebruikers
 - **migrations/**: Database schema versioning
 
 ### API Layer
-- **routes/api.py**: REST API endpoints voor chat functionaliteit
+- **routes/api.py**: REST API endpoints voor chat functionaliteit met platform support
 - **routes/analytics.py**: Analytics en reporting endpoints
+- **platform_api.py**: Platform management en configuratie endpoints
 
 ### Analytics & Monitoring
 - **analytics/**: Complete analytics module met cost tracking en token monitoring
 
 ### Frontend Layer
-- **templates/**: Jinja2 HTML templates
-- **static/**: CSS, JavaScript en assets
-- **Workflow automation**: JavaScript-based workflow management
+- **templates/**: Jinja2 HTML templates met platform selector UI
+- **static/**: CSS, JavaScript en assets inclusief platform-specific styling
+- **Workflow automation**: JavaScript-based workflow management met platform awareness
 
 ## Belangrijkste Functionaliteiten
 
-### 1. AI-Gestuurde Repository Ontwikkeling
-- Automatische GitHub repository ontwikkeling via `ga` commando
-- Issue-driven development workflow
+### 1. Multi-Platform Repository Ontwikkeling - **NIEUW**
+- **GitHub ondersteuning**: Via MCP (Model Context Protocol) server integration
+- **Bitbucket ondersteuning**: Via direct REST API integration met GitHub-compatible interface
+- **Unified interface**: Seamless switching tussen platforms met automatic tool routing
+- **Platform detectie**: Intelligent detection op basis van URLs, tool names en argumenten
+- **Automatische GitHub/Bitbucket repository ontwikkeling** via `ga` commando
+- Issue-driven development workflow voor beide platforms
 - Automatische branch en pull request management
+- Platform-aware tool execution en logging
 
-### 2. Workflow Automation
-- Pattern-based workflow automation
+### 2. Platform Management
+- **Platform selector UI**: Radio buttons voor GitHub/Bitbucket selectie
+- **Real-time status indicators**: Connected/disconnected/error states
+- **Connection management**: Connect/disconnect buttons per platform
+- **Configuration validation**: Platform-specific credential checking
+- **Automatic platform detection**: Intelligent routing op basis van context
+- **Error handling**: Platform-specific foutafhandeling en user feedback
+
+### 3. Workflow Automation
+- Pattern-based workflow automation met platform awareness
 - Automatische chat window management
 - Gestructureerde development cycles
+- Workflow tabs voor verschillende profielen
+- Platform-specific workflow configuratie
 
-### 3. MCP Tool Integration
-- GitHub API integratie via MCP
-- External tool support
+### 4. MCP Tool Integration
+- **GitHub API integratie** via MCP server
+- **Bitbucket API integratie** via unified interface
+- External tool support voor beide platforms
 - Real-time tool execution feedback
+- Enhanced tool logging met platform context
 
-### 4. Analytics & Monitoring
-- Token usage tracking
-- Cost calculation
+### 5. Analytics & Monitoring
+- Token usage tracking voor beide platforms
+- Cost calculation met platform-specific pricing
 - Performance analytics
 - Usage reporting
+- Platform usage comparison
 
-### 5. User Interface
+### 6. User Interface
 - Split-view chat interface
+- Platform selector panel
 - Log formatting en syntax highlighting
 - Dark/light theme support
 - Real-time updates
+- Platform-aware UI elements
 
-### 6. Authentication & Security
+### 7. Authentication & Security
 - Google OAuth met domain restrictie
 - Session management
 - Secure API key handling
+- Platform-specific credential management
+
+## Multi-Platform Features - **NIEUW**
+
+### Supported Platforms
+- **GitHub**: Via MCP (Model Context Protocol) server
+- **Bitbucket**: Via REST API met GitHub-compatible interface
+
+### Available Operations (Both Platforms)
+- Repository management (list, get, create, fork)
+- File operations (get contents, create/update files, push multiple files)
+- Issues management (list, get, create, update, add comments)
+- Pull requests (list, get, create, update, merge)
+- Branches (list, create)
+- Commits (list, get details)
+
+### Platform Detection
+- **URL-based**: Automatic detection van github.com vs bitbucket.org URLs
+- **Tool name-based**: Detection van bitbucket_ prefixes vs standard GitHub tools
+- **Context-based**: Detection uit tool argumenten (workspace/repo_slug vs owner/repo)
+- **Fallback**: Default platform bij onbekende context
+
+### Configuration Requirements
+- **GitHub**: MCP_SERVER_SCRIPT, MCP_SERVER_VENV_PATH (optioneel)
+- **Bitbucket**: BITBUCKET_WORKSPACE, BITBUCKET_USERNAME, BITBUCKET_APP_PASSWORD
+- **General**: DEFAULT_PLATFORM (github/bitbucket)
+
+### API Endpoints
+- **GET /api/platform/config**: Platform configuratie en beschikbare platforms
+- **GET /api/platform/status**: Huidige platform connection status
+- **POST /api/platform/connect**: Verbinden met specifiek platform
+- **POST /api/platform/disconnect**: Verbreken van platform verbinding
+- **POST /api/platform/switch**: Switchen tussen connected platforms
+- **GET /api/platform/tools**: Beschikbare tools per platform
+- **POST /api/platform/validate**: Platform configuratie validatie
 
 ## Development Status
-Het project is actief in ontwikkeling met een uitgebreide test suite en gestructureerde development workflow. De applicatie is productie-klaar met Docker support en deployment configuraties.
+Het project is actief in ontwikkeling met een uitgebreide test suite en gestructureerde development workflow. De applicatie is productie-klaar met Docker support en deployment configuraties. **Multi-platform ondersteuning voor GitHub en Bitbucket is volledig geïmplementeerd en operationeel.**
 
 ## Key Dependencies
 - Flask (web framework)
@@ -186,6 +257,16 @@ Het project is actief in ontwikkeling met een uitgebreide test suite en gestruct
 - Google OAuth libraries
 - MCP protocol libraries
 - Alembic (database migrations)
+- **aiohttp (voor Bitbucket API calls)**
 
-## Total Files: 82
-## Total Size: ~500KB (excluding dependencies)
+## Total Files: 89 (+7 nieuwe bestanden voor Bitbucket integratie)
+## Total Size: ~700KB (excluding dependencies)
+
+## Recent Additions (Bitbucket Integration)
+- **bitbucket/** module: Complete Bitbucket API integration
+- **platform_api.py**: Platform management REST API
+- **static/css/platform-selector.css**: Platform UI styling
+- Enhanced **mcp_integration.py**: Multi-platform support
+- Enhanced **anthropic_config.py**: Multi-platform configuration
+- Enhanced **templates/home.html**: Platform selector UI
+- Enhanced **static/js/home.js**: Platform management JavaScript
