@@ -333,6 +333,17 @@
 
 ## Toekomstige stappen (Must-have)
 
+1. De branch feature/bitbucket-intergration werkt nog niet naar behoren
+- Het geeft aan niet vrbonden te zijn met github, terwijl daar niks in is veranderd. 
+- Het heeft nog geen verbinden met Bitbucket.
+   - de app geeft aan: 
+         1. De Bitbucket connector bestaat maar niet is geactiveerd in mijn huidige sessie
+         2. Er aanvullende configuratie nodig is om de Bitbucket tools beschikbaar te maken
+         3. De Bitbucket functionaliteit is geïmplementeerd maar nog niet gekoppeld aan mijn tool interface
+         
+         Om dit op te lossen zou je kunnen:
+         - Controleren of de Bitbucket connector correct is geconfigureerd
+         - De MCP (Model Context Protocol) instellingen controleren om te zien of Bitbucket tools beschikbaar zouden moeten zijn
 
 ## Toekomstige stappen (Nice-to-have)
 
