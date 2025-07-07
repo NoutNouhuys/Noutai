@@ -9,6 +9,7 @@ from flask_login import current_user
 from routes.api import api_bp
 from routes.analytics import analytics_bp
 from database import init_db
+from platform_api import init_platform_api
 
 def create_app(config_class=None):
     """Create and configure the Flask application
@@ -51,6 +52,14 @@ def create_app(config_class=None):
     app.register_blueprint(api_bp, url_prefix='/api')
     app.register_blueprint(analytics_bp)  # Analytics routes already have /api/analytics prefix
     
+    # Initialize platform API (includes MCP integration)
+    try:
+        init_platform_api(app)
+        app.logger.info("Platform API initialized successfully")
+    except Exception as e:
+        app.logger.error(f"Failed to initialize Platform API: {str(e)}")
+        # Continue without platform API - app should still work for basic functionality
+    
     # Register main routes
     register_routes(app)
 
@@ -70,7 +79,9 @@ def configure_logging(app):
         'api',  # afhankelijk van hoe je het importeert
         'routes.api',
         'routes.analytics',
-        'analytics'
+        'analytics',
+        'platform_api',
+        'mcp_integration'
     ]:
         logging.getLogger(module).setLevel(log_level)
 
