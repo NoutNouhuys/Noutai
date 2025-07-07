@@ -1,0 +1,308 @@
+/**
+ * Platform Selector Styles
+ * 
+ * Styling for multi-platform Git repository support UI components
+ */
+
+/* Platform Selector Container */
+.platform-selector-container {
+    background: var(--bs-light);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.platform-selector-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.platform-selector-group label {
+    font-weight: 500;
+    color: var(--bs-secondary);
+    white-space: nowrap;
+}
+
+#platform-select {
+    min-width: 150px;
+}
+
+#platform-select option:disabled {
+    color: var(--bs-secondary);
+    font-style: italic;
+}
+
+/* Platform Status Indicators */
+.platform-status-group {
+    display: flex;
+    align-items: center;
+}
+
+#platform-status-indicators {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.platform-status-indicator {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    background: var(--bs-white);
+    border: 1px solid var(--bs-border-color);
+    cursor: help;
+    transition: all 0.2s ease;
+}
+
+.platform-status-indicator:hover {
+    background: var(--bs-gray-100);
+    transform: translateY(-1px);
+}
+
+.platform-status-indicator.github .platform-icon {
+    color: #333;
+}
+
+.platform-status-indicator.bitbucket .platform-icon {
+    color: #0052cc;
+}
+
+.platform-icon {
+    font-size: 1rem;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    position: relative;
+}
+
+.status-dot.connected {
+    background-color: #28a745;
+    box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.2);
+}
+
+.status-dot.disconnected {
+    background-color: #dc3545;
+    box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.2);
+}
+
+.status-dot.connected::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 4px;
+    height: 4px;
+    background-color: #fff;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Active Platform Indicator */
+.active-platform-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    background: var(--bs-primary);
+    color: white;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.active-platform-indicator i {
+    font-size: 0.875rem;
+}
+
+/* Platform Actions */
+.platform-actions-group {
+    display: flex;
+    align-items: center;
+}
+
+#refresh-platforms-btn {
+    border-radius: 50%;
+    width: 2.5rem;
+    height: 2.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+#refresh-platforms-btn:hover {
+    background-color: var(--bs-secondary);
+    border-color: var(--bs-secondary);
+    color: white;
+    transform: rotate(90deg);
+}
+
+#refresh-platforms-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+#refresh-platforms-btn .fa-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Platform Notifications */
+.platform-notification {
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .platform-selector-container {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1rem;
+    }
+    
+    .platform-selector-group {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+    
+    .platform-selector-group label {
+        text-align: center;
+    }
+    
+    #platform-select {
+        width: 100%;
+        min-width: auto;
+    }
+    
+    #platform-status-indicators {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .platform-actions-group {
+        justify-content: center;
+    }
+}
+
+/* Dark Theme Support */
+[data-bs-theme="dark"] .platform-selector-container {
+    background: var(--bs-dark);
+    border-color: var(--bs-border-color-translucent);
+}
+
+[data-bs-theme="dark"] .platform-status-indicator {
+    background: var(--bs-gray-800);
+    border-color: var(--bs-border-color-translucent);
+}
+
+[data-bs-theme="dark"] .platform-status-indicator:hover {
+    background: var(--bs-gray-700);
+}
+
+[data-bs-theme="dark"] .platform-status-indicator.github .platform-icon {
+    color: #fff;
+}
+
+[data-bs-theme="dark"] .platform-status-indicator.bitbucket .platform-icon {
+    color: #2684ff;
+}
+
+/* Integration with existing chat window styles */
+.chat-window .platform-info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--bs-secondary);
+}
+
+.chat-window .platform-info .platform-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.375rem;
+    background: var(--bs-light);
+    border: 1px solid var(--bs-border-color);
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.chat-window .platform-info .platform-badge.github {
+    color: #333;
+    border-color: #333;
+}
+
+.chat-window .platform-info .platform-badge.bitbucket {
+    color: #0052cc;
+    border-color: #0052cc;
+}
+
+[data-bs-theme="dark"] .chat-window .platform-info .platform-badge {
+    background: var(--bs-gray-800);
+    border-color: var(--bs-border-color-translucent);
+}
+
+[data-bs-theme="dark"] .chat-window .platform-info .platform-badge.github {
+    color: #fff;
+    border-color: #fff;
+}
+
+[data-bs-theme="dark"] .chat-window .platform-info .platform-badge.bitbucket {
+    color: #2684ff;
+    border-color: #2684ff;
+}
+
+/* Tooltip enhancements */
+.platform-status-indicator[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bs-dark);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    z-index: 1000;
+    margin-bottom: 0.25rem;
+}
+
+.platform-status-indicator[title]:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-top-color: var(--bs-dark);
+    z-index: 1000;
+}
