@@ -9,7 +9,7 @@ import re
 from typing import Dict, List, Optional, Any, Callable, Union
 from enum import Enum
 from anthropic_config import AnthropicConfig
-from mcp_integration import MCPIntegration
+import mcp_connector
 from .mcp_bitbucket_connector import MCPBitbucketConnector
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,8 @@ class PlatformManager:
             config: AnthropicConfig instance
         """
         self.config = config
-        self.github_connector = MCPIntegration(config)
+        # Use direct MCP connector for GitHub instead of MCPIntegration to avoid circular import
+        self.github_connector = mcp_connector.MCPConnector()
         self.bitbucket_connector = MCPBitbucketConnector(config)
         self.active_platform = Platform.AUTO
         self._github_connected = False
@@ -55,10 +56,18 @@ class PlatformManager:
         
         # Initialize GitHub connector
         try:
-            self._github_connected = await self.github_connector.connect()
-            results["github"] = self._github_connected
-            if self._github_connected:
+            script_path = self.config.mcp_server_script
+            venv_path = self.config.mcp_server_venv_path
+            
+            if script_path:
+                await self.github_connector.connect_to_server(script_path, venv_path)
+                self._github_connected = True
                 logger.info("GitHub MCP connector initialized successfully")
+            else:
+                logger.debug("No GitHub MCP server script path configured")
+                self._github_connected = False
+                
+            results["github"] = self._github_connected
         except Exception as e:
             logger.error(f"Failed to initialize GitHub connector: {str(e)}")
             results["github"] = False
@@ -78,7 +87,7 @@ class PlatformManager:
     async def disconnect_all(self) -> None:
         """Disconnect from all platform connectors."""
         if self._github_connected:
-            await self.github_connector.disconnect()
+            await self.github_connector.close()
             self._github_connected = False
             
         if self._bitbucket_connected:
@@ -97,17 +106,17 @@ class PlatformManager:
         """
         # GitHub patterns
         github_patterns = [
-            r'github\\.com',
+            r'github\.com',
             r'^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$',  # Simple owner/repo format
-            r'git@github\\.com:',
-            r'https://github\\.com/'
+            r'git@github\.com:',
+            r'https://github\.com/'
         ]
         
         # Bitbucket patterns
         bitbucket_patterns = [
-            r'bitbucket\\.org',
-            r'git@bitbucket\\.org:',
-            r'https://bitbucket\\.org/',
+            r'bitbucket\.org',
+            r'git@bitbucket\.org:',
+            r'https://bitbucket\.org/',
             r'^[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+$'  # Could be Bitbucket workspace/repo
         ]
         
@@ -280,6 +289,57 @@ class PlatformManager:
         else:
             raise RuntimeError("No platforms are connected")
             
+    def _format_tool_args(self, tool_name: str, tool_args: Dict[str, Any]) -> str:
+        """Format tool arguments for readable logging."""
+        if tool_name == "get_file_contents":
+            repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
+            path = tool_args.get('path', 'unknown')
+            ref = tool_args.get('ref', 'main')
+            return f"  Repository: {repo_info}\\n  Path: {path}\\n  Branch/Ref: {ref}"
+        
+        elif tool_name == "create_issue":
+            repo_info = f"{tool_args.get('owner', 'unknown')}/{tool_args.get('repo', 'unknown')}"
+            title = tool_args.get('title', 'No title')
+            labels = tool_args.get('labels', [])
+            return f"  Repository: {repo_info}\\n  Title: {title}\\n  Labels: {', '.join(labels) if labels else 'None'}"
+        
+        else:
+            # Generic formatting for unknown tools
+            formatted_args = []
+            for key, value in tool_args.items():
+                if isinstance(value, str) and len(value) > 50:
+                    value = value[:47] + "..."
+                formatted_args.append(f"  {key}: {value}")
+            return "\\n".join(formatted_args) if formatted_args else "  No parameters"
+    
+    def _summarize_result(self, tool_name: str, content: Any) -> str:
+        """Make a concise summary of the result."""
+        if not content:
+            return "  No result content"
+        
+        content_str = str(content)
+        
+        # Tool-specific result summaries
+        if tool_name == "get_file_contents":
+            try:
+                # Try to extract useful info from file content result
+                if "type" in content_str and "content" in content_str:
+                    # Estimate file size
+                    content_length = len(content_str)
+                    file_type = "text" if "text" in content_str else "binary"
+                    return f"  File retrieved ({content_length/1024:.1f} KB)\\n  Type: {file_type}"
+                else:
+                    return f"  File content retrieved ({len(content_str)} chars)"
+            except:
+                return f"  File content retrieved ({len(content_str)} chars)"
+        
+        else:
+            # Generic result summary
+            if len(content_str) > 200:
+                return f"  Result received ({len(content_str)} chars)\\n  Preview: {content_str[:100]}..."
+            else:
+                return f"  Result: {content_str}"
+            
     async def use_tool(
         self,
         tool_name: str,
@@ -312,24 +372,34 @@ class PlatformManager:
                     tool_name, tool_args, repository_hint
                 )
                 
+            # Log tool start with formatted parameters
+            if log_callback:
+                formatted_args = self._format_tool_args(tool_name, tool_args)
+                log_callback(f"▶ Starting tool: {tool_name}\\n{formatted_args}")
+                
             # Execute tool on appropriate platform
             if target_platform == Platform.GITHUB:
                 if not self._github_connected:
                     raise RuntimeError("GitHub connector is not connected")
-                result = await self.github_connector.use_tool(tool_name, tool_args, log_callback)
-                result["platform"] = "github"
+                result = await self.github_connector.use_tool(tool_name=tool_name, tool_args=tool_args)
+                result_dict = {"success": True, "content": result.content, "platform": "github"}
                 
             elif target_platform == Platform.BITBUCKET:
                 if not self._bitbucket_connected:
                     raise RuntimeError("Bitbucket connector is not connected")
-                result = await self.bitbucket_connector.use_tool(tool_name, tool_args, log_callback)
-                result["platform"] = "bitbucket"
+                result_dict = await self.bitbucket_connector.use_tool(tool_name, tool_args, log_callback)
+                result_dict["platform"] = "bitbucket"
                 
             else:
                 raise RuntimeError(f"Unsupported platform: {target_platform}")
                 
-            logger.info(f"Tool '{tool_name}' executed successfully on {result['platform']}")
-            return result
+            # Log successful completion with result summary
+            logger.info(f"Tool '{tool_name}' executed successfully on {result_dict['platform']}")
+            if log_callback:
+                result_summary = self._summarize_result(tool_name, result_dict.get("content"))
+                log_callback(f"✓ Tool {tool_name} completed:\\n{result_summary}")
+                
+            return result_dict
             
         except Exception as e:
             error_msg = f"Platform tool execution failed: {str(e)}"
@@ -434,7 +504,7 @@ class PlatformManager:
         elif tool_name == "merge_pull_request":
             if "pull_request_id" in bitbucket_args:
                 github_args["pull_number"] = bitbucket_args["pull_request_id"]
-                del github_args["pull_request_id"]
+                del bitbucket_args["pull_request_id"]
             if "merge_strategy" in bitbucket_args:
                 # Convert Bitbucket merge strategies to GitHub
                 strategy_mapping = {
