@@ -302,10 +302,102 @@ class AnthropicConfig:
     
     @property
     def mcp_server_script(self) -> Optional[str]:
-        """Get MCP server script path."""
+        """Get GitHub MCP server script path."""
         return os.environ.get("MCP_SERVER_SCRIPT")
     
     @property
     def mcp_server_venv_path(self) -> Optional[str]:
-        """Get MCP server virtual environment path."""
+        """Get GitHub MCP server virtual environment path."""
         return os.environ.get("MCP_SERVER_VENV_PATH")
+    
+    @property
+    def bitbucket_mcp_server_script(self) -> Optional[str]:
+        """Get Bitbucket MCP server script path."""
+        return (
+            self.config_dict.get('BITBUCKET_MCP_SERVER_SCRIPT') or 
+            os.environ.get("BITBUCKET_MCP_SERVER_SCRIPT")
+        )
+    
+    @property
+    def bitbucket_mcp_server_venv_path(self) -> Optional[str]:
+        """Get Bitbucket MCP server virtual environment path."""
+        return (
+            self.config_dict.get('BITBUCKET_MCP_SERVER_VENV_PATH') or 
+            os.environ.get("BITBUCKET_MCP_SERVER_VENV_PATH")
+        )
+    
+    def get_platform_config(self, platform: str) -> Dict[str, Optional[str]]:
+        """
+        Get platform-specific MCP server configuration.
+        
+        Args:
+            platform: Platform name ('github' or 'bitbucket')
+            
+        Returns:
+            Dict with script_path and venv_path for the platform
+        """
+        if platform.lower() == 'github':
+            return {
+                'script_path': self.mcp_server_script,
+                'venv_path': self.mcp_server_venv_path
+            }
+        elif platform.lower() == 'bitbucket':
+            return {
+                'script_path': self.bitbucket_mcp_server_script,
+                'venv_path': self.bitbucket_mcp_server_venv_path
+            }
+        else:
+            raise ValueError(f"Unsupported platform: {platform}")
+    
+    def validate_platform_config(self, platform: str) -> bool:
+        """
+        Validate platform-specific configuration.
+        
+        Args:
+            platform: Platform name to validate
+            
+        Returns:
+            True if platform configuration is valid
+            
+        Raises:
+            ValueError: If platform configuration is invalid
+        """
+        config = self.get_platform_config(platform)
+        
+        if not config['script_path']:
+            raise ValueError(f"No MCP server script path configured for {platform}")
+            
+        if not os.path.exists(config['script_path']):
+            raise ValueError(f"MCP server script not found at {config['script_path']} for {platform}")
+            
+        if config['venv_path'] and not os.path.exists(config['venv_path']):
+            logger.warning(f"Virtual environment not found at {config['venv_path']} for {platform}")
+            
+        return True
+    
+    def get_available_platforms(self) -> List[str]:
+        """
+        Get list of platforms with valid configuration.
+        
+        Returns:
+            List of platform names with valid configuration
+        """
+        platforms = []
+        
+        # Check GitHub configuration
+        try:
+            if self.mcp_server_script:
+                self.validate_platform_config('github')
+                platforms.append('github')
+        except ValueError:
+            pass
+            
+        # Check Bitbucket configuration
+        try:
+            if self.bitbucket_mcp_server_script:
+                self.validate_platform_config('bitbucket')
+                platforms.append('bitbucket')
+        except ValueError:
+            pass
+            
+        return platforms
