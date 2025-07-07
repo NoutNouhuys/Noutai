@@ -1,0 +1,211 @@
+/* Platform Selector Styles */
+.platform-panel {
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.platform-panel .card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+}
+
+.platform-panel .card-body {
+    padding: 0.75rem 1rem;
+}
+
+/* Platform Selection Buttons */
+.platform-panel .btn-group .btn {
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.platform-panel .btn-group .btn:first-child {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.platform-panel .btn-group .btn:last-child {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-left: 0;
+}
+
+.platform-panel .btn-check:checked + .btn {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+.platform-panel .btn-outline-primary:hover {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+    color: white;
+}
+
+/* Platform Status Indicators */
+.platform-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.platform-status .badge {
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.platform-status .badge.bg-success {
+    background-color: #198754 !important;
+}
+
+.platform-status .badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #000;
+}
+
+.platform-status .badge.bg-danger {
+    background-color: #dc3545 !important;
+}
+
+.platform-status .badge.bg-secondary {
+    background-color: #6c757d !important;
+}
+
+/* Status Icons */
+.platform-status .badge i.fa-circle {
+    font-size: 0.5rem;
+    animation: pulse 2s infinite;
+}
+
+.platform-status .badge.bg-success i.fa-circle {
+    color: #ffffff;
+    animation: none;
+}
+
+.platform-status .badge.bg-danger i.fa-circle {
+    animation: blink 1s infinite;
+}
+
+/* Connect Button */
+#platform-connect-btn {
+    font-size: 0.875rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+#platform-connect-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#platform-connect-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Platform Icons */
+.fab.fa-github {
+    color: #333;
+}
+
+.fab.fa-bitbucket {
+    color: #0052cc;
+}
+
+.btn-check:checked + .btn .fab {
+    color: white !important;
+}
+
+/* Animations */
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes blink {
+    0%, 50% {
+        opacity: 1;
+    }
+    51%, 100% {
+        opacity: 0.3;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .platform-panel .card-body {
+        padding: 0.5rem;
+    }
+    
+    .platform-panel .row {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .platform-panel .col-md-6:last-child {
+        text-align: left !important;
+    }
+    
+    .platform-status {
+        justify-content: flex-start;
+    }
+    
+    .platform-panel .btn-group .btn {
+        font-size: 0.875rem;
+        padding: 0.5rem 0.75rem;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .platform-panel .card {
+        background-color: #2d3748;
+        border-color: #4a5568;
+    }
+    
+    .platform-panel .card-body {
+        color: #e2e8f0;
+    }
+    
+    .fab.fa-github {
+        color: #e2e8f0;
+    }
+}
+
+/* Loading State */
+.platform-panel.loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.platform-panel.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #0d6efd;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
